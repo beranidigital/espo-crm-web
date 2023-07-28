@@ -33,7 +33,7 @@ class ThemeManager
 {
     private string $defaultName = 'Espo';
     private string $defaultStylesheet = 'client/css/espo/espo.css';
-    private string $defaultLogoSrc = 'client/img/logo.svg';
+    private string $defaultLogoSrc = 'client/img/bdi-logo-cut.jpg';
 
     public function __construct(
         private Config $config,

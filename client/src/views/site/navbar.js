@@ -340,7 +340,7 @@ class NavbarSiteView extends View {
         let companyLogoId = this.getConfig().get('companyLogoId');
 
         if (!companyLogoId) {
-            return this.getBasePath() + (this.getThemeManager().getParam('logo') || 'client/img/logo.svg');
+            return this.getBasePath() + (this.getThemeManager().getParam('logo') || 'client/img/bdi-logo-cut.jpg');
         }
 
         return this.getBasePath() + '?entryPoint=LogoImage&id='+companyLogoId;
@@ -1186,10 +1186,6 @@ class NavbarSiteView extends View {
         list = list.concat([
             {
                 divider: true
-            },
-            {
-                link: '#About',
-                label: this.getLanguage().translate('About')
             },
             {
                 action: 'logout',

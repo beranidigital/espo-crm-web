@@ -1,8 +1,8 @@
-<div class="page-header">
+<div class="page-header" style="visibility: hidden;">
     <h3>EspoCRM – Open Source CRM application</h3>
 </div>
 
-<div class="row">
+<div class="row" style="visibility: hidden;">
     <div class="col-md-8">
         <div class="panel panel-default">
             <div class="panel-body">

@@ -79,7 +79,7 @@ class MasterSiteView extends View {
             $body.attr('data-' + Espo.Utils.camelCaseToHyphen(param), value);
         }
 
-        let footerView = this.getView('footer');
+        let footerView = this.getView('footer | unhijack this');
 
         if (footerView) {
             let html = footerView.$el.html() || '';

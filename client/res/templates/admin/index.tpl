@@ -44,14 +44,7 @@
         <div class="col-md-5 admin-right-column">
             <div class="notifications-panel-container">{{{notificationsPanel}}}</div>
 
-            {{#unless iframeDisabled}}
-            <iframe
-                src="{{iframeUrl}}"
-                style="width: 100%; height: {{iframeHeight}}px"
-                frameborder="0"
-                webkitallowfullscreen mozallowfullscreen allowfullscreen
-            ></iframe>
-            {{/unless}}
+
         </div>
     </div>
 </div>

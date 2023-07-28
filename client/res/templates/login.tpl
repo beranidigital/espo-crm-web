@@ -2,7 +2,12 @@
     <div class="container-centering">
     <div id="login" class="panel panel-default block-center-sm">
         <div class="panel-heading">
-            <div class="logo-container">
+            <div class="logo-container" style="
+    justify-content: center;
+    /* align-content: center; */
+    width: 100%;
+    display: flex;
+">
                 <img src="{{logoSrc}}" class="logo">
             </div>
         </div>

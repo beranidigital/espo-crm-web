@@ -117,35 +117,20 @@ class Avatar extends Image
             return;
         }
 
-        $identicon = new Identicon();
+        // Redirect to default image when there is no uploaded avatar
+        $this->redirectToDefaultImage($response);
+    }
 
-        if (!$size) {
-            $size = 'small';
-        }
+    private function redirectToDefaultImage(Response $response): void
+    {
+        $defaultImage = 'client/img/bdi-logo-cut-grayscale.png';
 
-        if (empty($this->getSizes()[$size])) {
-            $this->renderBlank($response);
-
-            return;
-        }
-
-        $width = $this->getSizes()[$size][0];
-
+        // You might want to set appropriate cache control and content type for the default image
         $response
             ->setHeader('Cache-Control', 'max-age=360000, must-revalidate')
-            ->setHeader('Content-Type', 'image/png');
-
-        $hash = $userId;
-
-        $color = $this->getColor($userId);
-
-        if ($user->getUserName() === SystemUser::NAME) {
-            $color = $this->metadata->get(['app', 'avatars', 'systemColor']) ?? $this->systemColor;
-        }
-
-        $imgContent = $identicon->getImageData($hash, $width, $color);
-
-        $response->writeBody($imgContent);
+            ->setHeader('Content-Type', 'image/jpeg')
+            ->setHeader("Location", $defaultImage)
+            ->setStatus(302);
     }
 
     /**

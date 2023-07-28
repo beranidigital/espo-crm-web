@@ -756,6 +756,6 @@ class Installer
 
     public function getLogoSrc(string $theme): string
     {
-        return $this->getMetadata()->get(['themes', $theme, 'logo']) ?? 'client/img/logo.svg';
+        return $this->getMetadata()->get(['themes', $theme, 'logo']) ?? 'client/img/bdi-logo-cut.jpg';
     }
 }

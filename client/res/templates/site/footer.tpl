@@ -1,7 +1,8 @@
 <p class="credit small">&copy; 2023
 <a
-    href="https://www.espocrm.com"
-    title="Powered by EspoCRM"
+    href="https://beranidigital.id/"
     rel="noopener" target="_blank"
     tabindex="-1"
->EspoCRM</a></p>
+>Berani Digital ID</a>
+</p>
+

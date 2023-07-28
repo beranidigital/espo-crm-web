@@ -166,7 +166,7 @@ class LoginView extends View {
 
         if (!companyLogoId) {
             return this.getBasePath() +
-                (this.getConfig().get('logoSrc') || 'client/img/logo.svg');
+                (this.getConfig().get('logoSrc') || 'client/img/bdi-logo-cut.jpg');
         }
 
         return this.getBasePath() + '?entryPoint=LogoImage&id=' + companyLogoId;

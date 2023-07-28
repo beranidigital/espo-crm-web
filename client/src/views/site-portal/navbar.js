@@ -33,7 +33,7 @@ define('views/site-portal/navbar', ['views/site/navbar'], function (Dep) {
         getLogoSrc: function () {
             var companyLogoId = this.getConfig().get('companyLogoId');
             if (!companyLogoId) {
-                return this.getBasePath() + (this.getThemeManager().getParam('logo') || 'client/img/logo.svg');
+                return this.getBasePath() + (this.getThemeManager().getParam('logo') || 'client/img/bdi-logo-cut.jpg');
             }
             return this.getBasePath() + '?entryPoint=LogoImage&id='+companyLogoId+'&t=' + companyLogoId;
         },
