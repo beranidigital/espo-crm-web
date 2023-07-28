@@ -1,7 +1,7 @@
 {
     "stylesheet": "client/css/espo/espo.css",
     "stylesheetIframe": "client/css/espo/espo-iframe.css",
-    "logo": "client/img/bdi-logo-cut.jpg",
+    "logo": "client/img/bdi-logo-white.png",
     "params": {
         "navbar": {
             "type": "enum",
