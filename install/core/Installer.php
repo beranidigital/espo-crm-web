@@ -269,6 +269,7 @@ class Installer
     public function getThemeList(): array
     {
         return [
+            'Berani',
             'Violet',
             'Espo',
             'Dark',
@@ -392,7 +393,7 @@ class Installer
             'passwordSalt' => $this->getPasswordHash()->generateSalt(),
             'cryptKey' => Util::generateSecretKey(),
             'hashSecretKey' => Util::generateSecretKey(),
-            'theme' => $saveData['theme'] ?? 'Violet',
+            'theme' => $saveData['theme'] ?? 'Berani',
         ];
 
         if (empty($saveData['defaultPermissions']['user'])) {
@@ -756,6 +757,6 @@ class Installer
 
     public function getLogoSrc(string $theme): string
     {
-        return $this->getMetadata()->get(['themes', $theme, 'logo']) ?? 'client/img/bdi-logo-cut.jpg';
+        return $this->getMetadata()->get(['themes', $theme, 'logo']) ?? 'client/img/bdi-logo-white.png';
     }
 }

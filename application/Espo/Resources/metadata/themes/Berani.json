@@ -1,0 +1,7 @@
+{
+    "stylesheet": "client/css/espo/berani.css",
+    "stylesheetIframe": "client/css/espo/berani-iframe.css",
+    "logo": "client/img/bdi-logo-white.png",
+
+    "isDark": false
+}

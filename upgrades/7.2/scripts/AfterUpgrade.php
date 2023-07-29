@@ -95,6 +95,7 @@ class AfterUpgrade
             'HazyblueVertical',
             'VioletVertical',
             'SakuraVertical',
+            'BeraniVertical',
             'DarkVertical',
         ];
 
