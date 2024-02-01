@@ -229,6 +229,7 @@ class Installer
     {
         $installerConfig = $this->getInstallerConfig();
 
+
         if ($installerConfig->get('isInstalled')) {
             return true;
         }
