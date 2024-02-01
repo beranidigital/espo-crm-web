@@ -1,33 +1,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 import ModalView from 'views/modal';
 import Model from 'model';
+import EditForModalRecordView from 'views/record/edit-for-modal';
 
 class BaseDashletOptionsModalView extends ModalView {
 
@@ -36,7 +37,6 @@ class BaseDashletOptionsModalView extends ModalView {
     cssName = 'options-modal'
     className = 'dialog dialog-record'
     name = ''
-    fieldsMode = 'edit'
     escapeDisabled = true
     saveDisabled = false;
 
@@ -99,16 +99,16 @@ class BaseDashletOptionsModalView extends ModalView {
         layout = [{rows: []}];
 
         let i = 0;
-        let a = [];
+        let row = [];
 
         for (let field in this.fields) {
             if (!(i % 2)) {
-                a = [];
+                row = [];
 
-                layout[0].rows.push(a);
+                layout[0].rows.push(row);
             }
 
-            a.push({name: field});
+            row.push({name: field});
 
             i++;
         }
@@ -135,6 +135,11 @@ class BaseDashletOptionsModalView extends ModalView {
         model.setDefs({fields: this.fields});
         model.set(this.optionsData);
 
+        this.dataObject = {
+            dashletName: this.name,
+            userId: this.options.userId,
+        };
+
         model.dashletName = this.name;
         model.userId = this.options.userId;
 
@@ -143,11 +148,13 @@ class BaseDashletOptionsModalView extends ModalView {
 
         this.setupBeforeFinal();
 
-        this.createView('record', 'views/record/edit-for-modal', {
+        this.recordView = new EditForModalRecordView({
             model: model,
             detailLayout: this.getDetailLayout(),
-            selector: '.record',
+            dataObject: this.dataObject,
         });
+
+        this.assignView('record', this.recordView, '.record');
 
         this.$header =
             $('<span>')
@@ -172,7 +179,7 @@ class BaseDashletOptionsModalView extends ModalView {
      * @return {module:views/record/edit}
      */
     getRecordView() {
-        return this.getView('record');
+        return this.recordView;
     }
 
     /**

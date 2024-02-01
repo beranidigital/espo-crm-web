@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -30,22 +30,18 @@ import View from 'view';
 
 class StreamView extends View {
 
-    template ='stream'
+    template = 'stream'
     filterList = ['all', 'posts', 'updates']
     filter = false
 
     events = {
         /** @this StreamView */
         'click button[data-action="refresh"]': function () {
-            if (!this.getRecordView()) {
-                return;
-            }
-
-            this.getRecordView().showNewRecords();
+            this.actionRefresh();
         },
         /** @this StreamView */
         'click button[data-action="selectFilter"]': function (e) {
-            let data = $(e.currentTarget).data();
+            const data = $(e.currentTarget).data();
 
             this.actionSelectFilter(data);
         },
@@ -58,27 +54,21 @@ class StreamView extends View {
             filter = 'all';
         }
 
+        const hasGlobalStreamAccess = this.getAcl().checkScope('GlobalStream');
+
         return {
             displayTitle: this.options.displayTitle,
             filterList: this.filterList,
             filter: filter,
+            hasMenu: hasGlobalStreamAccess,
+            hasGlobalStreamAccess: hasGlobalStreamAccess,
         };
     }
 
     setup() {
         this.filter = this.options.filter || this.filter;
 
-        this.wait(
-            this.getModelFactory().create('Note', model => {
-                this.createView('createPost', 'views/stream/record/edit', {
-                    selector: '.create-post-container',
-                    model: model,
-                    interactiveMode: true,
-                }, view => {
-                    this.listenTo(view, 'after:save', () => this.getRecordView().showNewRecords());
-                });
-            })
-        );
+        this.addActionHandler('createPost', () => this.actionCreatePost());
     }
 
     afterRender() {
@@ -115,8 +105,8 @@ class StreamView extends View {
     }
 
     actionSelectFilter(data) {
-        let name = data.name;
-        let filter = name;
+        const name = data.name;
+        const filter = name;
 
         let internalFilter = name;
 
@@ -127,8 +117,8 @@ class StreamView extends View {
         this.filter = internalFilter;
         this.setFilter(this.filter);
 
-        this.filterList.forEach((item) => {
-            var $el = this.$el.find('.page-header button[data-action="selectFilter"][data-name="'+item+'"]');
+        this.filterList.forEach(item => {
+            const $el = this.$el.find('.button-container button[data-action="selectFilter"][data-name="' + item + '"]');
 
             if (item === filter) {
                 $el.addClass('active');
@@ -164,6 +154,37 @@ class StreamView extends View {
 
         this.collection.offset = 0;
         this.collection.maxSize = this.getConfig().get('recordsPerPage') || this.collection.maxSize;
+    }
+
+    actionCreatePost() {
+        this.createView('dialog', 'views/stream/modals/create-post', {}, view => {
+            view.render();
+
+            this.listenToOnce(view, 'after:save', () => {
+                view.close();
+
+                this.getRecordView().showNewRecords();
+            });
+        });
+    }
+
+    actionRefresh() {
+        if (!this.getRecordView()) {
+            return;
+        }
+
+        const iconEl = this.element.querySelector('button[data-action="refresh"] .icon');
+
+        if (iconEl) {
+            iconEl.classList.add('animation-spin-fast');
+
+            setTimeout(() => iconEl.classList.remove('animation-spin-fast'), 500);
+        }
+
+        Espo.Ui.notify(' ... ');
+
+        this.getRecordView().showNewRecords()
+            .then(() => Espo.Ui.notify(false));
     }
 }
 

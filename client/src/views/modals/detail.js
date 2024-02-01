@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -94,7 +94,8 @@ class DetailModalView extends ModalView {
     }
 
     setup() {
-        this.scope = this.scope || this.options.scope;
+        this.scope = this.scope || this.options.scope || this.options.entityType;
+        this.entityType = this.options.entityType || this.scope;
         this.id = this.options.id;
 
         this.buttonList = [];
@@ -107,9 +108,9 @@ class DetailModalView extends ModalView {
             this.removeDisabled = this.options.removeDisabled;
         }
 
-        this.editDisabled = this.getMetadata().get(['clientDefs', this.scope, 'editDisabled']) ||
+        this.editDisabled = this.getMetadata().get(['clientDefs', this.entityType, 'editDisabled']) ||
             this.editDisabled;
-        this.removeDisabled = this.getMetadata().get(['clientDefs', this.scope, 'removeDisabled']) ||
+        this.removeDisabled = this.getMetadata().get(['clientDefs', this.entityType, 'removeDisabled']) ||
             this.removeDisabled;
 
         this.fullFormDisabled = this.options.fullFormDisabled || this.fullFormDisabled;
@@ -165,7 +166,7 @@ class DetailModalView extends ModalView {
 
         this.sourceModel = this.model;
 
-        this.getModelFactory().create(this.scope).then(model => {
+        this.getModelFactory().create(this.entityType).then(model => {
             if (!this.sourceModel) {
                 this.model = model;
                 this.model.id = this.id;
@@ -215,7 +216,7 @@ class DetailModalView extends ModalView {
             this.remove();
         });
 
-        if (this.duplicateAction && this.getAcl().checkScope(this.scope, 'create')) {
+        if (this.duplicateAction && this.getAcl().checkScope(this.entityType, 'create')) {
             this.addDropdownItem({
                 name: 'duplicate',
                 label: 'Duplicate',
@@ -225,7 +226,7 @@ class DetailModalView extends ModalView {
 
     /** @private */
     setupActionItems() {
-        let actionItemSetup = new ActionItemSetup(
+        const actionItemSetup = new ActionItemSetup(
             this.getMetadata(),
             this.getHelper(),
             this.getAcl(),
@@ -298,13 +299,16 @@ class DetailModalView extends ModalView {
         this.removeButton('remove');
     }
 
+    /**
+     * @internal Used. Do not remove.
+     */
     getScope() {
         return this.scope;
     }
 
     createRecordView(callback) {
-        let model = this.model;
-        let scope = this.getScope();
+        const model = this.model;
+        const scope = this.getScope();
 
         this.headerHtml = '';
 
@@ -325,7 +329,7 @@ class DetailModalView extends ModalView {
         }
 
         if (!this.fullFormDisabled) {
-            let url = '#' + scope + '/view/' + this.id;
+            const url = '#' + scope + '/view/' + this.id;
 
             this.headerHtml =
                 $('<a>')
@@ -337,10 +341,10 @@ class DetailModalView extends ModalView {
                     .get(0).outerHTML;
         }
 
-        this.headerHtml = this.getHelper().getScopeColorIconHtml(this.scope) + this.headerHtml;
+        this.headerHtml = this.getHelper().getScopeColorIconHtml(this.entityType) + this.headerHtml;
 
         if (!this.editDisabled) {
-            let editAccess = this.getAcl().check(model, 'edit', true);
+            const editAccess = this.getAcl().check(model, 'edit', true);
 
             if (editAccess) {
                 this.showButton('edit');
@@ -358,7 +362,7 @@ class DetailModalView extends ModalView {
         }
 
         if (!this.removeDisabled) {
-            var removeAccess = this.getAcl().check(model, 'delete', true);
+            const removeAccess = this.getAcl().check(model, 'delete', true);
 
             if (removeAccess) {
                 this.showButton('remove');
@@ -376,14 +380,14 @@ class DetailModalView extends ModalView {
             }
         }
 
-        let viewName =
+        const viewName =
             this.detailViewName ||
             this.detailView ||
             this.getMetadata().get(['clientDefs', model.entityType, 'recordViews', 'detailSmall']) ||
             this.getMetadata().get(['clientDefs', model.entityType, 'recordViews', 'detailQuick']) ||
             'views/record/detail-small';
 
-        let options = {
+        const options = {
             model: model,
             fullSelector: this.containerSelector + ' .record-container',
             type: 'detailSmall',
@@ -392,7 +396,8 @@ class DetailModalView extends ModalView {
             inlineEditDisabled: true,
             sideDisabled: this.sideDisabled,
             bottomDisabled: this.bottomDisabled,
-            exit: function () {},
+            exit: function () {
+            },
         };
 
         this.createView('record', viewName, options, callback);
@@ -418,13 +423,13 @@ class DetailModalView extends ModalView {
     }
 
     controlNavigationButtons() {
-        let recordView = this.getRecordView();
+        const recordView = this.getRecordView();
 
         if (!recordView) {
             return;
         }
 
-        let indexOfRecord = this.indexOfRecord;
+        const indexOfRecord = this.indexOfRecord;
 
         let previousButtonEnabled = false;
         let nextButtonEnabled = false;
@@ -464,7 +469,7 @@ class DetailModalView extends ModalView {
             return;
         }
 
-        let previousModel = this.model;
+        const previousModel = this.model;
 
         this.sourceModel = this.model.collection.at(indexOfRecord);
 
@@ -513,7 +518,7 @@ class DetailModalView extends ModalView {
             return;
         }
 
-        let indexOfRecord = this.indexOfRecord - 1;
+        const indexOfRecord = this.indexOfRecord - 1;
 
         this.switchToModelByIndex(indexOfRecord);
     }
@@ -531,9 +536,9 @@ class DetailModalView extends ModalView {
             return;
         }
 
-        let collection = this.model.collection;
+        const collection = this.model.collection;
 
-        let indexOfRecord = this.indexOfRecord + 1;
+        const indexOfRecord = this.indexOfRecord + 1;
 
         if (indexOfRecord <= collection.length - 1) {
             this.switchToModelByIndex(indexOfRecord);
@@ -556,7 +561,7 @@ class DetailModalView extends ModalView {
      */
     actionEdit() {
         if (this.options.quickEditDisabled) {
-            let options = {
+            const options = {
                 id: this.id,
                 model: this.model,
                 returnUrl: this.getRouter().getCurrentUrl(),
@@ -572,7 +577,7 @@ class DetailModalView extends ModalView {
             return Promise.reject();
         }
 
-        let viewName = this.getMetadata().get(['clientDefs', this.scope, 'modalViews', 'edit']) ||
+        const viewName = this.getMetadata().get(['clientDefs', this.scope, 'modalViews', 'edit']) ||
             'views/modals/edit';
 
         Espo.Ui.notify(' ... ');
@@ -613,10 +618,10 @@ class DetailModalView extends ModalView {
     }
 
     actionRemove() {
-        let model = this.getRecordView().model;
+        const model = this.getRecordView().model;
 
         this.confirm(this.translate('removeRecordConfirmation', 'messages'), () => {
-            let $buttons = this.dialog.$el.find('.modal-footer button');
+            const $buttons = this.dialog.$el.find('.modal-footer button');
 
             $buttons.addClass('disabled').attr('disabled', 'disabled');
 
@@ -633,18 +638,18 @@ class DetailModalView extends ModalView {
 
     actionFullForm() {
         let url;
-        let router = this.getRouter();
+        const router = this.getRouter();
 
-        let scope = this.getScope();
+        const scope = this.getScope();
 
         url = '#' + scope + '/view/' + this.id;
 
         let attributes = this.getRecordView().fetch();
-        let model = this.getRecordView().model;
+        const model = this.getRecordView().model;
 
         attributes = _.extend(attributes, model.getClonedAttributes());
 
-        let options = {
+        const options = {
             attributes: attributes,
             returnUrl: Backbone.history.fragment,
             model: this.sourceModel || this.model,
@@ -672,7 +677,7 @@ class DetailModalView extends ModalView {
             .then(attributes => {
                 Espo.Ui.notify(false);
 
-                let url = '#' + this.scope + '/create';
+                const url = '#' + this.scope + '/create';
 
                 this.getRouter().dispatch(this.scope, 'create', {
                     attributes: attributes,

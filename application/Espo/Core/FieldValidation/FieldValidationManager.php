@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -88,7 +88,7 @@ class FieldValidationManager
         try {
             return $this->processInternal($entity, $data, $params, false);
         }
-        catch (ValidationError $e) {
+        catch (ValidationError) {
             throw new LogicException();
         }
     }
@@ -138,11 +138,12 @@ class FieldValidationManager
      */
     private function getMandatoryValidationList(string $entityType, string $field): array
     {
+        /** @var ?string $fieldType */
         $fieldType = $this->fieldUtil->getEntityTypeFieldParam($entityType, $field, 'type');
 
         return
             $this->metadata->get(['entityDefs', $entityType, 'fields', $field, 'mandatoryValidationList']) ??
-            $this->metadata->get(['fields', $fieldType, 'mandatoryValidationList']) ?? [];
+            $this->metadata->get(['fields', $fieldType ?? '', 'mandatoryValidationList']) ?? [];
     }
 
     /**
@@ -150,11 +151,12 @@ class FieldValidationManager
      */
     private function getValidationList(string $entityType, string $field): array
     {
+        /** @var ?string $fieldType */
         $fieldType = $this->fieldUtil->getEntityTypeFieldParam($entityType, $field, 'type');
 
         return
             $this->metadata->get(['entityDefs', $entityType, 'fields', $field, 'validationList']) ??
-            $this->metadata->get(['fields', $fieldType, 'validationList']) ?? [];
+            $this->metadata->get(['fields', $fieldType ?? '', 'validationList']) ?? [];
     }
 
     /**
@@ -250,8 +252,6 @@ class FieldValidationManager
 
         $validationList = $this->getAllValidationList($entity->getEntityType(), $field, $params);
 
-        $failureList = [];
-
         foreach ($validationList as $type) {
             $result = $this->check($entity, $field, $type, $data);
 
@@ -261,20 +261,24 @@ class FieldValidationManager
 
             $failure = new Failure($entity->getEntityType(), $field, $type);
 
-            $failureList[] = $failure;
-
             if ($throw) {
                 throw ValidationError::create($failure);
             }
+
+            return [$failure];
         }
 
-        $additionalFailureList = $this->checkAdditional($entity, $field, new Data($data));
+        $failure = $this->checkAdditional($entity, $field, new Data($data));
 
-        if ($throw && $additionalFailureList !== []) {
-            throw ValidationError::create($additionalFailureList[0]);
+        if (!$failure) {
+            return [];
         }
 
-        return array_merge($failureList, $additionalFailureList);
+        if ($throw) {
+            throw ValidationError::create($failure);
+        }
+
+        return [$failure];
     }
 
     /**
@@ -396,14 +400,9 @@ class FieldValidationManager
         return $isSet;
     }
 
-    /**
-     * @return Failure[]
-     */
-    private function checkAdditional(Entity $entity, string $field, Data $data): array
+    private function checkAdditional(Entity $entity, string $field, Data $data): ?Failure
     {
         $validatorList = $this->validatorFactory->createAdditionalList($entity->getEntityType(), $field);
-
-        $failureList = [];
 
         foreach ($validatorList as $validator) {
             $itemFailure = $validator->validate($entity, $field, $data);
@@ -414,9 +413,9 @@ class FieldValidationManager
 
             $type = lcfirst((new ReflectionClass($validator))->getShortName());
 
-            $failureList[] = new Failure($entity->getEntityType(), $field, $type);
+            return new Failure($entity->getEntityType(), $field, $type);
         }
 
-        return $failureList;
+        return null;
     }
 }

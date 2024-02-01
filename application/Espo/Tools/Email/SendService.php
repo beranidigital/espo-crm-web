@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -72,67 +72,37 @@ use Laminas\Mail\Message;
 use LogicException;
 use Throwable;
 
+use const FILTER_VALIDATE_EMAIL;
+
 /**
  * Email sending service.
  */
 class SendService
 {
-    /** @var (Email::STATUS_*)[] */
+    /** @var string[] */
     private array $notAllowedStatusList = [
         Email::STATUS_ARCHIVED,
         Email::STATUS_SENT,
         Email::STATUS_BEING_IMPORTED,
     ];
 
-    private User $user;
-    private EntityManager $entityManager;
-    private FieldValidationManager $fieldValidationManager;
-    private EmailSender $emailSender;
-    private StreamService $streamService;
-    private Config $config;
-    private Log $log;
-    private InjectableFactory $injectableFactory;
-    private Acl $acl;
-    private SendingAccountProvider $accountProvider;
-    private PersonalAccountService $personalAccountService;
-    private GroupAccountService $groupAccountService;
-    private HandlerProcessor $handlerProcessor;
-    private PersonalAccountFactory $personalAccountFactory;
-    private GroupAccountFactory $groupAccountFactory;
-
     public function __construct(
-        User $user,
-        EntityManager $entityManager,
-        FieldValidationManager $fieldValidationManager,
-        EmailSender $emailSender,
-        StreamService $streamService,
-        Config $config,
-        Log $log,
-        InjectableFactory $injectableFactory,
-        Acl $acl,
-        SendingAccountProvider $accountProvider,
-        PersonalAccountService $personalAccountService,
-        GroupAccountService $groupAccountService,
-        HandlerProcessor $handlerProcessor,
-        PersonalAccountFactory $personalAccountFactory,
-        GroupAccountFactory $groupAccountFactory
-    ) {
-        $this->user = $user;
-        $this->entityManager = $entityManager;
-        $this->fieldValidationManager = $fieldValidationManager;
-        $this->emailSender = $emailSender;
-        $this->streamService = $streamService;
-        $this->config = $config;
-        $this->log = $log;
-        $this->injectableFactory = $injectableFactory;
-        $this->acl = $acl;
-        $this->accountProvider = $accountProvider;
-        $this->personalAccountService = $personalAccountService;
-        $this->groupAccountService = $groupAccountService;
-        $this->handlerProcessor = $handlerProcessor;
-        $this->personalAccountFactory = $personalAccountFactory;
-        $this->groupAccountFactory = $groupAccountFactory;
-    }
+        private User $user,
+        private EntityManager $entityManager,
+        private FieldValidationManager $fieldValidationManager,
+        private EmailSender $emailSender,
+        private StreamService $streamService,
+        private Config $config,
+        private Log $log,
+        private InjectableFactory $injectableFactory,
+        private Acl $acl,
+        private SendingAccountProvider $accountProvider,
+        private PersonalAccountService $personalAccountService,
+        private GroupAccountService $groupAccountService,
+        private HandlerProcessor $handlerProcessor,
+        private PersonalAccountFactory $personalAccountFactory,
+        private GroupAccountFactory $groupAccountFactory
+    ) {}
 
     /**
      * Send an email entity.
@@ -224,7 +194,7 @@ class SendService
                 throw new NoSmtp("Can not use system SMTP. System SMTP is not shared.");
             }
 
-            throw new NoSmtp("No SMTP params for {$fromAddress}.");
+            throw new NoSmtp("No SMTP params for $fromAddress.");
         }
 
         if (
@@ -431,6 +401,7 @@ class SendService
      * @throws Forbidden
      * @throws Error
      * @throws NotFound
+     * @throws NoSmtp
      */
     public function sendTestEmail(SmtpParams $params, TestSendData $data): void
     {
@@ -478,9 +449,7 @@ class SendService
             /** @var ?EmailAccount $emailAccount */
             $emailAccount = $this->entityManager->getEntityById(EmailAccount::ENTITY_TYPE, $id);
 
-            if ($emailAccount) {
-                $handlerClassName = $emailAccount->getSmtpHandlerClassName();
-            }
+            $handlerClassName = $emailAccount?->getSmtpHandlerClassName();
         }
 
         if ($type === 'inboundEmail' && $id) {
@@ -500,15 +469,21 @@ class SendService
             $params = $this->applyUserHandler($user, $params, $fromAddress);
         }
 
-        $emailSender = $this->emailSender;
-
         try {
-            $emailSender
+            $this->emailSender
                 ->withSmtpParams($params)
                 ->send($email);
         }
         catch (Exception $e) {
             $this->log->warning("Email sending:" . $e->getMessage() . "; " . $e->getCode());
+
+            if ($e instanceof SendingError) {
+                throw ErrorSilent::createWithBody(
+                    'sendingFail',
+                    Error\Body::create()
+                        ->withMessageTranslation($e->getMessage(), Email::ENTITY_TYPE)
+                );
+            }
 
             $errorData = ['message' => $e->getMessage()];
 
@@ -524,25 +499,25 @@ class SendService
         $from = $entity->getFromAddress();
 
         if ($from) {
-            if (!filter_var($from, \FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($from, FILTER_VALIDATE_EMAIL)) {
                 throw new Error('From email address is not valid.');
             }
         }
 
         foreach ($entity->getToAddressList() as $address) {
-            if (!filter_var($address, \FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($address, FILTER_VALIDATE_EMAIL)) {
                 throw new Error('To email address is not valid.');
             }
         }
 
         foreach ($entity->getCcAddressList() as $address) {
-            if (!filter_var($address, \FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($address, FILTER_VALIDATE_EMAIL)) {
                 throw new Error('CC email address is not valid.');
             }
         }
 
         foreach ($entity->getBccAddressList() as $address) {
-            if (!filter_var($address, \FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($address, FILTER_VALIDATE_EMAIL)) {
                 throw new Error('BCC email address is not valid.');
             }
         }
@@ -601,11 +576,7 @@ class SendService
             ->where(['id' => $repliedLink->getId()])
             ->findOne();
 
-        if (!$replied) {
-            return null;
-        }
-
-        return $replied->getMessageId();
+        return $replied?->getMessageId();
     }
 
     /**
@@ -638,7 +609,7 @@ class SendService
         }
         catch (Throwable $e) {
             $this->log->error(
-                "Email sending: Could not create Smtp Handler for {$emailAddress}. Error: " .
+                "Email sending: Could not create Smtp Handler for $emailAddress. Error: " .
                 $e->getMessage() . "."
             );
 
@@ -656,7 +627,6 @@ class SendService
 
     /**
      * @throws Forbidden
-     * @throws NotFound
      * @throws Error
      * @throws NoSmtp
      */
@@ -682,11 +652,7 @@ class SendService
 
             $smtpParams = $personalAccount->getSmtpParams();
 
-            if (!$smtpParams) {
-                return null;
-            }
-
-            return $smtpParams->getPassword();
+            return $smtpParams?->getPassword();
         }
 
         if (!$this->user->isAdmin()) {
@@ -702,11 +668,7 @@ class SendService
                 ->create($id)
                 ->getSmtpParams();
 
-            if (!$smtpParams) {
-                return null;
-            }
-
-            return $smtpParams->getPassword();
+            return $smtpParams?->getPassword();
         }
 
         return $this->config->get('smtpPassword');

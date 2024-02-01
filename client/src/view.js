@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,7 +33,7 @@ import {View as BullView} from 'bullbone';
 /**
  * A base view. All views should extend this class.
  *
- * @see {@link https://docs.espocrm.com/development/view/}
+ * @see https://docs.espocrm.com/development/view/
  * @mixes Bull.Events
  */
 class View extends BullView {
@@ -71,6 +71,24 @@ class View extends BullView {
      * @private
      */
 
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * When the view is ready. Can be useful to prevent race condition when re-initialization is needed
+     * in-between initialization and render.
+     *
+     * @return Promise
+     * @todo Move to Bull.View.
+     */
+    whenReady() {
+        if (this.isReady) {
+            return Promise.resolve();
+        }
+
+        return new Promise(resolve => {
+            this.once('ready', () => resolve());
+        });
+    }
+
     /**
      * Add a DOM click event handler for a target defined by `data-action="{name}"` attribute.
      *
@@ -80,7 +98,10 @@ class View extends BullView {
     addActionHandler(action, handler) {
         const fullAction = `click [data-action="${action}"]`;
 
-        this.events[fullAction] = e => handler(e.originalEvent, e.currentTarget);
+        this.events[fullAction] = e => {
+            // noinspection JSUnresolvedReference
+            handler.call(this, e.originalEvent, e.currentTarget);
+        };
     }
 
     /**
@@ -116,7 +137,7 @@ class View extends BullView {
             timeout = void 0;
         }
 
-        let text = this.getLanguage().translate(label, 'labels', scope);
+        const text = this.getLanguage().translate(label, 'labels', scope);
 
         Espo.Ui.notify(text, type, timeout);
     }
@@ -287,7 +308,7 @@ class View extends BullView {
      * Update a page title. Supposed to be overridden if needed.
      */
     updatePageTitle() {
-        var title = this.getConfig().get('applicationName') || 'EspoCRM';
+        const title = this.getConfig().get('applicationName') || 'EspoCRM';
 
         this.setPageTitle(title);
     }
@@ -407,9 +428,9 @@ class View extends BullView {
                 .toString();
         }
 
-        let confirmText = o.confirmText || this.translate('Yes');
-        let confirmStyle = o.confirmStyle || null;
-        let cancelText = o.cancelText || this.translate('Cancel');
+        const confirmText = o.confirmText || this.translate('Yes');
+        const confirmStyle = o.confirmStyle || null;
+        const cancelText = o.cancelText || this.translate('Cancel');
 
         return Espo.Ui.confirm(message, {
             confirmText: confirmText,

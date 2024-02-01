@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -31,7 +31,9 @@ import SelectRecordsModalView from 'views/modals/select-records';
 class SelectCategoryTreeRecordsModalView extends SelectRecordsModalView {
 
     setup() {
+        /** @type {Object.<string, module:search-manager~advancedFilter>} */
         this.filters = this.options.filters || {};
+        /** @type {Object.<string, boolean>} */
         this.boolFilterList = this.options.boolFilterList || {};
         this.primaryFilterName = this.options.primaryFilterName || null;
 
@@ -55,7 +57,7 @@ class SelectCategoryTreeRecordsModalView extends SelectRecordsModalView {
                 style: 'danger',
                 label: 'Select',
                 onClick: dialog => {
-                    let listView = this.getRecordView();
+                    const listView = this.getRecordView();
 
                     if (listView.allResultIsChecked) {
                         this.trigger('select', {
@@ -65,7 +67,8 @@ class SelectCategoryTreeRecordsModalView extends SelectRecordsModalView {
                         });
                     }
                     else {
-                        var list = listView.getSelected();
+                        const list = listView.getSelected();
+
                         if (list.length) {
                             this.trigger('select', list);
                         }
@@ -99,7 +102,7 @@ class SelectCategoryTreeRecordsModalView extends SelectRecordsModalView {
 
                 this.collection = collection;
 
-                var searchManager = new SearchManager(collection, 'listSelect', null, this.getDateTime());
+                const searchManager = new SearchManager(collection, 'listSelect', null, this.getDateTime());
 
                 searchManager.emptyOnReset = true;
 
@@ -118,8 +121,8 @@ class SelectCategoryTreeRecordsModalView extends SelectRecordsModalView {
                 collection.where = searchManager.getWhere();
                 collection.url = collection.entityType + '/action/listTree';
 
-                var viewName = this.getMetadata()
-                    .get('clientDefs.' + this.scope + '.recordViews.listSelectCategoryTree') ||
+                const viewName =
+                    this.getMetadata().get('clientDefs.' + this.scope + '.recordViews.listSelectCategoryTree') ||
                     'views/record/list-tree';
 
                 this.listenToOnce(collection, 'sync', () => {

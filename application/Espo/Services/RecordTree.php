@@ -2,34 +2,35 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Services;
 
 use Espo\Core\Acl\Table;
+use Espo\Core\Exceptions\BadRequest;
 use Espo\ORM\Collection;
 use Espo\ORM\Entity;
 
@@ -76,6 +77,7 @@ class RecordTree extends Record
      * @param array<string, mixed> $params
      * @return ?Collection<Entity>
      * @throws Forbidden
+     * @throws BadRequest
      */
     public function getTree(
         string $parentId = null,
@@ -87,12 +89,15 @@ class RecordTree extends Record
             throw new Forbidden();
         }
 
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
         return $this->getTreeInternal($parentId, $params, $maxDepth, 0);
     }
 
     /**
      * @param array<string, mixed> $params
      * @return ?Collection<Entity>
+     * @throws BadRequest
+     * @throws Forbidden
      */
     protected function getTreeInternal(
         string $parentId = null,
@@ -153,7 +158,7 @@ class RecordTree extends Record
         foreach ($collection as $entity) {
             $childList = $this->getTreeInternal($entity->getId(), $params, $maxDepth, $level + 1);
 
-            $entity->set('childList', $childList ? $childList->getValueMapList() : null);
+            $entity->set('childList', $childList?->getValueMapList());
         }
 
         return $collection;
@@ -175,6 +180,10 @@ class RecordTree extends Record
         return false;
     }
 
+    /**
+     * @throws BadRequest
+     * @throws Forbidden
+     */
     protected function checkItemIsEmpty(Entity $entity): bool
     {
         if (!$this->categoryField) {
@@ -292,6 +301,10 @@ class RecordTree extends Record
         return false;
     }
 
+    /**
+     * @throws Forbidden
+     * @throws Error
+     */
     protected function beforeCreateEntity(Entity $entity, $data)
     {
         parent::beforeCreateEntity($entity, $data);
@@ -330,6 +343,7 @@ class RecordTree extends Record
     /**
      * @return string[]
      * @throws Forbidden
+     * @throws BadRequest
      */
     public function getLastChildrenIdList(?string $parentId = null): array
     {

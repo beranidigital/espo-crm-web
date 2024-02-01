@@ -115,6 +115,21 @@
         "amdId": "autonumeric"
     },
     {
+        "src": "node_modules/intl-tel-input/build/js/intlTelInput.js",
+        "bundle": true,
+        "amdId": "intl-tel-input",
+        "suppressAmd": true
+    },
+    {
+        "src": "node_modules/intl-tel-input/build/js/utils.js",
+        "bundle": true,
+        "amdId": "intl-tel-input-utils"
+    },
+    {
+        "bundle": true,
+        "amdId": "intl-tel-input-globals"
+    },
+    {
         "src": "node_modules/summernote/dist/summernote.js",
         "amdId": "summernote",
         "minify": true
@@ -167,6 +182,18 @@
             {
                 "src": "node_modules/ace-builds/src-noconflict/mode-javascript.js",
                 "dest": "client/lib/ace-mode-javascript.js"
+            },
+            {
+                "src": "node_modules/ace-builds/src-noconflict/mode-css.js",
+                "dest": "client/lib/ace-mode-css.js"
+            },
+            {
+                "src": "node_modules/ace-builds/src-noconflict/mode-html.js",
+                "dest": "client/lib/ace-mode-html.js"
+            },
+            {
+                "src": "node_modules/ace-builds/src-noconflict/mode-handlebars.js",
+                "dest": "client/lib/ace-mode-handlebars.js"
             },
             {
                 "src": "node_modules/ace-builds/src-noconflict/ext-language_tools.js",

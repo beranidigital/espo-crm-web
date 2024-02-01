@@ -2,53 +2,49 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Log\Handler;
 
-use Monolog\Logger;
-
 use Espo\Core\Utils\Config;
+
+use Monolog\Level;
 
 class EspoRotatingFileHandler extends EspoFileHandler
 {
-    /** @var string */
-    protected $dateFormat = 'Y-m-d';
-    /** @var string */
-    protected $filenameFormat = '{filename}-{date}';
-    /** @var string */
-    protected $filename;
-    /** @var int */
-    protected $maxFiles;
+    protected string $dateFormat = 'Y-m-d';
+    protected string $filenameFormat = '{filename}-{date}';
+    protected string $filename;
+    protected int $maxFiles;
 
     public function __construct(
         Config $config,
         string $filename,
         int $maxFiles = 0,
-        int $level = Logger::DEBUG,
+        Level $level = Level::Debug,
         bool $bubble = true
     ) {
         $this->filename = $filename;
@@ -59,10 +55,7 @@ class EspoRotatingFileHandler extends EspoFileHandler
         $this->rotate();
     }
 
-    /**
-     * @return void
-     */
-    protected function rotate()
+    protected function rotate(): void
     {
         if (0 === $this->maxFiles) {
             return; // unlimited number of files for 0
@@ -84,10 +77,7 @@ class EspoRotatingFileHandler extends EspoFileHandler
         }
     }
 
-    /**
-     * @return string
-     */
-    protected function getTimedFilename()
+    protected function getTimedFilename(): string
     {
         $fileInfo = pathinfo($this->filename);
 
@@ -104,10 +94,7 @@ class EspoRotatingFileHandler extends EspoFileHandler
         return $timedFilename;
     }
 
-    /**
-     * @return string
-     */
-    protected function getFilePattern()
+    protected function getFilePattern(): string
     {
         $fileInfo = pathinfo($this->filename);
 

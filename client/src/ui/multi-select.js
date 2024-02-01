@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -53,11 +53,11 @@ const MultiSelect = {
      * @param {module:ui/multi-select~Options} options Options.
      */
     init: function (element, options) {
-        let $el = $(element);
+        const $el = $(element);
 
         options = MultiSelect.applyDefaultOptions(options);
 
-        let plugins = [];
+        const plugins = [];
 
         if (options.removeButton) {
             plugins.push('remove_button');
@@ -75,7 +75,7 @@ const MultiSelect = {
         MultiSelect.loadBypassCtrlEnterPlugin();
         plugins.push('bypass_ctrl_enter');
 
-        let selectizeOptions = {
+        const selectizeOptions = {
             options: options.items,
             plugins: plugins,
             delimiter: options.delimiter,
@@ -91,7 +91,7 @@ const MultiSelect = {
             /** @this Selectize */
             selectizeOptions.score = function (search) {
                 // noinspection JSUnresolvedReference
-                let score = this.getScoreFunction(search);
+                const score = this.getScoreFunction(search);
 
                 search = search.toLowerCase();
 
@@ -109,12 +109,12 @@ const MultiSelect = {
             /** @this Selectize */
             selectizeOptions.score = function (search) {
                 // noinspection JSUnresolvedReference
-                let score = this.getScoreFunction(search);
+                const score = this.getScoreFunction(search);
 
                 search = search.toLowerCase();
 
                 return function (item) {
-                    let text = item.text.toLowerCase();
+                    const text = item.text.toLowerCase();
 
                     if (
                         !text.split(' ').find(item => item.startsWith(search)) &&
@@ -156,7 +156,7 @@ const MultiSelect = {
      * @param {Element|JQuery} element An element.
      */
     focus: function (element) {
-        let $el = $(element);
+        const $el = $(element);
 
         if (
             !$el[0] ||
@@ -165,7 +165,7 @@ const MultiSelect = {
             return;
         }
 
-        let selectize = $el[0].selectize;
+        const selectize = $el[0].selectize;
 
         selectize.focus();
     },
@@ -178,7 +178,7 @@ const MultiSelect = {
     applyDefaultOptions: function (options) {
         options = Espo.Utils.clone(options);
 
-        let defaults = {
+        const defaults = {
             removeButton: true,
             draggable: false,
             selectOnTab: false,
@@ -187,7 +187,7 @@ const MultiSelect = {
             allowCustomOptions: false,
         };
 
-        for (let key in defaults) {
+        for (const key in defaults) {
             if (key in options) {
                 continue;
             }
@@ -209,10 +209,10 @@ const MultiSelect = {
         const IS_MAC = /Mac/.test(navigator.userAgent);
 
         Selectize.define('bypass_ctrl_enter', function () {
-            let self = this;
+            const self = this;
 
             this.onKeyDown = (function() {
-                let original = self.onKeyDown;
+                const original = self.onKeyDown;
 
                 return function (e) {
                     if (e.code === 'Enter' && (IS_MAC ? e.metaKey : e.ctrlKey)) {
@@ -238,10 +238,10 @@ const MultiSelect = {
                 return option[this.settings.labelField];
             };
 
-            let self = this;
+            const self = this;
 
             this.onKeyDown = (function() {
-                let original = self.onKeyDown;
+                const original = self.onKeyDown;
 
                 return function (e) {
                     let index, option;

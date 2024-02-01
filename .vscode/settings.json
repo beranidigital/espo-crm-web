@@ -258,6 +258,12 @@
         },
         {
             "fileMatch": [
+                "*/Resources/metadata/app/emailTemplate.json"
+            ],
+            "url": "./schema/metadata/app/emailTemplate.json"
+        },
+        {
+            "fileMatch": [
                 "*/Resources/metadata/app/entityManagerParams.json"
             ],
             "url": "./schema/metadata/app/entityManagerParams.json"
@@ -330,6 +336,12 @@
         },
         {
             "fileMatch": [
+                "*/Resources/metadata/app/layouts.json"
+            ],
+            "url": "./schema/metadata/app/layouts.json"
+        },
+        {
+            "fileMatch": [
                 "*/Resources/metadata/app/linkManager.json"
             ],
             "url": "./schema/metadata/app/linkManager.json"
@@ -342,6 +354,12 @@
         },
         {
             "fileMatch": [
+                "*/Resources/metadata/app/mapProviders.json"
+            ],
+            "url": "./schema/metadata/app/mapProviders.json"
+        },
+        {
+            "fileMatch": [
                 "*/Resources/metadata/app/massActions.json"
             ],
             "url": "./schema/metadata/app/massActions.json"
@@ -351,6 +369,12 @@
                 "*/Resources/metadata/app/metadata.json"
             ],
             "url": "./schema/metadata/app/metadata.json"
+        },
+        {
+            "fileMatch": [
+                "*/Resources/metadata/app/clientNavbar.json"
+            ],
+            "url": "./schema/metadata/app/clientNavbar.json"
         },
         {
             "fileMatch": [

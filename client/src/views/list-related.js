@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -266,7 +266,7 @@ class ListRelatedView extends MainView {
 
         this.viewMode = this.viewMode || this.defaultViewMode;
 
-        let viewModeList = this.options.viewModeList ||
+        const viewModeList = this.options.viewModeList ||
             this.viewModeList ||
             this.getMetadata().get(['clientDefs', this.foreignScope, 'listRelatedViewModeList']);
 
@@ -275,10 +275,10 @@ class ListRelatedView extends MainView {
         if (this.viewModeList.length > 1) {
             let viewMode = null;
 
-            let modeKey = 'listRelatedViewMode' + this.scope + this.link;
+            const modeKey = 'listRelatedViewMode' + this.scope + this.link;
 
             if (this.getStorage().has('state', modeKey)) {
-                let storedViewMode = this.getStorage().get('state', modeKey);
+                const storedViewMode = this.getStorage().get('state', modeKey);
 
                 if (storedViewMode && this.viewModeList.includes(storedViewMode)) {
                     viewMode = storedViewMode;
@@ -342,14 +342,14 @@ class ListRelatedView extends MainView {
         if (this.panelDefs.filterList) {
             this.panelDefs.filterList.forEach(item1 => {
                 let isFound = false;
-                let name1 = item1.name || item1;
+                const name1 = item1.name || item1;
 
                 if (!name1 || name1 === 'all') {
                     return;
                 }
 
                 filterList.forEach(item2 => {
-                    let name2 = item2.name || item2;
+                    const name2 = item2.name || item2;
 
                     if (name1 === name2) {
                         isFound = true;
@@ -408,7 +408,7 @@ class ListRelatedView extends MainView {
         this.collection.maxSize = this.collectionMaxSize;
 
         if (toStore) {
-            var modeKey = 'listViewMode' + this.scope + this.link;
+            const modeKey = 'listViewMode' + this.scope + this.link;
 
             this.getStorage().set('state', modeKey, mode);
         }
@@ -417,7 +417,7 @@ class ListRelatedView extends MainView {
             this.getSearchView().setViewMode(mode);
         }
 
-        let methodName = 'setViewMode' + Espo.Utils.upperCaseFirst(this.viewMode);
+        const methodName = 'setViewMode' + Espo.Utils.upperCaseFirst(this.viewMode);
 
         if (this[methodName]) {
             this[methodName]();
@@ -428,9 +428,9 @@ class ListRelatedView extends MainView {
      * Set up a search manager.
      */
     setupSearchManager() {
-        let collection = this.collection;
+        const collection = this.collection;
 
-        let searchManager = new SearchManager(
+        const searchManager = new SearchManager(
             collection,
             'list',
             null,
@@ -478,7 +478,7 @@ class ListRelatedView extends MainView {
                     this.recordView;
         }
 
-        let propertyName = 'record' + Espo.Utils.upperCaseFirst(this.viewMode) + 'View';
+        const propertyName = 'record' + Espo.Utils.upperCaseFirst(this.viewMode) + 'View';
 
         return this.getMetadata().get(['clientDefs', this.foreignScope, 'recordViews', this.viewMode]) ||
             this[propertyName];
@@ -554,7 +554,7 @@ class ListRelatedView extends MainView {
             o.pagination = true;
         }
 
-        let massUnlinkDisabled = this.panelDefs.massUnlinkDisabled ||
+        const massUnlinkDisabled = this.panelDefs.massUnlinkDisabled ||
             this.panelDefs.unlinkDisabled || this.unlinkDisabled;
 
         o = {
@@ -564,8 +564,12 @@ class ListRelatedView extends MainView {
             forceDisplayTopBar: true,
             rowActionsOptions:  {
                 unlinkDisabled: this.panelDefs.unlinkDisabled || this.unlinkDisabled,
+                editDisabled: this.panelDefs.editDisabled,
+                removeDisabled: this.panelDefs.removeDisabled,
             },
-            ...o
+            additionalRowActionList: this.panelDefs.rowActionList,
+            ...o,
+            settingsEnabled: true,
         };
 
         if (this.getHelper().isXsScreen()) {
@@ -574,7 +578,7 @@ class ListRelatedView extends MainView {
 
         this.prepareRecordViewOptions(o);
 
-        let listViewName = this.getRecordViewName();
+        const listViewName = this.getRecordViewName();
 
         this.createView('list', listViewName, o, view =>{
             if (!this.hasParentView()) {
@@ -614,14 +618,14 @@ class ListRelatedView extends MainView {
      * @protected
      */
     actionQuickCreate() {
-        let link = this.link;
-        let foreignScope = this.foreignScope;
-        let foreignLink = this.model.getLinkParam(link, 'foreign');
+        const link = this.link;
+        const foreignScope = this.foreignScope;
+        const foreignLink = this.model.getLinkParam(link, 'foreign');
 
         let attributes = {};
 
-        let attributeMap = this.getMetadata()
-                .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createAttributeMap']) || {};
+        const attributeMap = this.getMetadata()
+            .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createAttributeMap']) || {};
 
         Object.keys(attributeMap)
             .forEach(attr => {
@@ -630,7 +634,7 @@ class ListRelatedView extends MainView {
 
         Espo.Ui.notify(' ... ');
 
-        let handler = this.getMetadata()
+        const handler = this.getMetadata()
             .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createHandler']);
 
         (new Promise(resolve => {
@@ -650,7 +654,7 @@ class ListRelatedView extends MainView {
             .then(additionalAttributes => {
                 attributes = {...attributes, ...additionalAttributes};
 
-                let viewName = this.getMetadata()
+                const viewName = this.getMetadata()
                     .get(['clientDefs', foreignScope, 'modalViews', 'edit']) || 'views/modals/edit';
 
                 this.createView('quickCreate', viewName, {
@@ -681,7 +685,7 @@ class ListRelatedView extends MainView {
      * @protected
      */
     actionUnlinkRelated(data) {
-        let id = data.id;
+        const id = data.id;
 
         this.confirm({
             message: this.translate('unlinkRecordConfirmation', 'messages'),
@@ -706,11 +710,11 @@ class ListRelatedView extends MainView {
      * @inheritDoc
      */
     getHeader() {
-        let name = this.model.get('name') || this.model.id;
+        const name = this.model.get('name') || this.model.id;
 
-        let recordUrl = '#' + this.scope  + '/view/' + this.model.id;
+        const recordUrl = '#' + this.scope + '/view/' + this.model.id;
 
-        let $name =
+        const $name =
             $('<a>')
                 .attr('href', recordUrl)
                 .addClass('font-size-flexible title')
@@ -720,8 +724,8 @@ class ListRelatedView extends MainView {
             $name.css('text-decoration', 'line-through');
         }
 
-        let headerIconHtml = this.getHelper().getScopeColorIconHtml(this.foreignScope);
-        let scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
+        const headerIconHtml = this.getHelper().getScopeColorIconHtml(this.foreignScope);
+        const scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
 
         let $root = $('<span>').text(scopeLabel);
 
@@ -740,7 +744,7 @@ class ListRelatedView extends MainView {
             $root.prepend(headerIconHtml);
         }
 
-        let $link = $('<span>').text(this.translate(this.link, 'links', this.scope));
+        const $link = $('<span>').text(this.translate(this.link, 'links', this.scope));
 
         return this.buildHeaderHtml([
             $root,
@@ -792,7 +796,7 @@ class ListRelatedView extends MainView {
             return;
         }
 
-        let $search = this.$el.find('input.text-filter').first();
+        const $search = this.$el.find('input.text-filter').first();
 
         if (!$search.length) {
             return;

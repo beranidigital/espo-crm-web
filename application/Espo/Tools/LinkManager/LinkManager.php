@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -847,6 +847,9 @@ class LinkManager
 
             $this->metadata->save();
 
+            $this->deleteFromLanguage($entity, 'links', $link);
+            $this->saveLanguage();
+
             return;
         }
 
@@ -861,6 +864,11 @@ class LinkManager
             if ($linkForeign) {
                 $this->updateParentForeignLinks($entity, $link, $linkForeign, []);
             }
+
+            $this->deleteFromLanguage($entity, 'fields', $link);
+            $this->deleteFromLanguage($entity, 'links', $link);
+
+            $this->saveLanguage();
 
             return;
         }
@@ -907,12 +915,12 @@ class LinkManager
 
         $this->metadata->delete('entityDefs', $entity, [
             'fields.' . $link,
-            'links.' . $link
+            'links.' . $link,
         ]);
 
         $this->metadata->delete('entityDefs', $entityForeign, [
             'fields.' . $linkForeign,
-            'links.' . $linkForeign
+            'links.' . $linkForeign,
         ]);
 
         $this->metadata->delete('clientDefs', $entity, ['relationshipPanels.' . $link]);
@@ -923,6 +931,14 @@ class LinkManager
         if ($linkParams) {
             $this->linkHookProcessor->processDelete($linkParams);
         }
+
+        $this->deleteFromLanguage($entity, 'fields', $link);
+        $this->deleteFromLanguage($entity, 'links', $link);
+
+        $this->deleteFromLanguage($entityForeign, 'fields', $linkForeign);
+        $this->deleteFromLanguage($entityForeign, 'links', $linkForeign);
+
+        $this->saveLanguage();
 
         $this->dataManager->clearCache();
     }
@@ -1013,13 +1029,7 @@ class LinkManager
                             'links.' . $linkForeign,
                         ]);
 
-                        $this->language->delete($itemEntityType, 'links', $linkForeign);
-
-                        if (
-                            $this->isLanguageNotBase()
-                        ) {
-                            $this->baseLanguage->delete($itemEntityType, 'links', $linkForeign);
-                        }
+                        $this->deleteFromLanguage($itemEntityType, 'links', $linkForeign);
                     }
 
                     break;
@@ -1049,11 +1059,15 @@ class LinkManager
         }
 
         $this->metadata->save();
+        $this->saveLanguage();
+    }
 
-        $this->language->save();
+    private function deleteFromLanguage(string $scope, string $category, string $item): void
+    {
+        $this->language->delete($scope, $category, $item);
 
         if ($this->isLanguageNotBase()) {
-            $this->baseLanguage->save();
+            $this->baseLanguage->delete($scope, $category, $item);
         }
     }
 
@@ -1065,5 +1079,14 @@ class LinkManager
     private function isNameTooLong(string $name): bool
     {
         return strlen(Util::camelCaseToUnderscore($name)) > self::MAX_LINK_NAME_LENGTH;
+    }
+
+    private function saveLanguage(): void
+    {
+        $this->language->save();
+
+        if ($this->isLanguageNotBase()) {
+            $this->baseLanguage->save();
+        }
     }
 }

@@ -8,7 +8,7 @@
     "Step2 page title": "Datenbankkonfiguration",
     "Step3 page title": "Einstellungen Administrator",
     "Step4 page title": "Systemeinstellungen",
-    "Step5 page title": "SMTP Einstellungen für ausgehende E-Mails",
+    "Step5 page title": "SMTP-Einstellungen für ausgehende E-Mails",
     "Errors page title": "Fehler",
     "Finish page title": "Die Installation ist abgeschlossen",
     "Congratulation! Welcome to EspoCRM": "Gratulation! EspoCRM wurde erfolgreich installiert.",
@@ -70,7 +70,8 @@
     "smtpAuth": "Authentifizierung",
     "smtpSecurity": "Transportsicherheit",
     "smtpUsername": "Benutzername",
-    "emailAddress": "E-Mail"
+    "emailAddress": "E-Mail",
+    "Platform": "Plattform"
   },
   "messages": {
     "1045": "Zugriff für Benutzer nicht erlaubt",
@@ -100,7 +101,7 @@
     "extension": "{0} Erweiterung fehlt",
     "option": "Empfohlener Wert ist {0}",
     "mysqlSettingError": "EspoCRM erfordert, dass die MySQL Einstellung \"{NAME}\"  auf {VALUE} gesetzt ist",
-    "requiredMariadbVersion": "6",
+    "requiredMariadbVersion": "Ihre MariaDB-Version wird von EspoCRM nicht unterstützt, bitte aktualisieren Sie mindestens auf MariaDB {minVersion}",
     "Ajax failed": "Es ist ein unerwarteter Fehler aufgetreten",
     "Bad init Permission": "Die Zugriff auf das Verzeichnis \"{*}\" wurde verweigert. Bitte setzen Sie 775 für \"{*}\" oder führen Sie diesen Befehl einfach im Terminal aus <pre><b>{C}</b></pre> Operation ist nicht erlaubt? Versuchen Sie diesen: {CSU}",
     "permissionInstruction": "<br>Führen Sie diesen Befehl im Terminal aus:<pre><b>\"{C}\"</b></pre>",

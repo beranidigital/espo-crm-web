@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -192,7 +192,7 @@ class EntityManager
         }
 
         if (!$this->mapperFactory) {
-            throw new RuntimeException("Could not create mapper '{$name}'. No mapper factory.");
+            throw new RuntimeException("Could not create mapper '$name'. No mapper factory.");
         }
 
         $this->mappers[$name] = $this->mapperFactory->create($name);
@@ -205,7 +205,7 @@ class EntityManager
     public function getEntity(string $entityType, ?string $id = null): ?Entity
     {
         if (!$this->hasRepository($entityType)) {
-            throw new RuntimeException("ORM: Repository '{$entityType}' does not exist.");
+            throw new RuntimeException("ORM: Repository '$entityType' does not exist.");
         }
 
         if ($id === null) {
@@ -236,18 +236,12 @@ class EntityManager
      * Store an entity.
      *
      * @param array<string, mixed> $options Options.
-     * @return void
-     *
-     * @todo Change return type to void in v7.4.
      */
-    public function saveEntity(Entity $entity, array $options = [])
+    public function saveEntity(Entity $entity, array $options = []): void
     {
         $entityType = $entity->getEntityType();
 
         $this->getRepository($entityType)->save($entity, $options);
-
-        /** @phpstan-ignore-next-line */
-        return $entity->getId();
     }
 
     /**
@@ -319,7 +313,7 @@ class EntityManager
     public function getRepository(string $entityType): Repository
     {
         if (!$this->hasRepository($entityType)) {
-            throw new RuntimeException("Repository '{$entityType}' does not exist.");
+            throw new RuntimeException("Repository '$entityType' does not exist.");
         }
 
         if (!array_key_exists($entityType, $this->repositoryHash)) {
@@ -339,7 +333,7 @@ class EntityManager
         $repository = $this->getRepository($entityType);
 
         if (!$repository instanceof RDBRepository) {
-            throw new RuntimeException("Repository '{$entityType}' is not RDB.");
+            throw new RuntimeException("Repository '$entityType' is not RDB.");
         }
 
         return $repository;

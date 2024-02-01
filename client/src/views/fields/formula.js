@@ -1,33 +1,39 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 import TextFieldView from 'views/fields/text';
 
+/**
+ * @type {{
+ *     edit: import('ace-builds').edit,
+ *     require: import('ace-builds').require,
+ * }}
+ */
 let ace;
 
 class FormulaFieldView extends TextFieldView {
@@ -99,7 +105,7 @@ class FormulaFieldView extends TextFieldView {
             .then(lib => {
                 ace = /** window.ace */lib;
 
-                let list = [
+                const list = [
                     Espo.loader.requirePromise('lib!ace-mode-javascript'),
                     Espo.loader.requirePromise('lib!ace-ext-language_tools'),
                 ];
@@ -115,7 +121,7 @@ class FormulaFieldView extends TextFieldView {
     }
 
     data() {
-        let data = super.data();
+        const data = super.data();
 
         data.containerId = this.containerId;
         data.targetEntityType = this.targetEntityType;
@@ -145,7 +151,7 @@ class FormulaFieldView extends TextFieldView {
                 this.$editor.css('minHeight', this.height + 'px');
             }
 
-            let editor = this.editor = ace.edit(this.containerId);
+            const editor = this.editor = ace.edit(this.containerId);
 
             editor.setOptions({
                 maxLines: this.mode === this.MODE_EDIT ?
@@ -160,6 +166,7 @@ class FormulaFieldView extends TextFieldView {
             }
 
             if (this.isEditMode()) {
+                // noinspection JSCheckFunctionSignatures
                 editor.getSession().on('change', () => {
                     this.trigger('change', {ui: true});
                 });
@@ -169,6 +176,7 @@ class FormulaFieldView extends TextFieldView {
 
             if (this.isReadMode()) {
                 editor.setReadOnly(true);
+                // noinspection JSUnresolvedReference
                 editor.renderer.$cursorLayer.element.style.display = "none";
                 editor.renderer.setShowGutter(false);
             }
@@ -178,7 +186,7 @@ class FormulaFieldView extends TextFieldView {
             editor.commands.removeCommand('find');
             editor.setHighlightActiveLine(false);
 
-            let JavaScriptMode = ace.require('ace/mode/javascript').Mode;
+            const JavaScriptMode = ace.require('ace/mode/javascript').Mode;
 
             editor.session.setMode(new JavaScriptMode());
 
@@ -189,7 +197,7 @@ class FormulaFieldView extends TextFieldView {
     }
 
     fetch() {
-        let data = {};
+        const data = {};
 
         let value = this.editor.getValue();
 
@@ -240,11 +248,11 @@ class FormulaFieldView extends TextFieldView {
             list = list.concat(this.options.additionalFunctionDataList);
         }
 
-        let allowedFunctionList = /** @type string[] */this.options.allowedFunctionList;
+        const allowedFunctionList = /** @type string[] */this.options.allowedFunctionList;
 
         if (allowedFunctionList) {
             list = list.filter(/** {name: string} */item => {
-                for (let func of allowedFunctionList) {
+                for (const func of allowedFunctionList) {
                     if (func.endsWith('\\') && item.name.startsWith(func)) {
                         return true;
                     }
@@ -272,9 +280,9 @@ class FormulaFieldView extends TextFieldView {
     }
 
     initAutocomplete() {
-        let functionItemList = this.getFunctionDataList().filter(item => item.insertText);
+        const functionItemList = this.getFunctionDataList().filter(item => item.insertText);
 
-        let attributeList = this.getFormulaAttributeList();
+        const attributeList = this.getFormulaAttributeList();
 
         ace.require('ace/ext/language_tools');
 
@@ -284,19 +292,19 @@ class FormulaFieldView extends TextFieldView {
         });
 
         // noinspection JSUnusedGlobalSymbols
-        let completer = {
+        const completer = {
             identifierRegexps: [/[\\a-zA-Z0-9{}\[\].$'"]/],
 
             getCompletions: function (editor, session, pos, prefix, callback) {
-                let matchedFunctionItemList = functionItemList
+                const matchedFunctionItemList = functionItemList
                     .filter((originalItem) => {
-                        let text = originalItem.name;
+                        const text = originalItem.name;
 
                         if (text.indexOf(prefix) === 0) {
                             return true;
                         }
 
-                        let parts = text.split('\\');
+                        const parts = text.split('\\');
 
                         if (parts[parts.length - 1].indexOf(prefix) === 0) {
                             return true;
@@ -314,7 +322,7 @@ class FormulaFieldView extends TextFieldView {
                             insertMatch: (editor, data) => {
                                 editor.completer.insertMatch({value: data.value});
 
-                                let index = data.value.indexOf('(');
+                                const index = data.value.indexOf('(');
 
                                 if (!~index) {
                                     return;
@@ -324,8 +332,9 @@ class FormulaFieldView extends TextFieldView {
                                     return;
                                 }
 
-                                let pos = editor.selection.getCursor();
+                                const pos = editor.selection.getCursor();
 
+                                // noinspection JSCheckFunctionSignatures
                                 editor.gotoLine(
                                     pos.row + 1,
                                     pos.column - data.value.length + index + 1
@@ -335,7 +344,7 @@ class FormulaFieldView extends TextFieldView {
                     };
                 });
 
-                let matchedAttributeList = attributeList
+                const matchedAttributeList = attributeList
                     .filter((item) => {
                         if (item.indexOf(prefix) === 0) {
                             return true;
@@ -344,7 +353,7 @@ class FormulaFieldView extends TextFieldView {
                         return false;
                     });
 
-                let itemAttributeList = matchedAttributeList.map((item) => {
+                const itemAttributeList = matchedAttributeList.map((item) => {
                     return {
                         name: item,
                         value: item,
@@ -366,17 +375,17 @@ class FormulaFieldView extends TextFieldView {
             return [];
         }
 
-        let attributeList = this.getFieldManager()
+        const attributeList = this.getFieldManager()
             .getEntityTypeAttributeList(this.targetEntityType)
             .concat(['id'])
             .sort();
 
-        let links = this.getMetadata().get(['entityDefs', this.targetEntityType, 'links']) || {};
+        const links = this.getMetadata().get(['entityDefs', this.targetEntityType, 'links']) || {};
 
-        let linkList = [];
+        const linkList = [];
 
         Object.keys(links).forEach((link) => {
-            var type = links[link].type;
+            const type = links[link].type;
 
             if (!type) {
                 return;
@@ -390,7 +399,7 @@ class FormulaFieldView extends TextFieldView {
         linkList.sort();
 
         linkList.forEach((link) => {
-            var scope = links[link].entity;
+            const scope = links[link].entity;
 
             if (!scope) {
                 return;
@@ -400,7 +409,7 @@ class FormulaFieldView extends TextFieldView {
                 return;
             }
 
-            let linkAttributeList = this.getFieldManager()
+            const linkAttributeList = this.getFieldManager()
                 .getEntityTypeAttributeList(scope)
                 .sort();
 
@@ -413,7 +422,7 @@ class FormulaFieldView extends TextFieldView {
     }
 
     checkSyntax() {
-        let expression = this.editor.getValue();
+        const expression = this.editor.getValue();
 
         if (!expression) {
             Espo.Ui.success(
@@ -425,7 +434,7 @@ class FormulaFieldView extends TextFieldView {
 
         Espo.Ajax
             .postRequest('Formula/action/checkSyntax', {expression: expression})
-            .then(response => {
+            .then(/** Record */response => {
                 if (response.isSuccess) {
                     Espo.Ui.success(
                         this.translate('checkSyntaxSuccess', 'messages', 'Formula')

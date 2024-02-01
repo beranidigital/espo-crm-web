@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -31,9 +31,7 @@ namespace Espo\Core;
 
 use Espo\ORM\Entity;
 use Espo\ORM\EntityManager;
-
 use Espo\Entities\User;
-
 use Espo\Core\Acl\AccessChecker;
 use Espo\Core\Acl\AccessChecker\AccessCheckerFactory;
 use Espo\Core\Acl\AccessCreateChecker;
@@ -184,6 +182,7 @@ class AclManager
      * Get an access level for a specific scope and action.
      *
      * @param Table::ACTION_* $action
+     * @noinspection PhpDocSignatureInspection
      */
     public function getLevel(User $user, string $scope, string $action): string
     {
@@ -201,7 +200,7 @@ class AclManager
      */
     public function getPermissionLevel(User $user, string $permission): string
     {
-        if (substr($permission, -10) === 'Permission') {
+        if (str_ends_with($permission, 'Permission')) {
             $permission = substr($permission, 0, -10);
         }
 
@@ -280,7 +279,7 @@ class AclManager
         try {
             return $this->check($user, $subject, $action);
         }
-        catch (NotImplemented $e) {
+        catch (NotImplemented) {
             return false;
         }
     }
@@ -324,7 +323,7 @@ class AclManager
             return $checker->checkEntity($user, $entity, $data, $action);
         }
 
-        throw new NotImplemented("No entity access checker for '{$scope}' action '{$action}'.");
+        throw new NotImplemented("No entity access checker for '$scope' action '$action'.");
     }
 
     /**
@@ -334,6 +333,7 @@ class AclManager
      */
     public function checkEntityRead(User $user, Entity $entity): bool
     {
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
         return $this->checkEntity($user, $entity, Table::ACTION_READ);
     }
 
@@ -436,7 +436,7 @@ class AclManager
         $methodName = 'checkScope';
 
         if (!method_exists($checker, $methodName)) {
-            throw new NotImplemented("No access checker for '{$scope}' action '{$action}'.");
+            throw new NotImplemented("No access checker for '$scope' action '$action'.");
         }
 
         return $checker->$methodName($user, $data, $action);
@@ -476,6 +476,7 @@ class AclManager
      * @param Table::ACTION_READ|Table::ACTION_EDIT $action An action.
      * @param string $thresholdLevel Should not be used. Stands for possible future enhancements.
      * @return string[]
+     * @noinspection PhpDocSignatureInspection
      */
     public function getScopeForbiddenAttributeList(
         User $user,
@@ -505,6 +506,7 @@ class AclManager
      * @param Table::ACTION_READ|Table::ACTION_EDIT $action An action.
      * @param string $thresholdLevel Should not be used. Stands for possible future enhancements.
      * @return string[]
+     * @noinspection PhpDocSignatureInspection
      */
     public function getScopeForbiddenFieldList(
         User $user,
@@ -534,6 +536,8 @@ class AclManager
      * @param Table::ACTION_READ|Table::ACTION_EDIT $action An action.
      * @param string $thresholdLevel Should not be used. Stands for possible future enhancements.
      * @return string[]
+     * @noinspection PhpUnusedParameterInspection
+     * @noinspection PhpDocSignatureInspection
      */
     public function getScopeForbiddenLinkList(
         User $user,
@@ -556,6 +560,7 @@ class AclManager
      * @param string $field A field to check.
      * @param Table::ACTION_READ|Table::ACTION_EDIT $action An action.
      * @return bool
+     * @noinspection PhpDocSignatureInspection
      */
     public function checkField(User $user, string $scope, string $field, string $action = Table::ACTION_READ): bool
     {
@@ -591,7 +596,6 @@ class AclManager
         }
 
         if ($permission === Table::LEVEL_TEAM) {
-            /** @var string[] $teamIdList */
             $teamIdList = $user->getLinkMultipleIdList('teams');
 
             /** @var \Espo\Repositories\User $userRepository */
@@ -622,10 +626,8 @@ class AclManager
     {
         $className = $this->userAclClassName;
 
-        $acl = new $className($this, $user);
-
         /** @var Acl */
-        return $acl;
+        return new $className($this, $user);
     }
 
     /**
@@ -733,6 +735,7 @@ class AclManager
 
     /**
      * @deprecated As of v7.0. Access checkers not to be exposed.
+     * @noinspection PhpUnused
      */
     public function getImplementation(string $scope): object
     {
@@ -764,7 +767,7 @@ class AclManager
             return false;
         }
 
-        if ($this->get($user, $permission) === Table::LEVEL_TEAM) {
+        if ($this->getPermissionLevel($user, $permission) === Table::LEVEL_TEAM) {
             if ($target->getId() === $user->getId()) {
                 return true;
             }

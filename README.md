@@ -6,7 +6,7 @@
 software that allows you to see, enter and evaluate all your company relationships regardless
 of the type. People, companies or opportunities – all in an easy and intuitive interface.
 
-It's a web application with a frontend designed as a single page application and REST API
+It's a web application with a frontend designed as a single page application and a REST API
 backend written in PHP.
 
 [Download](https://www.espocrm.com/download/) the latest release from our website. Release notes
@@ -20,8 +20,9 @@ You can try the CRM on the online [demo](https://www.espocrm.com/demo/).
 
 ### Requirements
 
-* PHP 8.0 and later;
-* MySQL 5.7 (and later), or MariaDB 10.2 (and later).
+* PHP 8.1 - 8.3;
+* MySQL 5.7 (and later), or MariaDB 10.2 (and later);
+* PostgreSQL 15 (and later) (yet experimental, officially supported soon).
 
 For more information about server configuration see [this article](https://docs.espocrm.com/administration/server-configuration/).
 
@@ -37,7 +38,7 @@ Create a [GitHub issue](https://github.com/espocrm/espocrm/issues/new/choose) or
 
 See installation instructions:
 
-* [Manual installation](https://docs.espocrm.com/administration/installation/) 
+* [Manual installation](https://docs.espocrm.com/administration/installation/)
 * [Installation by script](https://docs.espocrm.com/administration/installation-by-script/)
 * [Installation with Docker](https://docs.espocrm.com/administration/docker/installation/)
 * [Installation with Traefik](https://docs.espocrm.com/administration/docker/traefik/)
@@ -48,9 +49,17 @@ See the [developer documentation](https://docs.espocrm.com/development/).
 
 We highly recommend using IDE for development. The backend codebase follows SOLID principles, utilizes interfaces, static typing and generics. We recommend to start learning EspoCRM from the Dependency Injection article in the documentation.
 
+### Community & Support
+
+If you have a question regarding some features, need help or customizations, want to get in touch with other EspoCRM users, or add a feature request, please use our [community forum](https://forum.espocrm.com/). We believe that using the forum to ask for help and share experience allows everyone in the community to contribute and use this knowledge later.
+
+### License
+
+EspoCRM is published under the GNU AGPLv3 [license](https://raw.githubusercontent.com/espocrm/espocrm/master/LICENSE.txt).
+
 ### Contributing
 
-Before we can merge your pull request, you need to accept our CLA [here](https://github.com/espocrm/cla). It's very simple to do.
+Before we can merge your pull request, you need to accept our CLA [here](https://github.com/espocrm/cla). See [contributing guidelines](https://github.com/espocrm/espocrm/blob/master/.github/CONTRIBUTING.md).
 
 Branches:
 
@@ -63,11 +72,3 @@ Branches:
 If you want to improve existing translation or add a language that is not available yet, you can contribute on our [POEditor](https://poeditor.com/join/project/gLDKZtUF4i) project. See instructions [here](https://www.espocrm.com/blog/how-to-use-poeditor-to-translate-espocrm/). It may be reasonable to let us know about your intention to join the POEditor project by posting on our forum or via the contact form on our website.
 
 Changes on POEditor are usually merged to the GitHub repository before minor releases.
-
-### Community & Support
-
-If you have a question regarding some features, need help or customizations, want to get in touch with other EspoCRM users, or add a feature request, please use our [community forum](https://forum.espocrm.com/). We believe that using the forum to ask for help and share experience allows everyone in the community to contribute and use this knowledge later.
-
-### License
-
-EspoCRM is published under the GNU GPLv3 [license](https://raw.githubusercontent.com/espocrm/espocrm/master/LICENSE.txt).

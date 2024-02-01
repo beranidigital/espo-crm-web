@@ -2,34 +2,35 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\FieldProcessing\PhoneNumber;
 
 use Espo\Core\ORM\Repository\Option\SaveOption;
+use Espo\Core\ORM\Type\FieldType;
 use Espo\Entities\PhoneNumber;
 use Espo\Repositories\PhoneNumber as PhoneNumberRepository;
 
@@ -64,7 +65,7 @@ class Saver implements SaverInterface
             return;
         }
 
-        if ($defs->getField('phoneNumber')->getType() !== 'phone') {
+        if ($defs->getField('phoneNumber')->getType() !== FieldType::PHONE) {
             return;
         }
 
@@ -82,37 +83,35 @@ class Saver implements SaverInterface
 
         if ($entity->has('phoneNumber')) {
             $this->storePrimary($entity);
-
-            return;
         }
     }
 
     private function storeData(Entity $entity): void
     {
+        if (!$entity->has('phoneNumberData')) {
+            return;
+        }
+
         $phoneNumberValue = $entity->get('phoneNumber');
 
         if (is_string($phoneNumberValue)) {
             $phoneNumberValue = trim($phoneNumberValue);
         }
 
-        $phoneNumberData = null;
-
-        if ($entity->has('phoneNumberData')) {
-            $phoneNumberData = $entity->get('phoneNumberData');
-        }
-
-        if (is_null($phoneNumberData)) {
-            return;
-        }
+        $phoneNumberData = $entity->get('phoneNumberData');
 
         if (!is_array($phoneNumberData)) {
             return;
         }
 
+        $noPrimary = array_filter($phoneNumberData, fn ($item) => !empty($item->primary)) === [];
+
+        if ($noPrimary && $phoneNumberData !== []) {
+            $phoneNumberData[0]->primary = true;
+        }
+
         $keyList = [];
-
         $keyPreviousList = [];
-
         $previousPhoneNumberData = [];
 
         if (!$entity->isNew()) {
@@ -132,19 +131,15 @@ class Saver implements SaverInterface
                 continue;
             }
 
-            if (isset($row->type)) {
-                $type = $row->type;
-            }
-            else {
-                $type = $this->metadata
+            $type = $row->type ??
+                $this->metadata
                     ->get(['entityDefs', $entity->getEntityType(), 'fields', 'phoneNumber', 'defaultType']);
-            }
 
             $hash->$key = [
-                'primary' => !empty($row->primary) ? true : false,
+                'primary' => !empty($row->primary),
                 'type' => $type,
-                'optOut' => !empty($row->optOut) ? true : false,
-                'invalid' => !empty($row->invalid) ? true : false,
+                'optOut' => !empty($row->optOut),
+                'invalid' => !empty($row->invalid),
             ];
 
             $keyList[] = $key;
@@ -192,10 +187,10 @@ class Saver implements SaverInterface
             }
 
             $hashPrevious->$key = [
-                'primary' => $row->primary ? true : false,
+                'primary' => (bool) $row->primary,
                 'type' => $row->type,
-                'optOut' => $row->optOut ? true : false,
-                'invalid' => $row->invalid ? true : false,
+                'optOut' => (bool) $row->optOut,
+                'invalid' => (bool) $row->invalid,
             ];
 
             $keyPreviousList[] = $key;
@@ -210,8 +205,6 @@ class Saver implements SaverInterface
         $revertData = [];
 
         foreach ($keyList as $key) {
-            $data = $hash->$key;
-
             $new = true;
             $changed = false;
 
@@ -227,16 +220,18 @@ class Saver implements SaverInterface
                     $hash->{$key}['optOut'] != $hashPrevious->{$key}['optOut'] ||
                     $hash->{$key}['invalid'] != $hashPrevious->{$key}['invalid'];
 
-                if ($hash->{$key}['primary']) {
-                    if ($hash->{$key}['primary'] == $hashPrevious->{$key}['primary']) {
-                        $primary = false;
-                    }
+                if (
+                    $hash->{$key}['primary'] &&
+                    $hash->{$key}['primary'] === $hashPrevious->{$key}['primary']
+                ) {
+                    $primary = false;
                 }
             }
 
             if ($new) {
                 $toCreateList[] = $key;
             }
+
             if ($changed) {
                 $toUpdateList[] = $key;
             }
@@ -411,85 +406,15 @@ class Saver implements SaverInterface
             return;
         }
 
-        $phoneNumberValue = trim($entity->get('phoneNumber'));
+        $phoneNumberValue = trim($entity->get('phoneNumber') ?? '');
 
         $entityRepository = $this->entityManager->getRDBRepository($entity->getEntityType());
 
         if (!empty($phoneNumberValue)) {
             if ($phoneNumberValue !== $entity->getFetched('phoneNumber')) {
-
-                $phoneNumberNew = $this->entityManager
-                    ->getRDBRepository(PhoneNumber::ENTITY_TYPE)
-                    ->where([
-                        'name' => $phoneNumberValue,
-                    ])
-                    ->findOne();
-
-                $isNewPhoneNumber = false;
-
-                if (!$phoneNumberNew) {
-                    $phoneNumberNew = $this->entityManager->getNewEntity(PhoneNumber::ENTITY_TYPE);
-
-                    $phoneNumberNew->set('name', $phoneNumberValue);
-
-                    if ($entity->has('phoneNumberIsOptedOut')) {
-                        $phoneNumberNew->set('optOut', (bool) $entity->get('phoneNumberIsOptedOut'));
-                    }
-
-                    if ($entity->has('phoneNumberIsInvalid')) {
-                        $phoneNumberNew->set('invalid', (bool) $entity->get('phoneNumberIsInvalid'));
-                    }
-
-                    $defaultType = $this->metadata
-                        ->get('entityDefs.' .  $entity->getEntityType() . '.fields.phoneNumber.defaultType');
-
-                    $phoneNumberNew->set('type', $defaultType);
-
-                    $this->entityManager->saveEntity($phoneNumberNew);
-
-                    $isNewPhoneNumber = true;
-                }
-
-                $phoneNumberValueOld = $entity->getFetched('phoneNumber');
-
-                if (!empty($phoneNumberValueOld)) {
-                    $phoneNumberOld = $this->getByNumber($phoneNumberValueOld);
-
-                    if ($phoneNumberOld) {
-                        $entityRepository->unrelate($entity, 'phoneNumbers', $phoneNumberOld, [
-                            SaveOption::SKIP_HOOKS => true,
-                        ]);
-                    }
-                }
-
-                $entityRepository->relate($entity, 'phoneNumbers', $phoneNumberNew, null, [
-                    SaveOption::SKIP_HOOKS => true,
-                ]);
-
-                if ($entity->has('phoneNumberIsOptedOut')) {
-                    $this->markNumberOptedOut($phoneNumberValue, (bool) $entity->get('phoneNumberIsOptedOut'));
-                }
-
-                if ($entity->has('phoneNumberIsInvalid')) {
-                    $this->markNumberInvalid($phoneNumberValue, (bool) $entity->get('phoneNumberIsInvalid'));
-                }
-
-                $update = $this->entityManager
-                    ->getQueryBuilder()
-                    ->update()
-                    ->in('EntityPhoneNumber')
-                    ->set(['primary' => true])
-                    ->where([
-                        'entityId' => $entity->getId(),
-                        'entityType' => $entity->getEntityType(),
-                        'phoneNumberId' => $phoneNumberNew->getId(),
-                    ])
-                    ->build();
-
-                $this->entityManager->getQueryExecutor()->execute($update);
+                $this->storePrimaryNotEmpty($phoneNumberValue, $entity);
 
                 return;
-
             }
 
             if (
@@ -527,9 +452,9 @@ class Saver implements SaverInterface
             $phoneNumberOld = $this->getByNumber($phoneNumberValueOld);
 
             if ($phoneNumberOld) {
-                $entityRepository->unrelate($entity, 'phoneNumbers', $phoneNumberOld, [
-                    SaveOption::SKIP_HOOKS => true,
-                ]);
+                $entityRepository
+                    ->getRelation($entity, 'phoneNumbers')
+                    ->unrelate($phoneNumberOld, [SaveOption::SKIP_HOOKS => true]);
             }
         }
     }
@@ -569,5 +494,76 @@ class Saver implements SaverInterface
         // @todo Check if not modified by system.
 
         return !$this->accessChecker->checkEdit($user, $phoneNumber, $entity);
+    }
+
+    private function storePrimaryNotEmpty(string $phoneNumberValue, Entity $entity): void
+    {
+        $entityRepository = $this->entityManager->getRDBRepository($entity->getEntityType());
+
+        $phoneNumberNew = $this->entityManager
+            ->getRDBRepository(PhoneNumber::ENTITY_TYPE)
+            ->where([
+                'name' => $phoneNumberValue,
+            ])
+            ->findOne();
+
+        if (!$phoneNumberNew) {
+            $phoneNumberNew = $this->entityManager->getNewEntity(PhoneNumber::ENTITY_TYPE);
+
+            $phoneNumberNew->set('name', $phoneNumberValue);
+
+            if ($entity->has('phoneNumberIsOptedOut')) {
+                $phoneNumberNew->set('optOut', (bool)$entity->get('phoneNumberIsOptedOut'));
+            }
+
+            if ($entity->has('phoneNumberIsInvalid')) {
+                $phoneNumberNew->set('invalid', (bool)$entity->get('phoneNumberIsInvalid'));
+            }
+
+            $defaultType = $this->metadata
+                ->get('entityDefs.' . $entity->getEntityType() . '.fields.phoneNumber.defaultType');
+
+            $phoneNumberNew->set('type', $defaultType);
+
+            $this->entityManager->saveEntity($phoneNumberNew);
+        }
+
+        $phoneNumberValueOld = $entity->getFetched('phoneNumber');
+
+        if (!empty($phoneNumberValueOld)) {
+            $phoneNumberOld = $this->getByNumber($phoneNumberValueOld);
+
+            if ($phoneNumberOld) {
+                $entityRepository
+                    ->getRelation($entity, 'phoneNumbers')
+                    ->unrelate($phoneNumberOld, [SaveOption::SKIP_HOOKS => true]);
+            }
+        }
+
+        $entityRepository
+            ->getRelation($entity, 'phoneNumbers')
+            ->relate($phoneNumberNew, null, [SaveOption::SKIP_HOOKS => true]);
+
+        if ($entity->has('phoneNumberIsOptedOut')) {
+            $this->markNumberOptedOut($phoneNumberValue, (bool)$entity->get('phoneNumberIsOptedOut'));
+        }
+
+        if ($entity->has('phoneNumberIsInvalid')) {
+            $this->markNumberInvalid($phoneNumberValue, (bool)$entity->get('phoneNumberIsInvalid'));
+        }
+
+        $update = $this->entityManager
+            ->getQueryBuilder()
+            ->update()
+            ->in('EntityPhoneNumber')
+            ->set(['primary' => true])
+            ->where([
+                'entityId' => $entity->getId(),
+                'entityType' => $entity->getEntityType(),
+                'phoneNumberId' => $phoneNumberNew->getId(),
+            ])
+            ->build();
+
+        $this->entityManager->getQueryExecutor()->execute($update);
     }
 }

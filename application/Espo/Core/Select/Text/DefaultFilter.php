@@ -2,34 +2,33 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Select\Text;
 
-use Espo\Core\Exceptions\Error;
 use Espo\Core\Select\Text\Filter\Data;
 use Espo\ORM\Query\SelectBuilder as QueryBuilder;
 use Espo\ORM\Query\Part\Where\OrGroup;
@@ -38,6 +37,7 @@ use Espo\ORM\Query\Part\Where\Comparison as Cmp;
 use Espo\ORM\Query\Part\Expression as Expr;
 
 use Espo\ORM\Entity;
+use RuntimeException;
 
 class DefaultFilter implements Filter
 {
@@ -47,9 +47,6 @@ class DefaultFilter implements Filter
         private ConfigProvider $config
     ) {}
 
-    /**
-     * @throws Error
-     */
     public function apply(QueryBuilder $queryBuilder, Data $data): void
     {
         $orGroupBuilder = OrGroup::createBuilder();
@@ -76,7 +73,6 @@ class DefaultFilter implements Filter
     }
 
     /**
-     * @throws Error
      * @todo AttributeFilterFactory.
      */
     private function applyAttribute(
@@ -112,6 +108,25 @@ class DefaultFilter implements Filter
             return;
         }
 
+        if (
+            !str_contains($attribute, '.') &&
+            $this->metadataProvider->getFieldType($this->entityType, $attribute) === 'phone'
+        ) {
+            if (!preg_match("#[0-9()\-+% ]+$#", $filter)) {
+                return;
+            }
+
+            if ($this->config->usePhoneNumberNumericSearch()) {
+                $attribute = $attribute . 'Numeric';
+
+                $filter = preg_replace('/[^0-9%]/', '', $filter);
+            }
+
+            if (!$filter) {
+                return;
+            }
+        }
+
         $expression = $filter;
 
         if (!$skipWildcards) {
@@ -130,18 +145,15 @@ class DefaultFilter implements Filter
         );
     }
 
-    /**
-     * @throws Error
-     */
     private function getAttributeTypeAndApplyJoin(QueryBuilder $queryBuilder, string $attribute): string
     {
         if (str_contains($attribute, '.')) {
-            list($link, $foreignField) = explode('.', $attribute);
+            [$link, $foreignField] = explode('.', $attribute);
 
             $foreignEntityType = $this->metadataProvider->getRelationEntityType($this->entityType, $link);
 
             if (!$foreignEntityType) {
-                throw new Error("Bad relation in text filter field '{$attribute}'.");
+                throw new RuntimeException("Bad relation in text filter field '$attribute'.");
             }
 
             if ($this->metadataProvider->getRelationType($this->entityType, $link) === Entity::HAS_MANY) {

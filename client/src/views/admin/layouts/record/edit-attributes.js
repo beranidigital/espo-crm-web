@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -42,17 +42,21 @@ define('views/admin/layouts/record/edit-attributes', ['views/record/base'], func
         },
 
         getAttributeDataList: function () {
-            var list = [];
+            const list = [];
 
-            this.attributeList.forEach(item => {
-                let type = (this.attributeDefs[item] || {}).type;
+            this.attributeList.forEach(attribute => {
+                const defs = this.attributeDefs[attribute] || {};
 
-                let isWide = !['enum', 'bool', 'int', 'float', 'varchar'].includes(type);
+                const type = defs.type;
+
+                const isWide = !['enum', 'bool', 'int', 'float', 'varchar'].includes(type) &&
+                    attribute !== 'widthComplex';
 
                 list.push({
-                    name: item,
-                    viewKey: item + 'Field',
+                    name: attribute,
+                    viewKey: attribute + 'Field',
                     isWide: isWide,
+                    label: this.translate(defs.label || attribute, 'fields', 'LayoutManager'),
                 });
             });
 
@@ -66,10 +70,10 @@ define('views/admin/layouts/record/edit-attributes', ['views/record/base'], func
             this.attributeDefs = this.options.attributeDefs || {};
 
             this.attributeList.forEach(field => {
-                var params = this.attributeDefs[field] || {};
-                var type = params.type || 'base';
+                const params = this.attributeDefs[field] || {};
+                const type = params.type || 'base';
 
-                var viewName = params.view || this.getFieldManager().getViewName(type);
+                const viewName = params.view || this.getFieldManager().getViewName(type);
 
                 this.createField(field, viewName, params);
             });

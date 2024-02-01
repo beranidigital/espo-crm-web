@@ -2,35 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Select\Where;
 
 use Espo\Core\Select\Where\Item\Data;
-use Espo\Core\Select\Where\Item\Data\DateTime as DateTimeData;
 
 use InvalidArgumentException;
 use RuntimeException;
@@ -69,7 +68,7 @@ class Item
 
     /**
      * @param array<string, mixed> $params
-     * {@internal}
+     * @internal
      */
     public static function fromRaw(array $params): self
     {
@@ -85,18 +84,24 @@ class Item
         $obj->value = $params['value'] ?? null;
 
         if ($params['dateTime'] ?? false) {
-            $obj->data = DateTimeData
+            $obj->data = Data\DateTime
+                ::create()
+                ->withTimeZone($params['timeZone'] ?? null);
+        }
+        else if ($params['date'] ?? null) {
+            $obj->data = Data\Date
                 ::create()
                 ->withTimeZone($params['timeZone'] ?? null);
         }
 
         unset($params['field']);
         unset($params['dateTime']);
+        unset($params['date']);
         unset($params['timeZone']);
 
         foreach (array_keys($params) as $key) {
             if (!property_exists($obj, $key)) {
-                throw new InvalidArgumentException("Unknown parameter '{$key}'.");
+                throw new InvalidArgumentException("Unknown parameter '$key'.");
             }
         }
 
@@ -156,8 +161,10 @@ class Item
             $raw['attribute'] = $this->attribute;
         }
 
-        if ($this->data instanceof DateTimeData) {
-            $raw['dateTime'] = true;
+        if ($this->data instanceof Data\DateTime || $this->data instanceof Data\Date) {
+            if ($this->data instanceof Data\DateTime) {
+                $raw['dateTime'] = true;
+            }
 
             $timeZone = $this->data->getTimeZone();
 
@@ -204,7 +211,7 @@ class Item
     public function getItemList(): array
     {
         if (!in_array($this->type, $this->withNestedItemsTypeList)) {
-            throw new RuntimeException("Nested items not supported for '{$this->type}' type.");
+            throw new RuntimeException("Nested items not supported for '$this->type' type.");
         }
 
         $list = [];

@@ -3,6 +3,7 @@
     --fc-now-indicator-color: var(--brand-danger);
     --fc-border-color: var(--calendar-border);
     --fc-today-bg-color: var(--calendar-today-bg);
+    --fc-page-bg-color: var(--body-bg);
 }
 
 .date-title {
@@ -31,6 +32,12 @@
 
     th {
         font-weight: normal;
+    }
+
+    .fc-daygrid-event-harness {
+        .fc-event-main-frame > .fc-event-time {
+            overflow: unset;
+        }
     }
 
     .fc-daygrid-block-event .fc-event-time {

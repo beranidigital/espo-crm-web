@@ -2,54 +2,60 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Repositories;
 
+use Espo\Core\Repositories\Database;
+use Espo\Core\Utils\DateTime;
+use Espo\Entities\Job as JobEntity;
 use Espo\ORM\Entity;
 
 use Espo\Core\Di;
 
 /**
- * @extends \Espo\Core\Repositories\Database<\Espo\Entities\Job>
+ * @extends Database<JobEntity>
  */
-class Job extends \Espo\Core\Repositories\Database implements
+class Job extends Database implements
     Di\ConfigAware
 {
     use Di\ConfigSetter;
 
     protected $hooksDisabled = true;
 
+    /**
+     * @param JobEntity $entity
+     */
     public function beforeSave(Entity $entity, array $options = [])
     {
-        if (!$entity->has('executeTime') && $entity->isNew()) {
-            $entity->set('executeTime', date('Y-m-d H:i:s'));
+        if ($entity->get('executeTime') === null && $entity->isNew()) {
+            $entity->set('executeTime', DateTime::getSystemNowString());
         }
 
-        if (!$entity->has('attempts') && $entity->isNew()) {
+        if ($entity->get('attempts') === null && $entity->isNew()) {
             $attempts = $this->config->get('jobRerunAttemptNumber', 0);
 
             $entity->set('attempts', $attempts);

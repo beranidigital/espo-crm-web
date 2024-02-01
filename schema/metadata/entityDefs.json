@@ -96,6 +96,73 @@
                         "properties": {
                             "type": {
                                 "anyOf": [
+                                    {"const": "varchar"},
+                                    {"const": "text"},
+                                    {"const": "wysiwyg"},
+                                    {"const": "int"},
+                                    {"const": "float"},
+                                    {"const": "currency"},
+                                    {"const": "url"},
+                                    {"const": "personName"},
+                                    {"const": "address"},
+                                    {"const": "link"},
+                                    {"const": "linkMultiple"},
+                                    {"const": "linkParent"},
+                                    {"const": "linkOne"},
+                                    {"const": "email"},
+                                    {"const": "phone"},
+                                    {"const": "enum"},
+                                    {"const": "multiEnum"},
+                                    {"const": "array"},
+                                    {"const": "checklist"},
+                                    {"const": "urlMultiple"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "required": {
+                                "type": "boolean",
+                                "description": "The field is required."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "bool"},
+                                    {"const": "varchar"},
+                                    {"const": "text"},
+                                    {"const": "wysiwyg"},
+                                    {"const": "int"},
+                                    {"const": "float"},
+                                    {"const": "currency"},
+                                    {"const": "enum"},
+                                    {"const": "multiEnum"},
+                                    {"const": "array"},
+                                    {"const": "checklist"},
+                                    {"const": "urlMultiple"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "default": {
+                                "description": "A default value."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
                                     {"const": "enum"},
                                     {"const": "multiEnum"},
                                     {"const": "array"},
@@ -113,6 +180,51 @@
                                     "type": "string"
                                 },
                                 "description": "Options."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "varchar"},
+                                    {"const": "enum"},
+                                    {"const": "multiEnum"},
+                                    {"const": "array"},
+                                    {"const": "checklist"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "optionsPath": {
+                                "type": "string",
+                                "description": "An options path. E.g. `entityDefs.SomeEntityType.fields.someField.options`."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "enum"},
+                                    {"const": "multiEnum"},
+                                    {"const": "array"},
+                                    {"const": "checklist"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "translation": {
+                                "type": "string",
+                                "description": "A translation path. E.g. `Global.scopeNames`."
                             }
                         }
                     }
@@ -202,6 +314,172 @@
                             }
                         }
                     }
+                },
+                {
+                    "if": {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "dbType": {
+                                        "anyOf": [
+                                            {"const": "decimal"}
+                                        ]
+                                    }
+                                }
+                            },
+                            {
+                                "properties": {
+                                    "type": {
+                                        "anyOf": [
+                                            {"const": "currency"}
+                                        ]
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                    "then": {
+                        "properties": {
+                            "precision": {
+                                "type": "integer",
+                                "description": "A precision."
+                            },
+                            "scale": {
+                                "type": "integer",
+                                "description": "A scale."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "int"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "min": {
+                                "type": "integer",
+                                "description": "A minimum value."
+                            },
+                            "max": {
+                                "type": "integer",
+                                "description": "A maximum value."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "float"},
+                                    {"const": "currency"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "min": {
+                                "type": "number",
+                                "description": "A minimum value."
+                            },
+                            "max": {
+                                "type": "number",
+                                "description": "A maximum value."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "foreign"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "link": {
+                                "type": "string",
+                                "description": "A link."
+                            },
+                            "field": {
+                                "type": "string",
+                                "description": "A field if the foreign entity type."
+                            },
+                            "relateOnImport": {
+                                "type": "boolean",
+                                "description": "When importing the field, a matching foreign record will be related with an imported record."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "link"},
+                                    {"const": "linkMultiple"},
+                                    {"const": "linkOne"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "autocompleteOnEmpty": {
+                                "type": "boolean",
+                                "description": "Autocomplete on empty input."
+                            }
+                        }
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "linkMultiple"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "sortable": {
+                                "type": "boolean",
+                                "description": "Sortable."
+                            },
+                            "orderBy": {
+                                "type": "string",
+                                "description": "An order-by field."
+                            },
+                            "orderDirection": {
+                                "enum": ["asc", "desc"],
+                                "description": "An Order direction."
+                            },
+                            "columns": {
+                                "type": "object",
+                                "description": "A column => attribute map.",
+                                "additionalProperties": {
+                                    "type": "string",
+                                    "description": "A column."
+                                }
+                            }
+                        }
+                    }
                 }
             ],
             "properties": {
@@ -262,6 +540,10 @@
                 "readOnly": {
                     "type": "boolean",
                     "description": "Read-only fields are stripped from a payload received from the front-end. Fields are not editable."
+                },
+                "readOnlyAfterCreate": {
+                    "type": "boolean",
+                    "description": "The field will become read-only after the record is created. Read-only fields are stripped from a payload received from the front-end. Fields are not editable."
                 },
                 "view": {
                     "type": "string",
@@ -340,6 +622,17 @@
                     },
                     "description": "Validations to be bypassed for the field."
                 },
+                "sanitizerClassNameList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "A list of sanitizers. Should implement Espo\\Core\\FieldSanitize\\Sanitizer."
+                },
+                "inlineEditDisabled": {
+                    "type": "boolean",
+                    "default": "Disable inline edit."
+                },
                 "customizationDisabled": {
                     "type": "boolean",
                     "description": "Disables the ability to customize the field in the Entity Manager tool."
@@ -354,9 +647,38 @@
                 "layoutAvailabilityList": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "enum": [
+                                    "detail",
+                                    "list",
+                                    "filters",
+                                    "massUpdate",
+                                    "defaultSidePanel"
+                                ]
+                            }
+                        ]
                     },
                     "description": "A list of layout types there the field should be available. Specify an empty array to disable in all layouts."
+                },
+                "layoutIgnoreList": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {"type": "string"},
+                            {
+                                "enum": [
+                                    "detail",
+                                    "list",
+                                    "filters",
+                                    "massUpdate",
+                                    "defaultSidePanel"
+                                ]
+                            }
+                        ]
+                    },
+                    "description": "A list of layout types the field won't be available in. As of v8.2."
                 },
                 "textFilterDisabled": {
                     "type": "boolean",
@@ -369,6 +691,10 @@
                 "directUpdateDisabled": {
                     "type": "boolean",
                     "description": "Indicates that updating the field directly is not possible."
+                },
+                "foreignAccessDisabled": {
+                    "type": "boolean",
+                    "description": "Indicates that access to the field through a link is not feasible."
                 },
                 "importDisabled": {
                     "type": "boolean",
@@ -401,6 +727,21 @@
                 "converterClassName": {
                     "type": "string",
                     "description": "Converts field defs to ORM metadata. Should implement Espo\\Core\\Utils\\Database\\Orm\\FieldConverter."
+                },
+                "duplicateIgnore": {
+                    "type": "boolean",
+                    "description": "Ignore when duplicating a record."
+                },
+                "duplicatorClassName": {
+                    "type": "string",
+                    "description": "Duplicates attributes of a field. Some fields can require some processing when an entity is being duplicated. Should implement Espo\\Core\\Record\\Duplicator\\FieldDuplicator."
+                },
+                "additionalAttributeList": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Additional attributes for a field. Attribute name will be derived by concatenation with the field name."
                 },
                 "select": {
                     "type": "object",
@@ -548,7 +889,7 @@
                         "type": "object",
                         "properties": {
                             "type": {
-                                "enum": ["varchar", "int", "float", "bool"]
+                                "enum": ["varchar", "int", "float", "bool", "foreignId"]
                             },
                             "maxLength": {
                                 "type": "integer"
@@ -597,7 +938,31 @@
                     "type": "boolean",
                     "description": "The link will be hidden from a user on the UI but not disabled."
                 }
-            }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "anyOf": [
+                                    {"const": "belongsToParent"}
+                                ]
+                            }
+                        }
+                    },
+                    "then": {
+                        "properties": {
+                            "entityList": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Entity types."
+                            }
+                        }
+                    }
+                }
+            ]
         },
         "joins": {
             "type": "array",

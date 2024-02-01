@@ -1,34 +1,41 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 /** @module views/record/panels/bottom */
 
 import View from 'view';
+
+/**
+ * @typedef {Object} module:views/record/panels/bottom~defs
+ * @property [buttonList]
+ * @property [actionList]
+ * @property [tabNumber] For internal purposes.
+ */
 
 /**
  * A bottom panel.
@@ -43,21 +50,25 @@ class BottomPanelView extends View {
      * @protected
      * @type {module:views/record/panels/side~field[]}
      */
-    fieldList = null
+    fieldList
 
     /**
      * @protected
      * @type {Array<module:views/record/panels-container~action|false>}
      */
-    actionList = null
+    actionList
 
     /**
      * @protected
      * @type {module:views/record/panels-container~button[]}
      */
-    buttonList = null
+    buttonList
 
-    defs = null
+    /**
+     * @protected
+     * @type {module:views/record/panels/bottom~defs|Object.<string, *>}
+     */
+    defs
 
     /**
      * A mode.
@@ -87,6 +98,7 @@ class BottomPanelView extends View {
     data() {
         return {
             scope: this.scope,
+            entityType: this.entityType,
             name: this.panelName,
             hiddenFields: this.recordHelper.getHiddenFields(),
             fieldList: this.getFieldList(),
@@ -120,7 +132,7 @@ class BottomPanelView extends View {
         this.setupFields();
 
         this.fieldList = this.fieldList.map((d) => {
-            var item = d;
+            let item = d;
 
             if (typeof item !== 'object') {
                 item = {
@@ -137,7 +149,7 @@ class BottomPanelView extends View {
                 item.hidden = this.recordHelper.getFieldStateParam(item.name, 'hidden');
             }
             else {
-                this.recordHelper.setFieldStateParam(item.name, item.hidden || false);
+                this.recordHelper.setFieldStateParam(item.name, 'hidden', item.hidden || false);
             }
 
             return item;
@@ -185,9 +197,9 @@ class BottomPanelView extends View {
      * @return {Object.<string,module:views/fields/base>}
      */
     getFieldViews() {
-        let fields = {};
+        const fields = {};
 
-        this.getFieldList().forEach((item) => {
+        this.getFieldList().forEach(item => {
             if (this.hasView(item.viewKey)) {
                 fields[item.name] = this.getView(item.viewKey);
             }
@@ -198,6 +210,7 @@ class BottomPanelView extends View {
 
     /**
      * @deprecated Use `getFieldViews`.
+     * @todo Remove in v10.0.
      */
     getFields() {
         return this.getFieldViews();
@@ -224,14 +237,15 @@ class BottomPanelView extends View {
      * @private
      */
     createFields() {
-        this.getFieldList().forEach((item) => {
-            var view = null;
-            var field;
-            var readOnly = null;
+        this.getFieldList().forEach(item => {
+            let view = null;
+            let field;
+            let readOnly = null;
 
             if (typeof item === 'object') {
                 field = item.name;
                 view = item.view;
+
                 if ('readOnly' in item) {
                     readOnly = item.readOnly;
                 }
@@ -260,13 +274,13 @@ class BottomPanelView extends View {
      * @param {Object<string,*>} [options] View options.
      */
     createField(field, viewName, params, mode, readOnly, options) {
-        var type = this.model.getFieldType(field) || 'base';
+        const type = this.model.getFieldType(field) || 'base';
 
         viewName = viewName ||
             this.model.getFieldParam(field, 'view') ||
             this.getFieldManager().getViewName(type);
 
-        var o = {
+        const o = {
             model: this.model,
             selector: '.field[data-name="' + field + '"]',
             defs: {
@@ -274,15 +288,16 @@ class BottomPanelView extends View {
                 params: params || {},
             },
             mode: mode || this.mode,
+            dataObject: this.options.dataObject,
         };
 
         if (options) {
-            for (var param in options) {
+            for (const param in options) {
                 o[param] = options[param];
             }
         }
 
-        var readOnlyLocked = this.readOnlyLocked;
+        let readOnlyLocked = this.readOnlyLocked;
 
         if (this.readOnly) {
             o.readOnly = true;
@@ -332,7 +347,7 @@ class BottomPanelView extends View {
             o.validateCallback = () => this.recordViewObject.validateField(field);
         }
 
-        var viewKey = field + 'Field';
+        const viewKey = field + 'Field';
 
         this.createView(viewKey, viewName, o);
     }
@@ -348,12 +363,13 @@ class BottomPanelView extends View {
             return false;
         }
 
-        let parentView = this.getParentView();
+        const parentView = this.getParentView();
 
         if (!parentView) {
             return this.defs.tabNumber > 0;
         }
 
+        // noinspection JSUnresolvedReference
         if (parentView && parentView.hasTabs) {
             return parentView.currentTab !== defs.tabNumber;
         }

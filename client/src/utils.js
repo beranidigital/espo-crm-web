@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -44,7 +44,13 @@ Espo.Utils = {
      * @param {{
      *     action?: string,
      *     handler?: string,
-     *     actionItems?: Array<{onClick?: function(), name?: string}>,
+     *     actionFunction?: string,
+     *     actionItems?: Array<{
+     *         onClick?: function(),
+     *         name?: string,
+     *         handler?: string,
+     *         actionFunction?: string,
+     *     }>,
      *     className?: string,
      * }} [actionData] Data. If an action is not specified, it will be fetched from a target element.
      * @return {boolean} True if handled.
@@ -56,6 +62,9 @@ Espo.Utils = {
         const action = actionData.action || $target.data('action');
 
         const name = $target.data('name') || action;
+
+        let method;
+        let handler;
 
         if (
             name &&
@@ -74,9 +83,14 @@ Espo.Utils = {
 
                 return true;
             }
+
+            if (data) {
+                handler = data.handler;
+                method = data.actionFunction;
+            }
         }
 
-        if (!action) {
+        if (!action && !actionData.actionFunction && !method) {
             return false;
         }
 
@@ -89,8 +103,8 @@ Espo.Utils = {
         }
 
         const data = $target.data();
-        const method = 'action' + Espo.Utils.upperCaseFirst(action);
-        const handler = actionData.handler || data.handler;
+        method = actionData.actionFunction || method || 'action' + Espo.Utils.upperCaseFirst(action);
+        handler = actionData.handler || handler || data.handler;
 
         let fired = false;
 
@@ -101,7 +115,7 @@ Espo.Utils = {
             fired = true;
 
             Espo.loader.require(handler, Handler => {
-                let handler = new Handler(view);
+                const handler = new Handler(view);
 
                 handler[method].call(handler, data, event);
             });
@@ -129,13 +143,13 @@ Espo.Utils = {
      * @param {JQuery} $target
      */
     _processAfterActionDropdown: function ($target) {
-        let $dropdown = $target.closest('.dropdown-menu');
+        const $dropdown = $target.closest('.dropdown-menu');
 
         if (!$dropdown.length) {
             return;
         }
 
-        let $dropdownToggle = $dropdown.parent().find('[data-toggle="dropdown"]');
+        const $dropdownToggle = $dropdown.parent().find('[data-toggle="dropdown"]');
 
         if (!$dropdownToggle.length) {
             return;
@@ -175,7 +189,7 @@ Espo.Utils = {
      * @returns {boolean}
      */
     checkActionAvailability: function (helper, item) {
-        let config = helper.config;
+        const config = helper.config;
 
         if (item.configCheck) {
             let configCheck = item.configCheck;
@@ -263,7 +277,7 @@ Espo.Utils = {
     /**
      * Check access to an action.
      *
-     * @param {Espo.Utils~AccessDefs[]} dataList List of definitions.
+     * @param {module:utils~AccessDefs[]} dataList List of definitions.
      * @param {module:acl-manager} acl An ACL manager.
      * @param {module:models/user} user A user.
      * @param {module:model|null} [entity] A model.
@@ -275,8 +289,8 @@ Espo.Utils = {
             return true;
         }
 
-        for (var i in dataList) {
-            var item = dataList[i];
+        for (const i in dataList) {
+            const item = dataList[i];
 
             if (item.scope) {
                 if (item.action) {
@@ -298,7 +312,7 @@ Espo.Utils = {
 
             if (item.teamIdList) {
                 if (user && !(allowAllForAdmin && user.isAdmin())) {
-                    var inTeam = false;
+                    let inTeam = false;
 
                     user.getLinkMultipleIdList('teams').forEach(teamId => {
                         if (~item.teamIdList.indexOf(teamId)) {
@@ -314,7 +328,7 @@ Espo.Utils = {
 
             if (item.portalIdList) {
                 if (user && !(allowAllForAdmin && user.isAdmin())) {
-                    var inPortal = false;
+                    let inPortal = false;
 
                     user.getLinkMultipleIdList('portals').forEach(portalId => {
                         if (~item.portalIdList.indexOf(portalId)) {
@@ -366,7 +380,7 @@ Espo.Utils = {
             return string;
         }
 
-        var result = string;
+        let result = string;
 
         switch (p) {
             case 'c-h':
@@ -427,7 +441,7 @@ Espo.Utils = {
         data = Espo.Utils.clone(data);
 
         if (Espo.Utils.isObject(data) || _.isArray(data)) {
-            for (var i in data) {
+            for (const i in data) {
                 data[i] = this.cloneDeep(data[i]);
             }
         }
@@ -470,9 +484,9 @@ Espo.Utils = {
         }
 
         if (name.indexOf(':') !== -1) {
-            var arr = name.split(':');
-            var modPart = arr[0];
-            var namePart = arr[1];
+            const arr = name.split(':');
+            let modPart = arr[0];
+            let namePart = arr[1];
 
             modPart = this.camelCaseToHyphen(modPart);
             namePart = this.camelCaseToHyphen(namePart).split('.').join('/');
@@ -610,11 +624,11 @@ Espo.Utils = {
             return {};
         }
 
-        let options = {};
+        const options = {};
 
         if (typeof string !== 'undefined') {
             string.split('&').forEach(item => {
-                let p = item.split('=');
+                const p = item.split('=');
 
                 options[p[0]] = true;
 
@@ -662,6 +676,23 @@ Espo.Utils = {
     generateId: function () {
         return (Math.floor(Math.random() * 10000001)).toString()
     },
+
+    /**
+     * Not to be used in custom code. Can be removed in future versions.
+     * @internal
+     * @return {string}
+     */
+    obtainBaseUrl: function () {
+        let baseUrl = window.location.origin + window.location.pathname;
+
+        if (baseUrl.slice(-1) !== '/') {
+            baseUrl = window.location.pathname.includes('.') ?
+                baseUrl.slice(0, baseUrl.lastIndexOf('/')) + '/' :
+                baseUrl + '/';
+        }
+
+        return baseUrl;
+    }
 };
 
 const keyMap = {

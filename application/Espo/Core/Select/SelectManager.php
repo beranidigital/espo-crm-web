@@ -2,34 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Select;
 
-use Espo\Core\Exceptions\Error;
+use Espo\Core\Exceptions\BadRequest;
 use Espo\Core\Exceptions\Forbidden;
 
 use Espo\Core\Acl;
@@ -229,7 +229,7 @@ class SelectManager
             } else {
                 if (strpos($sortBy, '.') === false && strpos($sortBy, ':') === false) {
                     if (!$this->getSeed()->hasAttribute($sortBy)) {
-                        throw new Error("Order by non-existing field '{$sortBy}'.");
+                        throw new BadRequest("Order by non-existing field '{$sortBy}'.");
                     }
                 }
             }
@@ -242,10 +242,8 @@ class SelectManager
             }
 
             if (
-                $sortBy != 'id'
-                &&
-                (!$orderByAttribute || !$this->getSeed()->getAttributeParam($orderByAttribute, 'unique'))
-                &&
+                $sortBy != 'id' &&
+                (!$orderByAttribute || !$this->getSeed()->getAttributeParam($orderByAttribute, 'unique')) &&
                 $this->getSeed()->hasAttribute('id')
             ) {
                 $result['orderBy'][] = ['id', $desc];
@@ -263,10 +261,11 @@ class SelectManager
 
     protected function getTextFilterFieldList() : array
     {
-        return $this->getMetadata()->get(['entityDefs', $this->entityType, 'collection', 'textFilterFields'], ['name']);
+        return $this->getMetadata()
+            ->get(['entityDefs', $this->entityType, 'collection', 'textFilterFields'], ['name']);
     }
 
-    protected function getSeed() : Entity
+    protected function getSeed(): Entity
     {
         if (empty($this->seed)) {
             $this->seed = $this->entityManager->getEntity($this->entityType);
@@ -445,7 +444,7 @@ class SelectManager
                 $aliasName . 'Middle.teamId' => $idsValue
             ];
         } else {
-            throw new Error("Can't apply isUserFromTeams for link {$link}.");
+            throw new BadRequest("Can't apply isUserFromTeams for link {$link}.");
         }
 
         $this->setDistinct(true, $result);
@@ -456,7 +455,7 @@ class SelectManager
         $relDefs = $this->entityManager->getMetadata()->get($this->entityType, ['relations']);
 
         if (empty($relDefs[$link])) {
-            throw new Error("Can't apply inCategory for link {$link}.");
+            throw new BadRequest("Can't apply inCategory for link {$link}.");
         }
 
         $defs = $relDefs[$link];
@@ -464,14 +463,14 @@ class SelectManager
         $foreignEntity = $defs['entity'] ?? null;
 
         if (empty($foreignEntity)) {
-            throw new Error("Can't apply inCategory for link {$link}.");
+            throw new BadRequest("Can't apply inCategory for link {$link}.");
         }
 
         $pathName = lcfirst($foreignEntity) . 'Path';
 
         if ($defs['type'] == 'manyMany') {
             if (empty($defs['midKeys'])) {
-                throw new Error("Can't apply inCategory for link {$link}.");
+                throw new BadRequest("Can't apply inCategory for link {$link}.");
             }
 
             $this->setDistinct(true, $result);
@@ -495,7 +494,7 @@ class SelectManager
 
         if ($defs['type'] == 'belongsTo') {
             if (empty($defs['key'])) {
-                throw new Error("Can't apply inCategory for link {$link}.");
+                throw new BadRequest("Can't apply inCategory for link {$link}.");
             }
 
             $key = $defs['key'];
@@ -513,7 +512,7 @@ class SelectManager
             return;
         }
 
-        throw new Error("Can't apply inCategory for link {$link}.");
+        throw new BadRequest("Can't apply inCategory for link {$link}.");
     }
 
     protected function q(array $params, array &$result)
@@ -1031,11 +1030,11 @@ class SelectManager
         }
 
         if (!$attribute) {
-            throw new Error("Bad datetime where item, empty 'attribute'.");
+            throw new BadRequest("Bad datetime where item, empty 'attribute'.");
         }
 
         if (!$type) {
-            throw new Error("Bad datetime where item, empty 'type'.");
+            throw new BadRequest("Bad datetime where item, empty 'type'.");
         }
 
         if (empty($value) && in_array($type, ['on', 'before', 'after'])) {
@@ -1343,7 +1342,7 @@ class SelectManager
         }
 
         if ($attribute && !is_string($attribute)) {
-            throw new Error("Bad 'attribute' in where item.");
+            throw new BadRequest("Bad 'attribute' in where item.");
         }
 
         if (!empty($item['dateTime'])) {
@@ -1351,7 +1350,7 @@ class SelectManager
         }
 
         if (!$type) {
-            throw new Error("No 'type' in where item.");
+            throw new BadRequest("No 'type' in where item.");
         }
 
         if ($attribute && $type) {
@@ -2014,7 +2013,7 @@ class SelectManager
         $method = 'boolFilter' . ucfirst($filter);
 
         if (!method_exists($this, $method)) {
-            throw new Error("Bool filter '{$filter}' does not exist.");
+            throw new BadRequest("Bool filter '{$filter}' does not exist.");
         }
 
         $rawWhereClause = $this->$method($result) ?? [];

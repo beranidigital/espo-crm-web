@@ -2,33 +2,35 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Tools\Import;
 
+use Espo\Core\ORM\Type\FieldType;
+use Espo\Core\PhoneNumber\Sanitizer as PhoneNumberSanitizer;
 use Espo\Core\FieldValidation\Exceptions\ValidationError;
 use Espo\Core\Job\JobSchedulerFactory;
 use Espo\Entities\Attachment;
@@ -89,9 +91,9 @@ class Import
         private RecordServiceContainer $recordServiceContainer,
         private JobSchedulerFactory $jobSchedulerFactory,
         private Log $log,
-        private FieldValidationManager $fieldValidationManager
+        private FieldValidationManager $fieldValidationManager,
+        private PhoneNumberSanitizer $phoneNumberSanitizer
     ) {
-
         $this->params = Params::create();
     }
 
@@ -498,29 +500,15 @@ class Import
 
         $entity->set($params->getDefaultValues());
 
-        $valueMap = (object) [];
-
-        foreach ($attributeList as $i => $attribute) {
-            if (empty($attribute)) {
-                continue;
-            }
-
-            if (!array_key_exists($i, $row)) {
-                continue;
-            }
-
-            $value = $row[$i];
-            $valueMap->$attribute = $value;
-        }
+        $valueMap = $this->prepareRowValueMap($attributeList, $row);
 
         $failureList = [];
 
         foreach ($attributeList as $i => $attribute) {
-            if (empty($attribute)) {
-                continue;
-            }
-
-            if (!array_key_exists($i, $row)) {
+            if (
+                empty($attribute) ||
+                !array_key_exists($i, $row)
+            ) {
                 continue;
             }
 
@@ -548,18 +536,8 @@ class Import
             }
         }
 
-        foreach ($attributeList as $attribute) {
-            if (!$entity->hasAttribute($attribute)) {
-                continue;
-            }
-
-            if (
-                $entity->getAttributeType($attribute) === Entity::FOREIGN &&
-                $entity->getAttributeParam($attribute, 'foreign') === 'name'
-            ) {
-                $this->processForeignName($entity, $attribute);
-            }
-        }
+        $this->processForeignNames($attributeList, $entity);
+        $this->processForeignFields($attributeList, $entity);
 
         try {
             $failureList = array_merge(
@@ -639,41 +617,39 @@ class Import
         return $result;
     }
 
-    private function processForeignName(CoreEntity $entity, string $attribute): void
+    private function processForeignAttribute(CoreEntity $entity, string $attribute): void
     {
-        $nameValue = $entity->get($attribute);
+        $value = $entity->get($attribute);
 
-        if ($nameValue === null) {
+        if ($value === null) {
             return;
         }
 
+        $foreignAttribute = $entity->getAttributeParam($attribute, 'foreign');
         $relation = $entity->getAttributeParam($attribute, 'relation');
 
         if (!$relation) {
             return;
         }
 
-        $foreignEntityType = $entity->getRelationParam($relation, 'entity');
+        $idAttribute = $relation . 'Id';
 
-        $isPerson = false;
-
-        if ($foreignEntityType) {
-            $isPerson = $this->metadata
-                ->get(['entityDefs', $foreignEntityType, 'fields', 'name', 'type']) === 'personName';
-        }
-
-        if ($attribute !== $relation . 'Name') {
+        if ($entity->isNew() && $entity->has($idAttribute)) {
             return;
         }
 
-        if ($entity->has($relation . 'Id') && $entity->isNew()) {
+        if ($foreignAttribute === 'name' && $attribute !== $relation . 'Name') {
+            return;
+        }
+
+        if (!$entity->isNew() && $entity->isAttributeChanged($idAttribute)) {
             return;
         }
 
         if (
-            $entity->has($relation . 'Id') &&
             !$entity->isNew() &&
-            !$entity->isAttributeChanged($relation . 'Name')
+            $entity->has($idAttribute) &&
+            !$entity->isAttributeChanged($attribute)
         ) {
             return;
         }
@@ -688,24 +664,30 @@ class Import
             return;
         }
 
-        if ($isPerson) {
-            $where = $this->parsePersonName($nameValue, $this->params->getPersonNameFormat() ?? '');
+        $foreignEntityType = $entity->getRelationParam($relation, 'entity');
+
+        if (!$foreignEntityType) {
+            return;
         }
-        else {
-            $where = [
-                'name' => $nameValue,
-            ];
+
+        $where = [$foreignAttribute => $value];
+
+        if (
+            $foreignAttribute === 'name' &&
+            $this->getFieldType($foreignEntityType, $foreignAttribute) === FieldType::PERSON_NAME
+        ) {
+            $where = $this->parsePersonName($value, $this->params->getPersonNameFormat() ?? '');
         }
 
         $found = $this->entityManager
             ->getRDBRepository($foreignEntityType)
-            ->select(['id', 'name'])
+            ->select(['id', $foreignAttribute])
             ->where($where)
             ->findOne();
 
         if ($found) {
-            $entity->set($relation . 'Id', $found->getId());
-            $entity->set($relation . 'Name', $found->get('name'));
+            $entity->set($idAttribute, $found->getId());
+            //$entity->set($relation . 'Name', $found->get($foreignAttribute));
 
             //return;
         }
@@ -743,9 +725,9 @@ class Import
             $attributeType = $entity->getAttributeType($attribute);
 
             if ($value !== '') {
-                $type = $this->metadata->get(['entityDefs', $this->entityType, 'fields', $attribute, 'type']);
+                $type = $this->getFieldType($this->entityType, $attribute);
 
-                if ($attribute === 'emailAddress' && $type === 'email') {
+                if ($attribute === 'emailAddress' && $type === FieldType::EMAIL) {
                     $emailAddressData = $entity->get('emailAddressData');
                     $emailAddressData = $emailAddressData ?? [];
 
@@ -761,7 +743,7 @@ class Import
                     return;
                 }
 
-                if ($attribute === 'phoneNumber' && $type === 'phone') {
+                if ($attribute === 'phoneNumber' && $type === FieldType::PHONE) {
                     $phoneNumberData = $entity->get('phoneNumberData');
                     $phoneNumberData = $phoneNumberData ?? [];
 
@@ -770,7 +752,7 @@ class Import
                     }
 
                     $o = (object) [
-                        'phoneNumber' => $value,
+                        'phoneNumber' => $this->formatPhoneNumber($value, $params),
                         'primary' => true,
                     ];
 
@@ -837,7 +819,7 @@ class Import
 
         if (
             $entity->hasAttribute('phoneNumber') &&
-            $entity->getAttributeParam('phoneNumber', 'fieldType') === 'phone'
+            $entity->getAttributeParam('phoneNumber', 'fieldType') === FieldType::PHONE
         ) {
             $typeList = $this->metadata
                 ->get(['entityDefs', $this->entityType, 'fields', 'phoneNumber', 'typeList']) ?? [];
@@ -867,7 +849,7 @@ class Import
             }
 
             $o = (object) [
-                'phoneNumber' => $value,
+                'phoneNumber' => $this->formatPhoneNumber($value, $params),
                 'type' => $type,
                 'primary' => $isPrimary,
             ];
@@ -917,7 +899,6 @@ class Import
     {
         $params = $this->params;
 
-        /** @noinspection PhpRedundantVariableDocTypeInspection */
         /** @var non-empty-string $decimalMark */
         $decimalMark = $params->getDecimalMark() ?? self::DEFAULT_DECIMAL_MARK;
 
@@ -937,11 +918,37 @@ class Import
             return null;
         }
 
+        $fieldDefs = $this->entityManager
+            ->getDefs()
+            ->getEntity($entity->getEntityType())
+            ->tryGetField($attribute);
+
+        if ($fieldDefs) {
+            $fieldType = $fieldDefs->getType();
+
+            if (
+                $fieldType === FieldType::CURRENCY &&
+                $fieldDefs->getParam('decimal')
+            ) {
+                $value = $this->transformFloatString($decimalMark, $value);
+
+                if ($value === null) {
+                    throw ValidationError::create(
+                        new Failure($entity->getEntityType(), $attribute, 'valid')
+                    );
+                }
+
+                return $value;
+            }
+        }
+
         switch ($type) {
             case Entity::DATE:
                 $dt = DateTime::createFromFormat($dateFormat, $value);
 
-                if (!$dt) {
+                $errorData = DateTime::getLastErrors();
+
+                if (!$dt || ($errorData && $errorData['warnings'] !== [])) {
                     throw ValidationError::create(
                         new Failure($entity->getEntityType(), $attribute, 'valid')
                     );
@@ -955,7 +962,9 @@ class Import
 
                 $dt = DateTime::createFromFormat($dateFormat . ' ' . $timeFormat, $value, $timezone);
 
-                if (!$dt) {
+                $errorData = DateTime::getLastErrors();
+
+                if (!$dt || ($errorData && $errorData['warnings'] !== [])) {
                     throw ValidationError::create(
                         new Failure($entity->getEntityType(), $attribute, 'valid')
                     );
@@ -966,24 +975,25 @@ class Import
                 return $dt->format(DateTimeUtil::SYSTEM_DATE_TIME_FORMAT);
 
             case Entity::FLOAT:
-                $a = explode($decimalMark, $value);
+                $value = $this->transformFloatString($decimalMark, $value);
 
-                if (!is_numeric($a[0])) {
+                if ($value === null) {
                     throw ValidationError::create(
                         new Failure($entity->getEntityType(), $attribute, 'valid')
                     );
                 }
 
-                //$a[0] = preg_replace('/[^A-Za-z0-9\-]/', '', $a[0]);
-
-                if (count($a) > 1) {
-                    return floatval($a[0] . '.' . $a[1]);
-                }
-
-                return floatval($a[0]);
+                return floatval($value);
 
             case Entity::INT:
-                if (!is_numeric($value)) {
+                $replaceList = [
+                    ' ',
+                    $decimalMark === '.' ? ',' : '.',
+                ];
+
+                $value = str_replace($replaceList, '', $value);
+
+                if (str_contains($value, $decimalMark) || !is_numeric($value)) {
                     throw ValidationError::create(
                         new Failure($entity->getEntityType(), $attribute, 'valid')
                     );
@@ -1211,6 +1221,8 @@ class Import
             }
         }
 
+        ksort($o);
+
         return $o;
     }
 
@@ -1252,5 +1264,123 @@ class Import
         ]);
 
         $errorIndex++;
+    }
+
+    private function formatPhoneNumber(string $value, Params $params): string
+    {
+        return $this->phoneNumberSanitizer->sanitize($value, $params->getPhoneNumberCountry());
+    }
+
+    /**
+     * @param non-empty-string $decimalMark
+     */
+    private function transformFloatString(string $decimalMark, string $value): ?string
+    {
+        $a = explode($decimalMark, $value);
+
+        $left = $a[0];
+        $right = $a[1] ?? null;
+
+        $replaceList = [
+            ' ',
+            $decimalMark === '.' ? ',' : '.',
+        ];
+
+        $left = str_replace($replaceList, '', $left);
+
+        if (!is_numeric($left)) {
+            return null;
+        }
+
+        if ($right !== null) {
+            return $left . '.' . $right;
+        }
+
+        return $left;
+    }
+
+    private function getFieldType(string $entityType, string $field): ?string
+    {
+        return $this->entityManager
+            ->getDefs()
+            ->getEntity($entityType)
+            ->tryGetField($field)
+            ?->getType();
+    }
+
+    /** @noinspection PhpSameParameterValueInspection */
+    private function getFieldParam(string $entityType, string $field, string $param): mixed
+    {
+        return $this->entityManager
+            ->getDefs()
+            ->getEntity($entityType)
+            ->tryGetField($field)
+            ?->getParam($param);
+    }
+
+    /**
+     * @param string[] $attributeList
+     * @param string[] $row
+     */
+    private function prepareRowValueMap(array $attributeList, array $row): stdClass
+    {
+        $valueMap = (object) [];
+
+        foreach ($attributeList as $i => $attribute) {
+            if (empty($attribute)) {
+                continue;
+            }
+
+            if (!array_key_exists($i, $row)) {
+                continue;
+            }
+
+            $valueMap->$attribute = $row[$i];
+        }
+
+        return $valueMap;
+    }
+
+    /**
+     * @param string[] $attributeList
+     * @param CoreEntity $entity
+     */
+    private function processForeignNames(array $attributeList, CoreEntity $entity): void
+    {
+        foreach ($attributeList as $attribute) {
+            if (!$entity->hasAttribute($attribute)) {
+                continue;
+            }
+
+            if (
+                $entity->getAttributeType($attribute) === Entity::FOREIGN &&
+                $entity->getAttributeParam($attribute, 'foreign') === 'name'
+            ) {
+                $this->processForeignAttribute($entity, $attribute);
+            }
+        }
+    }
+
+    /**
+     * @param string[] $attributeList
+     * @param CoreEntity $entity
+     */
+    private function processForeignFields(array $attributeList, CoreEntity $entity): void
+    {
+        foreach ($attributeList as $attribute) {
+            if (!$entity->hasAttribute($attribute)) {
+                continue;
+            }
+
+            assert($this->entityType !== null);
+
+            if (
+                $entity->getAttributeType($attribute) === Entity::FOREIGN &&
+                $entity->getAttributeParam($attribute, 'foreign') !== 'name' &&
+                $this->getFieldParam($this->entityType, $attribute, 'relateOnImport')
+            ) {
+                $this->processForeignAttribute($entity, $attribute);
+            }
+        }
     }
 }

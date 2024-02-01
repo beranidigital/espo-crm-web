@@ -2,33 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Utils;
 
+use Espo\Core\Api\Action;
 use Espo\Core\Api\Route as RouteItem;
 use Espo\Core\Utils\File\Manager as FileManager;
 use Espo\Core\Utils\Resource\PathProvider;
@@ -40,7 +41,7 @@ use Espo\Core\Utils\Resource\PathProvider;
  *     method: string,
  *     noAuth?: bool,
  *     params?: array<string, mixed>,
- *     actionClassName: ?class-string<\Espo\Core\Api\Action>
+ *     actionClassName: ?class-string<Action>
  *   }
  */
 class Route
@@ -111,26 +112,18 @@ class Route
      */
     private function unify(): array
     {
-        $customData = $this->addDataFromFile([], $this->pathProvider->getCustom() . $this->routesFileName);
+        $customFilePath = $this->pathProvider->getCustom() . $this->routesFileName;
+        $coreFilePath = $this->pathProvider->getCore() . $this->routesFileName;
 
-        $moduleData = [];
+        $data = $this->addDataFromFile([], $customFilePath);
 
-        foreach ($this->metadata->getModuleList() as $moduleName) {
-            $moduleFilePath = $this->pathProvider->getModule($moduleName) . $this->routesFileName;
+        foreach (array_reverse($this->metadata->getModuleList()) as $module) {
+            $moduleFilePath = $this->pathProvider->getModule($module) . $this->routesFileName;
 
-            foreach ($this->addDataFromFile([], $moduleFilePath) as $item) {
-                $key = $item['method'] . $item['route'];
-
-                $moduleData[$key] = $item;
-            }
+            $data = $this->addDataFromFile($data, $moduleFilePath);
         }
 
-        $data = array_merge($customData, array_values($moduleData));
-
-        return $this->addDataFromFile(
-            $data,
-            $this->pathProvider->getCore() . $this->routesFileName
-        );
+        return $this->addDataFromFile($data, $coreFilePath);
     }
 
     /**
@@ -184,7 +177,7 @@ class Route
     {
         // to fast route format
         /** @var string $pathFormatted */
-        $pathFormatted = preg_replace('/\:([a-zA-Z0-9]+)/', '{${1}}', trim($path));
+        $pathFormatted = preg_replace('/:([a-zA-Z0-9]+)/', '{${1}}', trim($path));
 
         if (!str_starts_with($pathFormatted, '/')) {
             return '/' . $pathFormatted;
@@ -209,6 +202,7 @@ class Route
         $scriptDir = dirname($scriptNameModified);
 
         /** @var string $uri */
+        /** @noinspection HttpUrlsUsage */
         $uri = parse_url('http://any.com' . $serverRequestUri, PHP_URL_PATH);
 
         if (stripos($uri, $scriptName) === 0) {
@@ -222,35 +216,17 @@ class Route
         return '';
     }
 
-    public static function detectEntryPointRoute(): string
-    {
-        $basePath = self::detectBasePath();
-
-        /** @var string $serverRequestUri */
-        $serverRequestUri = $_SERVER['REQUEST_URI'];
-
-        /** @var string $uri */
-        $uri = parse_url('http://any.com' . $serverRequestUri, PHP_URL_PATH);
-
-        if ($uri === $basePath) {
-            return '/';
-        }
-
-        if (stripos($uri, $basePath) === 0) {
-            return substr($uri, strlen($basePath));
-        }
-
-        return '/';
-    }
-
     /**
      * @param RouteArrayShape $newRoute
-     * @param array<int, RouteArrayShape> $routeList
+     * @param RouteArrayShape[] $routeList
      */
     static private function isRouteInList(array $newRoute, array $routeList): bool
     {
         foreach ($routeList as $route) {
-            if (Util::areEqual($route, $newRoute)) {
+            if (
+                $route['route'] === $newRoute['route'] &&
+                $route['method'] === $newRoute['method']
+            ) {
                 return true;
             }
         }

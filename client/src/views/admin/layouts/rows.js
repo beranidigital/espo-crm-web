@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -56,7 +56,7 @@ define('views/admin/layouts/rows', ['views/admin/layouts/base'], function (Dep) 
             Dep.prototype.setup.call(this);
 
             this.events['click a[data-action="editItem"]'] = e => {
-                let name = $(e.target).closest('li').data('name');
+                const name = $(e.target).closest('li').data('name');
 
                 this.editRow(name);
             };
@@ -71,11 +71,13 @@ define('views/admin/layouts/rows', ['views/admin/layouts/base'], function (Dep) 
         },
 
         onRemove: function () {
-            if (this.$style) this.$style.remove();
+            if (this.$style) {
+                this.$style.remove();
+            }
         },
 
         editRow: function (name) {
-            var attributes = Espo.Utils.cloneDeep(this.itemsData[name] || {});
+            const attributes = Espo.Utils.cloneDeep(this.itemsData[name] || {});
             attributes.name = name;
 
             this.openEditDialog(attributes)
@@ -98,18 +100,24 @@ define('views/admin/layouts/rows', ['views/admin/layouts/base'], function (Dep) 
         onDrop: function (e) {},
 
         fetch: function () {
-            var layout = [];
+            const layout = [];
 
             $("#layout ul.enabled > li").each((i, el) => {
-                var o = {};
+                const o = {};
 
-                var name = $(el).data('name');
+                const name = $(el).data('name');
 
-                var attributes = this.itemsData[name] || {};
+                const attributes = this.itemsData[name] || {};
                 attributes.name = name;
 
                 this.dataAttributeList.forEach(attribute => {
-                    var value = attributes[attribute] || null;
+                    const defs = this.dataAttributesDefs[attribute] || {};
+
+                    if (defs.notStorable) {
+                        return;
+                    }
+
+                    const value = attributes[attribute] || null;
 
                     if (value) {
                         o[attribute] = value;

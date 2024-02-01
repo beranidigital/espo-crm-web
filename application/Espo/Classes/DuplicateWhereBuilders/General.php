@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,6 +33,7 @@ use Espo\Core\Duplicate\WhereBuilder;
 use Espo\Core\Field\EmailAddressGroup;
 use Espo\Core\Field\PhoneNumberGroup;
 use Espo\Core\ORM\Entity as CoreEntity;
+use Espo\Core\Utils\Config;
 use Espo\Core\Utils\Metadata;
 use Espo\ORM\Defs;
 use Espo\ORM\Entity;
@@ -49,7 +50,8 @@ class General implements WhereBuilder
 {
     public function __construct(
         private Metadata $metadata,
-        private Defs $ormDefs
+        private Defs $ormDefs,
+        private Config $config
     ) {}
 
     /**
@@ -177,6 +179,12 @@ class General implements WhereBuilder
 
         $toCheck = false;
 
+        $isNumeric = $this->config->get('phoneNumberNumericSearch');
+
+        $column = $isNumeric ?
+            $field . 'Numeric' :
+            $field;
+
         if (
             ($entity->get($field) || $entity->get($field . 'Data')) &&
             (
@@ -185,11 +193,15 @@ class General implements WhereBuilder
                 $entity->isAttributeChanged($field . 'Data')
             )
         ) {
-            foreach ($this->getPhoneNumberList($entity) as $phoneNumber) {
+            foreach ($this->getPhoneNumberList($entity) as $number) {
+                if ($isNumeric) {
+                    $number = preg_replace('/[^0-9]/', '', $number);
+                }
+
                 $orBuilder->add(
                     Cond::equal(
-                        Cond::column($field),
-                        $phoneNumber
+                        Cond::column($column),
+                        $number
                     )
                 );
 

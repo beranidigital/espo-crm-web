@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -35,7 +35,6 @@ use Espo\Core\Mail\EmailSender;
 use Espo\Core\Mail\Exceptions\NoSmtp;
 use Espo\Core\Mail\Exceptions\SendingError;
 use Espo\Core\Mail\Sender as EmailSenderSender;
-use Espo\Core\Mail\SmtpParams;
 use Espo\Core\Utils\Config;
 use Espo\Core\Utils\TemplateFileManager;
 use Espo\Entities\Email;
@@ -47,25 +46,13 @@ use Espo\Repositories\Portal as PortalRepository;
 
 class Sender
 {
-    private Config $config;
-    private EmailSender $emailSender;
-    private EntityManager $entityManager;
-    private HtmlizerFactory $htmlizerFactory;
-    private TemplateFileManager $templateFileManager;
-
     public function __construct(
-        Config $config,
-        EmailSender $emailSender,
-        EntityManager $entityManager,
-        HtmlizerFactory $htmlizerFactory,
-        TemplateFileManager $templateFileManager
-    ) {
-        $this->config = $config;
-        $this->emailSender = $emailSender;
-        $this->entityManager = $entityManager;
-        $this->htmlizerFactory = $htmlizerFactory;
-        $this->templateFileManager = $templateFileManager;
-    }
+        private Config $config,
+        private EmailSender $emailSender,
+        private EntityManager $entityManager,
+        private HtmlizerFactory $htmlizerFactory,
+        private TemplateFileManager $templateFileManager
+    ) {}
 
     /**
      * Send access info for a new user.
@@ -108,7 +95,6 @@ class Sender
      * Send a plain password in email.
      *
      * @throws SendingError
-     * @throws Error
      */
     public function sendPassword(User $user, string $password): void
     {
@@ -144,20 +130,9 @@ class Sender
         $this->createSender()->send($email);
     }
 
-    /**
-     * @throws NoSmtp
-     */
     private function createSender(): EmailSenderSender
     {
-        $sender = $this->emailSender->create();
-
-        $smtpParams = $this->getSmtpParams();
-
-        if ($smtpParams) {
-            $sender = $sender->withSmtpParams($smtpParams);
-        }
-
-        return $sender;
+        return $this->emailSender->create();
     }
 
     /**
@@ -227,44 +202,12 @@ class Sender
 
     private function isSmtpConfigured(): bool
     {
-        return
-            $this->emailSender->hasSystemSmtp() ||
-            $this->config->get('internalSmtpServer');
+        return $this->emailSender->hasSystemSmtp();
     }
 
     private function getPortalRepository(): PortalRepository
     {
         /** @var PortalRepository */
         return $this->entityManager->getRDBRepository(Portal::ENTITY_TYPE);
-    }
-
-    /**
-     * @throws NoSmtp
-     */
-    private function getSmtpParams(): ?SmtpParams
-    {
-        if ($this->emailSender->hasSystemSmtp()) {
-            return null;
-        }
-
-        $server = $this->config->get('internalSmtpServer');
-
-        if (!$server) {
-            throw new NoSmtp("No SMTP configured to send access info.");
-        }
-
-        /** @var int $port */
-        $port = $this->config->get('internalSmtpPort');
-
-        return SmtpParams
-            ::create($server, $port)
-            ->withAuth($this->config->get('internalSmtpAuth'))
-            ->withUsername($this->config->get('internalSmtpUsername'))
-            ->withPassword($this->config->get('internalSmtpPassword'))
-            ->withSecurity($this->config->get('internalSmtpSecurity'))
-            ->withFromAddress(
-                $this->config->get('internalOutboundEmailFromAddress') ??
-                $this->config->get('outboundEmailFromAddress')
-            );
     }
 }

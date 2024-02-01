@@ -2,44 +2,42 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Mail\Parsers;
 
-use Psr\Http\Message\StreamInterface;
-
 use Espo\Entities\Email;
 use Espo\Entities\Attachment;
-
+use Espo\ORM\EntityManager;
 use Espo\Core\Mail\Message;
 use Espo\Core\Mail\Parser;
 use Espo\Core\Mail\Message\Part;
 use Espo\Core\Mail\Message\MailMimeParser\Part as WrapperPart;
 
-use Espo\ORM\EntityManager;
+use Psr\Http\Message\StreamInterface;
 
 use ZBateson\MailMimeParser\Header\AddressHeader;
 use ZBateson\MailMimeParser\MailMimeParser as WrappeeParser;
@@ -63,20 +61,20 @@ class MailMimeParser implements Parser
         'webp' => 'image/webp',
     ];
 
-    private EntityManager $entityManager;
     private ?WrappeeParser $parser = null;
 
-    /**
-     * @var array<string, ParserMessage>
-     */
+    private const FIELD_BODY = 'body';
+    private const FIELD_ATTACHMENTS = 'attachments';
+
+    private const DISPOSITION_INLINE = 'inline';
+
+    /** @var array<string, ParserMessage> */
     private array $messageHash = [];
 
-    public function __construct(EntityManager $entityManager)
-    {
-        $this->entityManager = $entityManager;
-    }
+    public function __construct(private EntityManager $entityManager)
+    {}
 
-    protected function getParser(): WrappeeParser
+    private function getParser(): WrappeeParser
     {
         if (!$this->parser) {
             $this->parser = new WrappeeParser();
@@ -85,7 +83,7 @@ class MailMimeParser implements Parser
         return $this->parser;
     }
 
-    protected function loadContent(Message $message): void
+    private function loadContent(Message $message): void
     {
         $raw = $message->getFullRawContent();
 
@@ -98,7 +96,7 @@ class MailMimeParser implements Parser
     /**
      * @return ParserMessage
      */
-    protected function getMessage(Message $message)
+    private function getMessage(Message $message)
     {
         $key = spl_object_hash($message);
 
@@ -291,7 +289,7 @@ class MailMimeParser implements Parser
 
         $attachmentPartList = $this->getMessage($message)->getAllAttachmentParts();
 
-        $inlineIds = [];
+        $inlineAttachmentMap = [];
 
         foreach ($attachmentPartList as $attachmentPart) {
             if (!$attachmentPart instanceof MimePart) {
@@ -334,54 +332,73 @@ class MailMimeParser implements Parser
                 $contentId = trim($contentId, '<>');
             }
 
-            if ($disposition === 'inline') {
+            if ($disposition === self::DISPOSITION_INLINE) {
                 $attachment->setRole(Attachment::ROLE_INLINE_ATTACHMENT);
-                $attachment->setTargetField('body');
+                $attachment->setTargetField(self::FIELD_BODY);
             }
             else {
-                $disposition = 'attachment';
-
                 $attachment->setRole(Attachment::ROLE_ATTACHMENT);
-                $attachment->setTargetField('attachments');
+                $attachment->setTargetField(self::FIELD_ATTACHMENTS);
             }
 
             $attachment->setContents($content);
 
             $this->entityManager->saveEntity($attachment);
 
-            if ($disposition === 'attachment') {
-                $email->addLinkMultipleId('attachments', $attachment->getId());
+            if ($attachment->getRole() === Attachment::ROLE_ATTACHMENT) {
+                $email->addLinkMultipleId(self::FIELD_ATTACHMENTS, $attachment->getId());
 
                 if ($contentId) {
-                    $inlineIds[$contentId] = $attachment->getId();
+                    $inlineAttachmentMap[$contentId] = $attachment;
                 }
 
                 continue;
             }
 
-            // inline disposition
+            // Inline disposition.
+
             if ($contentId) {
-                $inlineIds[$contentId] = $attachment->getId();
+                $inlineAttachmentMap[$contentId] = $attachment;
 
                 $inlineAttachmentList[] = $attachment;
 
                 continue;
             }
 
-            $email->addLinkMultipleId('attachments', $attachment->getId());
+            // No ID found, fallback to attachment.
+            $attachment
+                ->setRole(Attachment::ROLE_ATTACHMENT)
+                ->setTargetField(self::FIELD_ATTACHMENTS);
+
+            $this->entityManager->saveEntity($attachment);
+
+            $email->addLinkMultipleId(self::FIELD_ATTACHMENTS, $attachment->getId());
         }
 
         $body = $email->getBody();
 
-        if (!empty($body)) {
-            foreach ($inlineIds as $cid => $attachmentId) {
+        if ($body) {
+            foreach ($inlineAttachmentMap as $cid => $attachment) {
                 if (str_contains($body, 'cid:' . $cid)) {
-                    $body = str_replace('cid:' . $cid, '?entryPoint=attachment&amp;id=' . $attachmentId, $body);
+                    $body = str_replace(
+                        'cid:' . $cid,
+                        '?entryPoint=attachment&amp;id=' . $attachment->getId(),
+                        $body
+                    );
 
                     continue;
                 }
 
-                $email->addLinkMultipleId('attachments', $attachmentId);
+                // Fallback to attachment.
+                if ($attachment->getRole() === Attachment::ROLE_INLINE_ATTACHMENT) {
+                    $attachment
+                        ->setRole(Attachment::ROLE_ATTACHMENT)
+                        ->setTargetField(self::FIELD_ATTACHMENTS);
+
+                    $this->entityManager->saveEntity($attachment);
+
+                    $email->addLinkMultipleId(self::FIELD_ATTACHMENTS, $attachment->getId());
+                }
             }
 
             $email->setBody($body);

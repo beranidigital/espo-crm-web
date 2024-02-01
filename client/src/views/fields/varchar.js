@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -171,7 +171,7 @@ class VarcharFieldView extends BaseFieldView {
      * @protected
      */
     copyToClipboard() {
-        let value = this.model.get(this.name);
+        const value = this.model.get(this.name);
 
         navigator.clipboard.writeText(value).then(() => {
             Espo.Ui.success(this.translate('Copied to clipboard'));
@@ -190,9 +190,11 @@ class VarcharFieldView extends BaseFieldView {
     }
 
     transformAutocompleteResult(response) {
-        let responseParsed = JSON.parse(response);
+        const responseParsed = typeof response === 'string' ?
+            JSON.parse(response) :
+            response;
 
-        let list = [];
+        const list = [];
 
         responseParsed.list.forEach(item => {
             list.push({
@@ -211,14 +213,14 @@ class VarcharFieldView extends BaseFieldView {
 
     setupSearch() {
         this.events['change select.search-type'] = e => {
-            let type = $(e.currentTarget).val();
+            const type = $(e.currentTarget).val();
 
             this.handleSearchType(type);
         };
     }
 
     data() {
-        let data = super.data()
+        const data = super.data();
 
         if (
             this.model.get(this.name) !== null &&
@@ -233,6 +235,14 @@ class VarcharFieldView extends BaseFieldView {
         if (this.isSearchMode()) {
             if (typeof this.searchParams.value === 'string') {
                 this.searchData.value = this.searchParams.value;
+            }
+
+            if (this.searchParams.data && typeof this.searchParams.data.value === 'string') {
+                this.searchData.value = this.searchParams.data.value;
+            }
+
+            if (!this.searchParams.value && !this.searchParams.data) {
+                this.searchData.value = null;
             }
         }
 
@@ -256,7 +266,7 @@ class VarcharFieldView extends BaseFieldView {
         super.afterRender();
 
         if (this.isSearchMode()) {
-            let type = this.$el.find('select.search-type').val();
+            const type = this.$el.find('select.search-type').val();
 
             this.handleSearchType(type);
         }
@@ -269,10 +279,12 @@ class VarcharFieldView extends BaseFieldView {
             )
         ) {
             // noinspection JSUnusedGlobalSymbols
-            let autocompleteOptions = {
+            const autocompleteOptions = {
                 minChars: 0,
                 lookup: this.params.options,
                 maxHeight: 200,
+                triggerSelectOnValidInput: false,
+                autoSelectFirst: true,
                 beforeRender: $c => {
                     if (this.$element.hasClass('input-sm')) {
                         $c.addClass('small');
@@ -296,15 +308,23 @@ class VarcharFieldView extends BaseFieldView {
             };
 
             if (this.useAutocompleteUrl) {
-                autocompleteOptions.serviceUrl = q => this.getAutocompleteUrl(q);
-                autocompleteOptions.transformResult = response =>
-                    this.transformAutocompleteResult(response);
                 autocompleteOptions.noCache = true;
-                autocompleteOptions.lookup = null;
+                autocompleteOptions.lookup = (query, done) => {
+                    Espo.Ajax.getRequest(this.getAutocompleteUrl(query))
+                        .then(response => {
+                            return this.transformAutocompleteResult(response);
+                        })
+                        .then(result => {
+                            done(result);
+                        });
+                };
             }
 
             this.$element.autocomplete(autocompleteOptions);
             this.$element.attr('autocomplete', 'espo-' + this.name);
+
+            // Prevent showing suggestions after select.
+            this.$element.off('focus.autocomplete');
 
             this.$element.on('focus', () => {
                 if (this.$element.val()) {
@@ -331,7 +351,7 @@ class VarcharFieldView extends BaseFieldView {
 
     // noinspection JSUnusedGlobalSymbols
     validatePattern() {
-        let pattern = this.params.pattern;
+        const pattern = this.params.pattern;
 
         return this.fieldValidatePattern(this.name, pattern);
     }
@@ -345,21 +365,20 @@ class VarcharFieldView extends BaseFieldView {
     fieldValidatePattern(name, pattern) {
         pattern = pattern || this.model.getFieldParam(name, 'pattern');
         /** @var {string|null} value */
-        let value = this.model.get(name);
+        const value = this.model.get(name);
 
         if (!pattern) {
             return false;
         }
 
-        let helper = new RegExpPattern(this.getMetadata(), this.getLanguage());
-
-        let result = helper.validate(pattern, value, name, this.entityType);
+        const helper = new RegExpPattern(this.getMetadata(), this.getLanguage());
+        const result = helper.validate(pattern, value, name, this.entityType);
 
         if (!result) {
             return false;
         }
 
-        let message = result.message.replace('{field}', this.getLanguage().translate(this.getLabelText()));
+        const message = result.message.replace('{field}', this.getLanguage().translate(this.getLabelText()));
 
         this.showValidationMessage(message, '[data-name="' + name + '"]');
 
@@ -368,9 +387,9 @@ class VarcharFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetch() {
-        let data = {};
+        const data = {};
 
-        let value = this.$element.val().trim();
+        const value = this.$element.val().trim();
 
         data[this.name] = value || null;
 
@@ -379,7 +398,7 @@ class VarcharFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetchSearch() {
-        let type = this.fetchSearchType() || 'startsWith';
+        const type = this.fetchSearchType() || 'startsWith';
 
         if (~['isEmpty', 'isNotEmpty'].indexOf(type)) {
             if (type === 'isEmpty') {
@@ -388,11 +407,11 @@ class VarcharFieldView extends BaseFieldView {
                     value: [
                         {
                             type: 'isNull',
-                            field: this.name,
+                            attribute: this.name,
                         },
                         {
                             type: 'equals',
-                            field: this.name,
+                            attribute: this.name,
                             value: '',
                         },
                     ],
@@ -402,10 +421,10 @@ class VarcharFieldView extends BaseFieldView {
                 };
             }
 
-            let value = [
+            const value = [
                 {
                     type: 'isNotNull',
-                    field: this.name,
+                    attribute: this.name,
                     value: null,
                 },
             ];
@@ -413,7 +432,7 @@ class VarcharFieldView extends BaseFieldView {
             if (!this.model.getFieldParam(this.name, 'notStorable')) {
                 value.push({
                     type: 'notEquals',
-                    field: this.name,
+                    attribute: this.name,
                     value: '',
                 });
             }
@@ -427,7 +446,7 @@ class VarcharFieldView extends BaseFieldView {
             };
         }
 
-        let value = this.$element.val().toString().trim();
+        const value = this.$element.val().toString().trim();
 
         if (!value) {
             return null;

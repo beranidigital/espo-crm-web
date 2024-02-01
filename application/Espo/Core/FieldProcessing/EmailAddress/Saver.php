@@ -2,34 +2,35 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\FieldProcessing\EmailAddress;
 
 use Espo\Core\ORM\Repository\Option\SaveOption;
+use Espo\Core\ORM\Type\FieldType;
 use Espo\Entities\EmailAddress;
 use Espo\Repositories\EmailAddress as EmailAddressRepository;
 use Espo\ORM\Entity;
@@ -59,7 +60,7 @@ class Saver implements SaverInterface
             return;
         }
 
-        if ($defs->getField('emailAddress')->getType() !== 'email') {
+        if ($defs->getField('emailAddress')->getType() !== FieldType::EMAIL) {
             return;
         }
 
@@ -77,36 +78,35 @@ class Saver implements SaverInterface
 
         if ($entity->has('emailAddress')) {
             $this->storePrimary($entity);
-
-            return;
         }
     }
 
     private function storeData(Entity $entity): void
     {
+        if (!$entity->has('emailAddressData')) {
+            return;
+        }
+
         $emailAddressValue = $entity->get('emailAddress');
 
         if (is_string($emailAddressValue)) {
             $emailAddressValue = trim($emailAddressValue);
         }
 
-        $emailAddressData = null;
-
-        if ($entity->has('emailAddressData')) {
-            $emailAddressData = $entity->get('emailAddressData');
-        }
-
-        if (is_null($emailAddressData)) {
-            return;
-        }
+        $emailAddressData = $entity->get('emailAddressData');
 
         if (!is_array($emailAddressData)) {
             return;
         }
 
+        $noPrimary = array_filter($emailAddressData, fn ($item) => !empty($item->primary)) === [];
+
+        if ($noPrimary && $emailAddressData !== []) {
+            $emailAddressData[0]->primary = true;
+        }
+
         $keyList = [];
         $keyPreviousList = [];
-
         $previousEmailAddressData = [];
 
         if (!$entity->isNew()) {
@@ -129,9 +129,9 @@ class Saver implements SaverInterface
             $key = strtolower($key);
 
             $hash->$key = [
-                'primary' => !empty($row->primary) ? true : false,
-                'optOut' => !empty($row->optOut) ? true : false,
-                'invalid' => !empty($row->invalid) ? true : false,
+                'primary' => !empty($row->primary),
+                'optOut' => !empty($row->optOut),
+                'invalid' => !empty($row->invalid),
                 'emailAddress' => trim($row->emailAddress),
             ];
 
@@ -182,9 +182,9 @@ class Saver implements SaverInterface
             }
 
             $hashPrevious->$key = [
-                'primary' => $row->primary ? true : false,
-                'optOut' => $row->optOut ? true : false,
-                'invalid' => $row->invalid ? true : false,
+                'primary' => (bool) $row->primary,
+                'optOut' => (bool) $row->optOut,
+                'invalid' => (bool) $row->invalid,
                 'emailAddress' => $row->emailAddress,
             ];
 
@@ -215,10 +215,11 @@ class Saver implements SaverInterface
                     $hash->{$key}['invalid'] != $hashPrevious->{$key}['invalid'] ||
                     $hash->{$key}['emailAddress'] !== $hashPrevious->{$key}['emailAddress'];
 
-                if ($hash->{$key}['primary']) {
-                    if ($hash->{$key}['primary'] == $hashPrevious->{$key}['primary']) {
-                        $primary = false;
-                    }
+                if (
+                    $hash->{$key}['primary'] &&
+                    $hash->{$key}['primary'] === $hashPrevious->{$key}['primary']
+                ) {
+                    $primary = false;
                 }
             }
 
@@ -416,9 +417,8 @@ class Saver implements SaverInterface
             if ($emailAddressOld) {
                 $this->entityManager
                     ->getRDBRepository($entity->getEntityType())
-                    ->unrelate($entity, 'emailAddresses', $emailAddressOld, [
-                        SaveOption::SKIP_HOOKS => true,
-                    ]);
+                    ->getRelation($entity, 'emailAddresses')
+                    ->unrelate($emailAddressOld, [SaveOption::SKIP_HOOKS => true]);
             }
         }
     }
@@ -464,8 +464,6 @@ class Saver implements SaverInterface
             ])
             ->findOne();
 
-        $isNewEmailAddress = false;
-
         if (!$emailAddressNew) {
             $emailAddressNew = $this->entityManager->getNewEntity(EmailAddress::ENTITY_TYPE);
 
@@ -480,8 +478,6 @@ class Saver implements SaverInterface
             }
 
             $this->entityManager->saveEntity($emailAddressNew);
-
-            $isNewEmailAddress = true;
         }
 
         $emailAddressValueOld = $entity->getFetched('emailAddress');
@@ -490,15 +486,15 @@ class Saver implements SaverInterface
             $emailAddressOld = $this->getByAddress($emailAddressValueOld);
 
             if ($emailAddressOld) {
-                $entityRepository->unrelate($entity, 'emailAddresses', $emailAddressOld, [
-                    SaveOption::SKIP_HOOKS => true,
-                ]);
+                $entityRepository
+                    ->getRelation($entity, 'emailAddresses')
+                    ->unrelate($emailAddressOld, [SaveOption::SKIP_HOOKS => true]);
             }
         }
 
-        $entityRepository->relate($entity, 'emailAddresses', $emailAddressNew, null, [
-            SaveOption::SKIP_HOOKS => true,
-        ]);
+        $entityRepository
+            ->getRelation($entity, 'emailAddresses')
+            ->relate($emailAddressNew, null, [SaveOption::SKIP_HOOKS => true]);
 
         if ($entity->has('emailAddressIsOptedOut')) {
             $this->markAddressOptedOut($emailAddressValue, (bool) $entity->get('emailAddressIsOptedOut'));

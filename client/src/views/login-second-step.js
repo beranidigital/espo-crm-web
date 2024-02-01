@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -115,11 +115,11 @@ class LoginSecondStepView extends View {
 
     /** @private */
     send() {
-        let code = this.$code.val().trim().replace(/\s/g, '');
+        const code = this.$code.val().trim().replace(/\s/g, '');
 
-        let userName = this.options.userName;
-        let token = this.loginData.token;
-        let headers = Espo.Utils.clone(this.headers);
+        const userName = this.options.userName;
+        const token = this.loginData.token;
+        const headers = Espo.Utils.clone(this.headers);
 
         if (code === '') {
             this.processEmptyCode();
@@ -130,7 +130,7 @@ class LoginSecondStepView extends View {
         this.disableForm();
 
         if (userName && token) {
-            let authString = Base64.encode(userName  + ':' + token);
+            const authString = Base64.encode(userName + ':' + token);
 
             headers['Authorization'] = 'Basic ' + authString;
             headers['Espo-Authorization'] = authString;
@@ -158,7 +158,16 @@ class LoginSecondStepView extends View {
             .catch(xhr => {
                 this.undisableForm();
 
+
                 if (xhr.status === 401) {
+                    const statusReason = xhr.getResponseHeader('X-Status-Reason');
+
+                    if (statusReason === 'error') {
+                        this.onError();
+
+                        return;
+                    }
+
                     this.onWrongCredentials();
                 }
             });
@@ -187,9 +196,9 @@ class LoginSecondStepView extends View {
     processEmptyCode() {
         this.isPopoverDestroyed = false;
 
-        let message = this.getLanguage().translate('codeIsRequired', 'messages', 'User');
+        const message = this.getLanguage().translate('codeIsRequired', 'messages', 'User');
 
-        let $el = this.$code;
+        const $el = this.$code;
 
         $el
             .popover({
@@ -200,7 +209,7 @@ class LoginSecondStepView extends View {
             })
             .popover('show');
 
-        let $cell = $el.closest('.form-group');
+        const $cell = $el.closest('.form-group');
 
         $cell.addClass('has-error');
 
@@ -218,8 +227,8 @@ class LoginSecondStepView extends View {
     }
 
     /** @private */
-    onWrongCredentials() {
-        let $cell = $('#login .form-group');
+    onFail(msg) {
+        const $cell = $('#login .form-group');
 
         $cell.addClass('has-error');
 
@@ -227,7 +236,17 @@ class LoginSecondStepView extends View {
             $cell.removeClass('has-error');
         });
 
-        Espo.Ui.error(this.translate('wrongCode', 'messages', 'User'));
+        Espo.Ui.error(this.translate(msg, 'messages', 'User'));
+    }
+
+    /** @private */
+    onError() {
+        this.onFail('loginError');
+    }
+
+    /** @private */
+    onWrongCredentials() {
+        this.onFail('wrongCode');
     }
 
     /** @private */

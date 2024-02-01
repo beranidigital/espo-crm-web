@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -129,7 +129,7 @@ class LoginView extends View {
     setup() {
         this.anotherUser = this.options.anotherUser || null;
 
-        let loginData = this.getConfig().get('loginData') || {};
+        const loginData = this.getConfig().get('loginData') || {};
 
         this.fallback = !!loginData.fallback;
         this.method = loginData.method;
@@ -162,7 +162,7 @@ class LoginView extends View {
      * @return {string}
      */
     getLogoSrc() {
-        let companyLogoId = this.getConfig().get('companyLogoId');
+        const companyLogoId = this.getConfig().get('companyLogoId');
 
         if (!companyLogoId) {
             return this.getBasePath() +
@@ -208,9 +208,9 @@ class LoginView extends View {
     login() {
         let authString;
         let userName = this.$username.val();
-        let password = this.$password.val();
+        const password = this.$password.val();
 
-        let trimmedUserName = userName.trim();
+        const trimmedUserName = userName.trim();
 
         if (trimmedUserName !== userName) {
             this.$username.val(trimmedUserName);
@@ -237,7 +237,7 @@ class LoginView extends View {
             throw e;
         }
 
-        let headers = {
+        const headers = {
             'Authorization': 'Basic ' + authString,
             'Espo-Authorization': authString,
         };
@@ -254,7 +254,7 @@ class LoginView extends View {
     proceed(headers, userName, password) {
         headers = Espo.Utils.clone(headers);
 
-        let initialHeaders = Espo.Utils.clone(headers);
+        const initialHeaders = Espo.Utils.clone(headers);
 
         headers['Espo-Authorization-By-Token'] = 'false';
         headers['Espo-Authorization-Create-Token-Secret'] = 'true';
@@ -279,12 +279,18 @@ class LoginView extends View {
                 this.undisableForm();
 
                 if (xhr.status === 401) {
-                    let data = xhr.responseJSON || {};
-                    let statusReason = xhr.getResponseHeader('X-Status-Reason');
+                    const data = xhr.responseJSON || {};
+                    const statusReason = xhr.getResponseHeader('X-Status-Reason');
 
                     if (statusReason === 'second-step-required') {
                         xhr.errorIsHandled = true;
                         this.onSecondStepRequired(initialHeaders, userName, password, data);
+
+                        return;
+                    }
+
+                    if (statusReason === 'error') {
+                        this.onError();
 
                         return;
                     }
@@ -317,9 +323,9 @@ class LoginView extends View {
     processEmptyUsername() {
         this.isPopoverDestroyed = false;
 
-        let $el = this.$username;
+        const $el = this.$username;
 
-        let message = this.getLanguage().translate('userCantBeEmpty', 'messages', 'User');
+        const message = this.getLanguage().translate('userCantBeEmpty', 'messages', 'User');
 
         $el
             .popover({
@@ -330,7 +336,7 @@ class LoginView extends View {
             })
             .popover('show');
 
-        let $cell = $el.closest('.form-group');
+        const $cell = $el.closest('.form-group');
 
         $cell.addClass('has-error');
 
@@ -367,14 +373,28 @@ class LoginView extends View {
      * @param {Object.<string, *>} data
      */
     onSecondStepRequired(headers, userName, password, data) {
-        let view = data.view || 'views/login-second-step';
+        const view = data.view || 'views/login-second-step';
 
         this.trigger('redirect', view, headers, userName, password, data);
     }
 
     /** @private */
+    onError() {
+        this.onFail('loginError');
+    }
+
+    /** @private */
     onWrongCredentials() {
-        let $cell = $('#login .form-group');
+        const msg = this.handler ?
+            'failedToLogIn' :
+            'wrongUsernamePassword';
+
+        this.onFail(msg);
+    }
+
+    /** @private */
+    onFail(msg) {
+        const $cell = $('#login .form-group');
 
         $cell.addClass('has-error');
 
@@ -382,11 +402,7 @@ class LoginView extends View {
             $cell.removeClass('has-error');
         });
 
-        let messageKey = this.handler ?
-            'failedToLogIn' :
-            'wrongUsernamePassword';
-
-        Espo.Ui.error(this.translate(messageKey, 'messages', 'User'));
+        Espo.Ui.error(this.translate(msg, 'messages', 'User'));
     }
 
     /** @private */

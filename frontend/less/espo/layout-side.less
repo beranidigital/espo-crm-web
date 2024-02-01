@@ -124,6 +124,9 @@ body[data-navbar="side"] {
                     > li.more {
                         > ul {
                             > li.tab-divider {
+                                min-height: 10px;
+                                margin-top: 9px;
+
                                 &:not(:first-child):before {
                                     height: 1px;
                                     margin: 9.5px 0;
@@ -711,6 +714,11 @@ body[data-navbar="side"] {
     }
 
     @media screen and (max-width: (@screen-sm-min - 1px)) {
+        .stick-sub,
+        &.minimized .stick-sub {
+            left: 0;
+        }
+
         .list-buttons-container .sticked-bar,
         &.minimized .list-buttons-container .sticked-bar {
             width: 100%;

@@ -2,45 +2,43 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Tools\UserSecurity;
 
-use Espo\Core\Exceptions\Error;
+use Espo\Core\Authentication\TwoFactor\Exceptions\NotConfigured;
+use Espo\Core\Exceptions\Error\Body;
 use Espo\Core\Exceptions\Forbidden;
 use Espo\Core\Exceptions\NotFound;
 use Espo\Core\Exceptions\BadRequest;
-
+use Espo\Core\Utils\Log;
 use Espo\ORM\EntityManager;
-
 use Espo\Entities\User;
 use Espo\Entities\UserData;
-
 use Espo\Repositories\UserData as UserDataRepository;
-
 use Espo\Core\Api\RequestNull;
 use Espo\Core\Authentication\Login\Data as LoginData;
 use Espo\Core\Authentication\LoginFactory;
@@ -56,7 +54,8 @@ class Service
         private User $user,
         private Config $config,
         private LoginFactory $authLoginFactory,
-        private TwoFactorUserSetupFactory $twoFactorUserSetupFactory
+        private TwoFactorUserSetupFactory $twoFactorUserSetupFactory,
+        private Log $log
     ) {}
 
     /**
@@ -99,7 +98,6 @@ class Service
 
     /**
      * @throws BadRequest
-     * @throws Error
      * @throws Forbidden
      * @throws NotFound
      */
@@ -153,9 +151,19 @@ class Service
             throw new BadRequest();
         }
 
-        $clientData = $this->twoFactorUserSetupFactory
-            ->create($auth2FAMethod)
-            ->getData($user);
+        try {
+            $clientData = $this->twoFactorUserSetupFactory
+                ->create($auth2FAMethod)
+                ->getData($user);
+        }
+        catch (NotConfigured $e) {
+            $this->log->error($e->getMessage());
+
+            throw Forbidden::createWithBody(
+                "2FA method '$auth2FAMethod' is not fully configured.",
+                Body::create()->withMessageTranslation('2faMethodNotConfigured', 'User')
+            );
+        }
 
         if ($isReset) {
             $userData = $this->getUserDataRepository()->getByUserId($id);
@@ -165,6 +173,7 @@ class Service
             }
 
             $userData->set('auth2FA', false);
+            /** @noinspection PhpRedundantOptionalArgumentInspection */
             $userData->set('auth2FAMethod', null);
 
             $this->entityManager->saveEntity($userData);
@@ -174,9 +183,9 @@ class Service
     }
 
     /**
-     * @throws Error
      * @throws Forbidden
      * @throws NotFound
+     * @throws BadRequest
      */
     public function update(string $id, stdClass $data): stdClass
     {
@@ -225,6 +234,7 @@ class Service
         }
 
         if (!$userData->get('auth2FA')) {
+            /** @noinspection PhpRedundantOptionalArgumentInspection */
             $userData->set('auth2FAMethod', null);
         }
 

@@ -24,6 +24,10 @@
         {
             "name": "readOnly",
             "type": "bool"
+        },
+        {
+            "name": "readOnlyAfterCreate",
+            "type": "bool"
         }
     ],
     "validationList": [
@@ -50,5 +54,10 @@
         "update",
         "add",
         "remove"
-    ]
+    ],
+    "sanitizerClassNameList": [
+        "Espo\\Classes\\FieldSanitizers\\ArrayFromNull",
+        "Espo\\Classes\\FieldSanitizers\\ArrayStringTrim"
+    ],
+    "default": []
 }

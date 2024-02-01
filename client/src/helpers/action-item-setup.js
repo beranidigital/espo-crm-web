@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -53,15 +53,16 @@ class ActionItemSetupHelper {
      */
     setup(view, type, waitFunc, addFunc, showFunc, hideFunc, options) {
         options = options || {};
-        let actionList = [];
+        const actionList = [];
 
-        let scope = view.scope || view.model.entityType;
+        // noinspection JSUnresolvedReference
+        const scope = view.scope || view.model.entityType;
 
         if (!scope) {
             throw new Error();
         }
 
-        let actionDefsList = [
+        const actionDefsList = [
             ...this.metadata.get(['clientDefs', 'Global', type + 'ActionList']) || [],
             ...this.metadata.get(['clientDefs', scope, type + 'ActionList']) || [],
         ];
@@ -73,7 +74,7 @@ class ActionItemSetupHelper {
 
             item = Espo.Utils.cloneDeep(item);
 
-            let name = item.name;
+            const name = item.name;
 
             if (!item.label) {
                 item.html = this.language.translate(name, 'actions', scope);
@@ -81,7 +82,7 @@ class ActionItemSetupHelper {
 
             item.data = item.data || {};
 
-            let handlerName = item.handler || item.data.handler;
+            const handlerName = item.handler || item.data.handler;
 
             if (handlerName && !item.data.handler) {
                 item.data.handler = handlerName;
@@ -109,14 +110,14 @@ class ActionItemSetupHelper {
 
             waitFunc(new Promise(resolve => {
                 Espo.loader.require(handlerName, Handler => {
-                    let handler = new Handler(view);
+                    const handler = new Handler(view);
 
                     if (item.initFunction) {
                         handler[item.initFunction].call(handler);
                     }
 
                     if (item.checkVisibilityFunction) {
-                        let isNotVisible = !handler[item.checkVisibilityFunction].call(handler);
+                        const isNotVisible = !handler[item.checkVisibilityFunction].call(handler);
 
                         if (isNotVisible) {
                             hideFunc(item.name);
@@ -134,10 +135,10 @@ class ActionItemSetupHelper {
             return;
         }
 
-        let onSync = () => {
+        const onSync = () => {
             actionList.forEach(item => {
                 if (item.handlerInstance && item.checkVisibilityFunction) {
-                    let isNotVisible = !item.handlerInstance[item.checkVisibilityFunction]
+                    const isNotVisible = !item.handlerInstance[item.checkVisibilityFunction]
                         .call(item.handlerInstance);
 
                     if (isNotVisible) {

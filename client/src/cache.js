@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -57,7 +57,7 @@ class Cache {
      * @param {Number} cacheTimestamp A cache timestamp.
      */
     handleActuality(cacheTimestamp) {
-        let storedTimestamp = this.getCacheTimestamp();
+        const storedTimestamp = this.getCacheTimestamp();
 
         if (storedTimestamp) {
             if (storedTimestamp !== cacheTimestamp) {
@@ -87,7 +87,7 @@ class Cache {
      * @todo Revise whether is needed.
      */
     storeTimestamp() {
-        let frontendCacheTimestamp = Date.now();
+        const frontendCacheTimestamp = Date.now();
 
         this.set('app', 'timestamp', frontendCacheTimestamp);
     }
@@ -131,7 +131,7 @@ class Cache {
     get(type, name) {
         this.checkType(type);
 
-        let key = this.composeKey(type, name);
+        const key = this.composeKey(type, name);
 
         let stored;
 
@@ -148,7 +148,7 @@ class Cache {
             let result = stored;
 
             if (stored.length > 9 && stored.substring(0, 9) === '__JSON__:') {
-                let jsonString = stored.slice(9);
+                const jsonString = stored.slice(9);
 
                 try {
                     result = JSON.parse(jsonString);
@@ -174,7 +174,7 @@ class Cache {
     set(type, name, value) {
         this.checkType(type);
 
-        let key = this.composeKey(type, name);
+        const key = this.composeKey(type, name);
 
         if (value instanceof Object || Array.isArray(value)) {
             value = '__JSON__:' + JSON.stringify(value);
@@ -209,9 +209,9 @@ class Cache {
             reText = '^' + this.basePrefix + '-';
         }
 
-        let re = new RegExp(reText);
+        const re = new RegExp(reText);
 
-        for (let i in localStorage) {
+        for (const i in localStorage) {
             if (re.test(i)) {
                 delete localStorage[i];
             }

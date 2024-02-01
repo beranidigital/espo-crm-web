@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -46,9 +46,9 @@ import $ from 'jquery';
  * @property {number|null} [width] A width.
  * @property {boolean} [removeOnClose=true] To remove on close.
  * @property {boolean} [draggable=false] Is draggable.
- * @property {function (): void} [onRemove] An on-remove callback.
- * @property {function (): void} [onClose] An on-close callback.
- * @property {function (): void} [onBackdropClick] An on-backdrop-click callback.
+ * @property {function(): void} [onRemove] An on-remove callback.
+ * @property {function(): void} [onClose] An on-close callback.
+ * @property {function(): void} [onBackdropClick] An on-backdrop-click callback.
  * @property {string} [container='body'] A container selector.
  * @property {boolean} [keyboard=true] Enable a keyboard control. The `Esc` key closes a dialog.
  * @property {boolean} [footerAtTheTop=false] To display a footer at the top.
@@ -97,7 +97,7 @@ class Dialog {
         options = options || {};
 
         /** @private */
-        this.className = 'dialog';
+        this.className = 'dialog-confirm';
         /** @private */
         this.backdrop = 'static';
         /** @private */
@@ -133,7 +133,7 @@ class Dialog {
 
         this.activeElement = document.activeElement;
 
-        let params = [
+        const params = [
             'className',
             'backdrop',
             'keyboard',
@@ -179,14 +179,14 @@ class Dialog {
             this.backdrop = 'static';
         }
 
-        let $header = this.getHeader();
-        let $footer = this.getFooter();
+        const $header = this.getHeader();
+        const $footer = this.getFooter();
 
-        let $body = $('<div>')
+        const $body = $('<div>')
             .addClass('modal-body body')
             .html(this.body);
 
-        let $content = $('<div>').addClass('modal-content');
+        const $content = $('<div>').addClass('modal-content');
 
         if ($header) {
             $content.append($header);
@@ -202,11 +202,11 @@ class Dialog {
             $content.append($footer);
         }
 
-        let $dialog = $('<div>')
+        const $dialog = $('<div>')
             .addClass('modal-dialog')
             .append($content);
 
-        let $container = $(this.container);
+        const $container = $(this.container);
 
         $('<div>')
             .attr('id', this.id)
@@ -244,7 +244,7 @@ class Dialog {
             });
         }
 
-        let modalContentEl = this.$el.find('.modal-content');
+        const modalContentEl = this.$el.find('.modal-content');
 
         if (this.width) {
             modalContentEl.css('width', this.width);
@@ -267,13 +267,13 @@ class Dialog {
             });
         }
 
-        let $window = $(window);
+        const $window = $(window);
 
         this.$el.on('shown.bs.modal', () => {
             $('.modal-backdrop').not('.stacked').addClass('stacked');
 
-            let headerHeight = this.$el.find('.modal-header').outerHeight() || 0;
-            let footerHeight = this.$el.find('.modal-footer').outerHeight() || 0;
+            const headerHeight = this.$el.find('.modal-header').outerHeight() || 0;
+            const footerHeight = this.$el.find('.modal-footer').outerHeight() || 0;
 
             let diffHeight = headerHeight + footerHeight;
 
@@ -282,9 +282,9 @@ class Dialog {
             }
 
             if (this.fitHeight || options.fullHeight) {
-                let processResize = () => {
-                    let windowHeight = window.innerHeight;
-                    let windowWidth = $window.width();
+                const processResize = () => {
+                    const windowHeight = window.innerHeight;
+                    const windowWidth = $window.width();
 
                     if (!options.fullHeight && windowHeight < 512) {
                         this.$el.find('div.modal-body').css({
@@ -296,7 +296,7 @@ class Dialog {
                         return;
                     }
 
-                    let cssParams = {
+                    const cssParams = {
                         overflow: 'auto',
                     };
 
@@ -323,7 +323,7 @@ class Dialog {
             }
         });
 
-        let $documentBody = $(document.body);
+        const $documentBody = $(document.body);
 
         this.$el.on('hidden.bs.modal', () => {
             if ($('.modal:visible').length > 0) {
@@ -370,7 +370,7 @@ class Dialog {
     initButtonEvents() {
         this.buttonList.forEach(o => {
             if (typeof o.onClick === 'function') {
-                let $button = $('#' + this.id + ' .modal-footer button[data-name="' + o.name + '"]');
+                const $button = $('#' + this.id + ' .modal-footer button[data-name="' + o.name + '"]');
 
                 $button.on('click', e => o.onClick(this, e));
             }
@@ -378,7 +378,7 @@ class Dialog {
 
         this.dropdownItemList.forEach(o => {
             if (typeof o.onClick === 'function') {
-                let $button = $('#' + this.id + ' .modal-footer a[data-name="' + o.name + '"]');
+                const $button = $('#' + this.id + ' .modal-footer a[data-name="' + o.name + '"]');
 
                 $button.on('click', e => o.onClick(this, e));
             }
@@ -394,7 +394,7 @@ class Dialog {
             return null;
         }
 
-        let $header = $('<header />')
+        const $header = $('<header />')
             .addClass('modal-header')
             .addClass(this.options.fixedHeaderHeight ? 'fixed-height' : '')
             .append(
@@ -450,26 +450,26 @@ class Dialog {
             return null;
         }
 
-        let $footer = $('<footer>').addClass('modal-footer');
+        const $footer = $('<footer>').addClass('modal-footer');
 
-        let $main = $('<div>')
+        const $main = $('<div>')
             .addClass('btn-group')
             .addClass('main-btn-group');
 
-        let $additional = $('<div>')
+        const $additional = $('<div>')
             .addClass('btn-group')
             .addClass('additional-btn-group');
 
         this.buttonList.forEach(/** module:ui.Dialog~Button */o => {
-            let style = o.style || 'default';
+            const style = o.style || 'default';
 
-            let $button =
+            const $button =
                 $('<button>')
                     .attr('type', 'button')
                     .attr('data-name', o.name)
                     .addClass('btn')
                     .addClass('btn-' + style)
-                    .addClass(o.className || 'btn-xs-wide')
+                    .addClass(o.className || 'btn-xs-wide');
 
             if (o.disabled) {
                 $button.attr('disabled', 'disabled');
@@ -501,9 +501,9 @@ class Dialog {
             $main.append($button);
         });
 
-        let allDdItemsHidden = this.dropdownItemList.filter(o => !o.hidden).length === 0;
+        const allDdItemsHidden = this.dropdownItemList.filter(o => !o.hidden).length === 0;
 
-        let $dropdown = $('<div>')
+        const $dropdown = $('<div>')
             .addClass('btn-group')
             .addClass(allDdItemsHidden ? 'hidden' : '')
             .append(
@@ -517,12 +517,12 @@ class Dialog {
                     )
             );
 
-        let $ul = $('<ul>').addClass('dropdown-menu pull-right');
+        const $ul = $('<ul>').addClass('dropdown-menu pull-right');
 
         $dropdown.append($ul);
 
         this.dropdownItemList.forEach(/** module:ui.Dialog~Button */o => {
-            let $a = $('<a>')
+            const $a = $('<a>')
                 .attr('role', 'button')
                 .attr('tabindex', '0')
                 .attr('data-name', o.name);
@@ -539,9 +539,9 @@ class Dialog {
                 $a.html(o.html);
             }
 
-            let $li = $('<li>')
+            const $li = $('<li>')
                 .addClass(o.hidden ? ' hidden' : '')
-                .append($a)
+                .append($a);
 
             $ul.append($li);
         });
@@ -571,7 +571,7 @@ class Dialog {
 
         this.$el.find('.modal-content').removeClass('hidden');
 
-        let $modalBackdrop = $('.modal-backdrop');
+        const $modalBackdrop = $('.modal-backdrop');
 
         $modalBackdrop.each((i, el) => {
             if (i < $modalBackdrop.length - 1) {
@@ -579,7 +579,7 @@ class Dialog {
             }
         });
 
-        let $modalContainer = $('.modal-container');
+        const $modalContainer = $('.modal-container');
 
         $modalContainer.each((i, el) => {
             if (i < $modalContainer.length - 1) {
@@ -634,12 +634,12 @@ class Dialog {
      * Hide with a backdrop.
      */
     hideWithBackdrop() {
-        let $modalBackdrop = $('.modal-backdrop');
+        const $modalBackdrop = $('.modal-backdrop');
 
         $modalBackdrop.last().addClass('hidden');
         $($modalBackdrop.get($modalBackdrop.length - 2)).removeClass('hidden');
 
-        let $modalContainer = $('.modal-container');
+        const $modalContainer = $('.modal-container');
 
         $($modalContainer.get($modalContainer.length - 2)).removeClass('overlaid');
 
@@ -658,11 +658,11 @@ class Dialog {
      * @private
      */
     _close() {
-        let $modalBackdrop = $('.modal-backdrop');
+        const $modalBackdrop = $('.modal-backdrop');
 
         $modalBackdrop.last().removeClass('hidden');
 
-        let $modalContainer = $('.modal-container');
+        const $modalContainer = $('.modal-container');
 
         $($modalContainer.get($modalContainer.length - 2)).removeClass('overlaid');
     }
@@ -674,7 +674,7 @@ class Dialog {
      */
     _findClosestFocusableElement(element) {
         // noinspection JSUnresolvedReference
-        let isVisible = !!(
+        const isVisible = !!(
             element.offsetWidth ||
             element.offsetHeight ||
             element.getClientRects().length
@@ -687,11 +687,10 @@ class Dialog {
             return element;
         }
 
-        let $element = $(element);
+        const $element = $(element);
 
         if ($element.closest('.dropdown-menu').length) {
-            let $button = $element.closest('.btn-group').find(`[data-toggle="dropdown"]`);
-
+            const $button = $element.closest('.btn-group').find(`[data-toggle="dropdown"]`);
 
             if ($button.length) {
                 // noinspection JSUnresolvedReference
@@ -714,7 +713,7 @@ class Dialog {
 
             if (this.activeElement) {
                 setTimeout(() => {
-                    let element = this._findClosestFocusableElement(this.activeElement);
+                    const element = this._findClosestFocusableElement(this.activeElement);
 
                     if (element) {
                         // noinspection JSUnresolvedReference
@@ -778,9 +777,9 @@ Espo.Ui = {
     confirm: function (message, o, callback, context) {
         o = o || {};
 
-        let confirmText = o.confirmText;
-        let cancelText = o.cancelText;
-        let confirmStyle = o.confirmStyle || 'danger';
+        const confirmText = o.confirmText;
+        const cancelText = o.cancelText;
+        const confirmStyle = o.confirmStyle || 'danger';
         let backdrop = o.backdrop;
 
         if (typeof backdrop === 'undefined') {
@@ -789,7 +788,7 @@ Espo.Ui = {
 
         let isResolved = false;
 
-        let processCancel = () => {
+        const processCancel = () => {
             if (!o.cancelCallback) {
                 return;
             }
@@ -808,7 +807,7 @@ Espo.Ui = {
         }
 
         return new Promise(resolve => {
-            let dialog = new Dialog({
+            const dialog = new Dialog({
                 backdrop: backdrop,
                 header: null,
                 className: 'dialog-confirm',
@@ -886,6 +885,7 @@ Espo.Ui = {
      * @property {'manual'|'click'|'hover'|'focus'} [trigger='manual'] A trigger type.
      * @property {boolean} [noToggleInit=false] Skip init toggle on click.
      * @property {boolean} [preventDestroyOnRender=false] Don't destroy on re-render.
+     * @property {boolean} [noHideOnOutsideClick=false] Don't hide on clicking outside.
      * @property {function(): void} [onShow] On-show callback.
      * @property {function(): void} [onHide] On-hide callback.
      */
@@ -896,18 +896,18 @@ Espo.Ui = {
      * @param {Element|JQuery} element An element.
      * @param {Espo.Ui~PopoverOptions} o Options.
      * @param {module:view} [view] A view.
+     * @return {{hide: function(), destroy: function(), show: function(), detach: function()}}
      */
     popover: function (element, o, view) {
-        let $el = $(element);
-
-        let $body = $('body')
-        let content = o.content || Handlebars.Utils.escapeExpression(o.text || '');
+        const $el = $(element);
+        const $body = $('body');
+        const content = o.content || Handlebars.Utils.escapeExpression(o.text || '');
         let isShown = false;
 
         let container = o.container;
 
         if (!container) {
-            let $modalBody = $el.closest('.modal-body');
+            const $modalBody = $el.closest('.modal-body');
 
             container = $modalBody.length ? $modalBody : 'body';
         }
@@ -929,25 +929,27 @@ Espo.Ui = {
                     return;
                 }
 
-                $body.off('click.popover-' + view.cid);
-
-                $body.on('click.popover-' + view.cid, e => {
-                    if ($(e.target).closest('.popover-content').get(0)) {
-                        return;
-                    }
-
-                    if ($.contains($el.get(0), e.target)) {
-                        return;
-                    }
-
-                    if ($el.get(0) === e.target) {
-                        return;
-                    }
-
+                if (view && !o.noHideOnOutsideClick) {
                     $body.off('click.popover-' + view.cid);
-                    // noinspection JSUnresolvedReference
-                    $el.popover('hide');
-                });
+
+                    $body.on('click.popover-' + view.cid, e => {
+                        if ($(e.target).closest('.popover-content').get(0)) {
+                            return;
+                        }
+
+                        if ($.contains($el.get(0), e.target)) {
+                            return;
+                        }
+
+                        if ($el.get(0) === e.target) {
+                            return;
+                        }
+
+                        $body.off('click.popover-' + view.cid);
+                        // noinspection JSUnresolvedReference
+                        $el.popover('hide');
+                    });
+                }
 
                 if (o.onShow) {
                     o.onShow();
@@ -968,26 +970,46 @@ Espo.Ui = {
             });
         }
 
-        if (view) {
-            let hide = () => {
-                if (!isShown) {
-                    return;
-                }
+        let isDetached = false;
 
-                // noinspection JSUnresolvedReference
-                $el.popover('hide');
-            };
-
-            let destroy = () => {
-                // noinspection JSUnresolvedReference
-                $el.popover('destroy');
+        const detach = () => {
+            if (view) {
                 $body.off('click.popover-' + view.cid);
 
                 view.off('remove', destroy);
                 view.off('render', destroy);
                 view.off('render', hide);
-            };
+            }
 
+            isDetached = true;
+        };
+
+        const destroy = () => {
+            if (isDetached) {
+                return;
+            }
+
+            // noinspection JSUnresolvedReference
+            $el.popover('destroy');
+
+            detach();
+        };
+
+        const hide = () => {
+            if (!isShown) {
+                return;
+            }
+
+            // noinspection JSUnresolvedReference
+            $el.popover('hide');
+        };
+
+        const show = () => {
+            // noinspection JSUnresolvedReference
+            $el.popover('show');
+        };
+
+        if (view) {
             view.once('remove', destroy);
 
             if (!o.preventDestroyOnRender) {
@@ -998,6 +1020,13 @@ Espo.Ui = {
                 view.on('render', hide);
             }
         }
+
+        return {
+            hide: () => hide(),
+            destroy: () => destroy(),
+            show: () => show(),
+            detach: () => detach(),
+        };
     },
 
     /**
@@ -1011,7 +1040,7 @@ Espo.Ui = {
     /**
      * Show a notify-message.
      *
-     * @param {string|false} message A message. False removes an already displayed message.
+     * @param {string|false} [message=false] A message. False removes an already displayed message.
      * @param {'warning'|'danger'|'success'|'info'} [type='warning'] A type.
      * @param {number} [timeout] Microseconds. If empty, then won't be hidden.
      *   Should be hidden manually or by displaying another message.
@@ -1037,13 +1066,13 @@ Espo.Ui = {
             setTimeout(() => notifySuppressed = false, timeout)
         }
 
-        let parsedMessage = message.indexOf('\n') !== -1 ?
+        const parsedMessage = message.indexOf('\n') !== -1 ?
             marked.parse(message) :
             marked.parseInline(message);
 
         let sanitizedMessage = DOMPurify.sanitize(parsedMessage, {}).toString();
 
-        let closeButton = options.closeButton || false;
+        const closeButton = options.closeButton || false;
 
         if (type === 'error') {
             // For bc.
@@ -1054,9 +1083,9 @@ Espo.Ui = {
             sanitizedMessage = ' <span class="fas fa-spinner fa-spin"> ';
         }
 
-        let additionalClassName = closeButton ? ' alert-closable' : '';
+        const additionalClassName = closeButton ? ' alert-closable' : '';
 
-        let $el = $('<div>')
+        const $el = $('<div>')
             .addClass('alert alert-' + type + additionalClassName + ' fade in')
             .attr('id', 'notification')
             .css({
@@ -1073,7 +1102,7 @@ Espo.Ui = {
             );
 
         if (closeButton) {
-            let $close = $('<button>')
+            const $close = $('<button>')
                 .attr('type', 'button')
                 .attr('data-dismiss', 'modal')
                 .attr('aria-hidden', 'true')
@@ -1127,7 +1156,7 @@ Espo.Ui = {
             {closeButton: options} :
             {...options};
 
-        let timeout = options.closeButton ? 0 : 4000;
+        const timeout = options.closeButton ? 0 : 4000;
 
         Espo.Ui.notify(message, 'danger', timeout, options);
     },

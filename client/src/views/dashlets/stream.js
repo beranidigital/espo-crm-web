@@ -1,61 +1,60 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-define('views/dashlets/stream', ['views/dashlets/abstract/base'], function (Dep) {
+import BaseDashletView from 'views/dashlets/abstract/base';
 
-    return Dep.extend({
+class StreamDashletView extends BaseDashletView {
 
-        name: 'Stream',
+    name = 'Stream'
 
-        templateContent: '<div class="list-container">{{{list}}}</div>',
+    templateContent = '<div class="list-container">{{{list}}}</div>'
 
-        actionRefresh: function () {
-            let listView = this.getView('list');
+    actionRefresh() {
+        if (!this.getRecordView()) {
+            return;
+        }
 
-            if (!listView) {
-                return;
+        this.getRecordView().showNewRecords();
+    }
+
+    afterRender() {
+        this.getCollectionFactory().create('Note', collection => {
+            this.collection = collection;
+
+            collection.url = 'Stream';
+            collection.maxSize = this.getOption('displayRecords');
+
+            if (this.getOption('skipOwn')) {
+                collection.data.skipOwn = true;
             }
 
-            listView.showNewRecords();
-        },
-
-        afterRender: function () {
-            this.getCollectionFactory().create('Note', (collection) => {
-                this.collection = collection;
-
-                collection.url = 'Stream';
-                collection.maxSize = this.getOption('displayRecords');
-
-                if (this.getOption('skipOwn')) {
-                    collection.data.skipOwn = true;
-                }
-
-                this.listenToOnce(collection, 'sync', () => {
+            collection.fetch()
+                .then(() => {
                     this.createView('list', 'views/stream/record/list', {
                         selector: '> .list-container',
                         collection: collection,
@@ -64,43 +63,51 @@ define('views/dashlets/stream', ['views/dashlets/abstract/base'], function (Dep)
                     }, view => {
                         view.render();
                     });
-                });
+                })
+        });
+    }
 
-                collection.fetch();
-            });
-        },
+    /**
+     * @return {module:views/stream/record/list}
+     */
+    getRecordView() {
+        return this.getView('list');
+    }
 
-        setupActionList: function () {
+    setupActionList() {
+        this.actionList.unshift({
+            name: 'viewList',
+            text: this.translate('View'),
+            iconHtml: '<span class="fas fa-align-justify"></span>',
+            url: '#Stream',
+        });
+
+        if (!this.getUser().isPortal()) {
             this.actionList.unshift({
-                name: 'viewList',
-                text: this.translate('View'),
-                iconHtml: '<span class="fas fa-align-justify"></span>',
-                url: '#Stream',
+                name: 'create',
+                text: this.translate('Create Post', 'labels'),
+                iconHtml: '<span class="fas fa-plus"></span>',
             });
+        }
+    }
 
-            if (!this.getUser().isPortal()) {
-                this.actionList.unshift({
-                    name: 'create',
-                    text: this.translate('Create Post', 'labels'),
-                    iconHtml: '<span class="fas fa-plus"></span>',
-                });
-            }
-        },
+    // noinspection JSUnusedGlobalSymbols
+    actionCreate() {
+        this.createView('dialog', 'views/stream/modals/create-post', {}, view => {
+            view.render();
 
-        actionCreate: function () {
-            this.createView('dialog', 'views/stream/modals/create-post', {}, (view) => {
-                view.render();
+            this.listenToOnce(view, 'after:save', () => {
+                view.close();
 
-                this.listenToOnce(view, 'after:save', () => {
-                    view.close();
-
-                    this.actionRefresh();
-                });
+                this.actionRefresh();
             });
-        },
+        });
+    }
 
-        actionViewList: function () {
-            this.getRouter().navigate('#Stream', {trigger: true});
-        },
-    });
-});
+    // noinspection JSUnusedGlobalSymbols
+    actionViewList() {
+        this.getRouter().navigate('#Stream', {trigger: true});
+    }
+}
+
+export default StreamDashletView;

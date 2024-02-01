@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -53,6 +53,8 @@ use Espo\Tools\Stream\Jobs\ControlFollowers as ControlFollowersJob;
  */
 class HookProcessor
 {
+    private const OPTION_NO_STREAM = 'noStream';
+
     /** @var array<string, bool> */
     private $hasStreamCache = [];
     /** @var array<string, bool> */
@@ -80,7 +82,7 @@ class HookProcessor
 
         if (
             $entity->isNew() &&
-            empty($options['noStream']) &&
+            empty($options[self::OPTION_NO_STREAM]) &&
             empty($options[SaveOption::SILENT]) &&
             $this->metadata->get(['scopes', $entity->getEntityType(), 'object'])
         ) {
@@ -88,6 +90,7 @@ class HookProcessor
         }
     }
 
+    /** @noinspection PhpUnusedParameterInspection */
     public function afterRemove(Entity $entity, RemoveOptions $options): void
     {
         if ($this->checkHasStream($entity->getEntityType())) {
@@ -110,8 +113,8 @@ class HookProcessor
 
         if (!array_key_exists($key, $this->isLinkObservableInStreamCache)) {
             $this->isLinkObservableInStreamCache[$key] =
-                (bool) $this->metadata->get(['scopes', $entityType, 'stream']) &&
-                (bool) $this->metadata->get(['entityDefs', $entityType, 'links', $link, 'audited']);
+                $this->metadata->get(['scopes', $entityType, 'stream']) &&
+                $this->metadata->get(['entityDefs', $entityType, 'links', $link, 'audited']);
         }
 
         return $this->isLinkObservableInStreamCache[$key];
@@ -147,6 +150,7 @@ class HookProcessor
             if ($type === Entity::HAS_MANY) {
                 $this->handleCreateRelatedHasMany($entity, $relation, $notifiedEntityTypeList, $options);
 
+                /** @noinspection PhpUnnecessaryStopStatementInspection */
                 continue;
             }
         }
@@ -371,7 +375,7 @@ class HookProcessor
             $this->service->followEntityMass($entity, $userIdList);
         }
 
-        if (empty($options['noStream']) && empty($options[SaveOption::SILENT])) {
+        if (empty($options[self::OPTION_NO_STREAM]) && empty($options[SaveOption::SILENT])) {
             $this->service->noteCreate($entity, $options);
         }
 
@@ -409,7 +413,7 @@ class HookProcessor
      */
     private function afterSaveStreamNotNew1(CoreEntity $entity, array $options): void
     {
-        if (!empty($options['noStream']) || !empty($options[SaveOption::SILENT])) {
+        if (!empty($options[self::OPTION_NO_STREAM]) || !empty($options[SaveOption::SILENT])) {
             return;
         }
 
@@ -436,7 +440,6 @@ class HookProcessor
             return;
         }
 
-        /** @var string[] $assignedUserIdList */
         $assignedUserIdList = $entity->getLinkMultipleIdList($multipleField);
         $fetchedAssignedUserIdList = $entity->getFetched($multipleField . 'Ids') ?? [];
 
@@ -548,7 +551,7 @@ class HookProcessor
         $foreignLink = $entity->getRelationParam($link, 'foreign');
 
         if (
-            !empty($options['noStream']) ||
+            !empty($options[self::OPTION_NO_STREAM]) ||
             !empty($options[SaveOption::SILENT]) ||
             !$this->metadata->get(['scopes', $entityType, 'object'])
         ) {
@@ -581,7 +584,7 @@ class HookProcessor
         $foreignLink = $entity->getRelationParam($link, 'foreign');
 
         if (
-            !empty($options['noStream']) ||
+            !empty($options[self::OPTION_NO_STREAM]) ||
             !empty($options[SaveOption::SILENT]) ||
             !$this->metadata->get(['scopes', $entityType, 'object'])
         ) {

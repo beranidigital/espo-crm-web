@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -56,7 +56,7 @@ class EmailListRecordView extends ListRecordView {
         }
 
         this.listenTo(this.collection, 'moving-to-trash', (id) => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('inTrash', true);
@@ -68,7 +68,7 @@ class EmailListRecordView extends ListRecordView {
         });
 
         this.listenTo(this.collection, 'retrieving-from-trash', (id) => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('inTrash', false);
@@ -82,16 +82,16 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     massActionMarkAsRead() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
         Espo.Ajax.postRequest('Email/inbox/read', {ids: ids});
 
         ids.forEach(id => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('isRead', true);
@@ -101,16 +101,16 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     massActionMarkAsNotRead() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
         Espo.Ajax.deleteRequest('Email/inbox/read', {ids: ids});
 
         ids.forEach(id => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('isRead', false);
@@ -119,16 +119,16 @@ class EmailListRecordView extends ListRecordView {
     }
 
     massActionMarkAsImportant() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
         Espo.Ajax.postRequest('Email/inbox/important', {ids: ids});
 
         ids.forEach(id => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('isImportant', true);
@@ -137,16 +137,16 @@ class EmailListRecordView extends ListRecordView {
     }
 
     massActionMarkAsNotImportant() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
         Espo.Ajax.deleteRequest('Email/inbox/important', {ids: ids});
 
         ids.forEach(id => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (model) {
                 model.set('isImportant', false);
@@ -156,9 +156,9 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     massActionMoveToTrash() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
@@ -181,9 +181,9 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     massActionRetrieveFromTrash() {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
@@ -205,9 +205,9 @@ class EmailListRecordView extends ListRecordView {
     }
 
     massMoveToFolder(folderId) {
-        let params = this.getMassActionSelectionPostData();
-        let helper = new MassActionHelper(this);
-        let idle = !!params.searchParams && helper.checkIsIdle();
+        const params = this.getMassActionSelectionPostData();
+        const helper = new MassActionHelper(this);
+        const idle = !!params.searchParams && helper.checkIsIdle();
 
         Espo.Ui.notify(this.translate('pleaseWait', 'messages'));
 
@@ -262,11 +262,11 @@ class EmailListRecordView extends ListRecordView {
     actionMarkAsImportant(data) {
         data = data || {};
 
-        let id = data.id;
+        const id = data.id;
 
         Espo.Ajax.postRequest('Email/inbox/important', {id: id});
 
-        let model = this.collection.get(id);
+        const model = this.collection.get(id);
 
         if (model) {
             model.set('isImportant', true);
@@ -276,11 +276,11 @@ class EmailListRecordView extends ListRecordView {
     actionMarkAsNotImportant(data) {
         data = data || {};
 
-        let id = data.id;
+        const id = data.id;
 
         Espo.Ajax.deleteRequest('Email/inbox/important', {id: id});
 
-        let model = this.collection.get(id);
+        const model = this.collection.get(id);
 
         if (model) {
             model.set('isImportant', false);
@@ -299,7 +299,7 @@ class EmailListRecordView extends ListRecordView {
     }
 
     actionMoveToTrash(data) {
-        let id = data.id;
+        const id = data.id;
 
         Espo.Ui.notify(' ... ');
 
@@ -314,7 +314,7 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     actionRetrieveFromTrash(data) {
-        let id = data.id;
+        const id = data.id;
 
         Espo.Ui.notify(' ... ');
 
@@ -335,9 +335,9 @@ class EmailListRecordView extends ListRecordView {
     }
 
     massRetrieveFromTrashMoveToFolder(folderId) {
-        let ids = [];
+        const ids = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             ids.push(this.checkedList[i]);
         }
 
@@ -361,8 +361,8 @@ class EmailListRecordView extends ListRecordView {
      * @todo Use one API request.
      */
     actionRetrieveFromTrashMoveToFolder(data) {
-        let id = data.id;
-        let folderId = data.folderId;
+        const id = data.id;
+        const folderId = data.folderId;
 
         Espo.Ui.notify(' ... ');
 
@@ -387,8 +387,8 @@ class EmailListRecordView extends ListRecordView {
     }
 
     actionMoveToFolder(data) {
-        let id = data.id;
-        let folderId = data.folderId;
+        const id = data.id;
+        const folderId = data.folderId;
 
         if (folderId) {
             Espo.Ui.notify(' ... ');
@@ -425,13 +425,13 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     actionSend(data) {
-        let id = data.id;
+        const id = data.id;
 
         this.confirm({
             message: this.translate('sendConfirm', 'messages', 'Email'),
             confirmText: this.translate('Send', 'labels', 'Email'),
         }).then(() => {
-            let model = this.collection.get(id);
+            const model = this.collection.get(id);
 
             if (!model) {
                 return;
@@ -458,7 +458,7 @@ class EmailListRecordView extends ListRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     toggleMassMarkAsImportant() {
-        let allImportant = !this.checkedList
+        const allImportant = !this.checkedList
             .map(id => this.collection.get(id))
             .find(m => !m.get('isImportant'));
 

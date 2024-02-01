@@ -2,47 +2,44 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\unit\Espo\Core\Select\Applier\Appliers;
 
-use Espo\Core\{
-    Exceptions\Error,
-    Select\Primary\Applier as PrimaryFilterApplier,
-    Select\Primary\FilterFactory as PrimaryFilterFactory,
-    Select\Primary\Filter as PrimaryFilter,
-    Select\SelectManager,
-};
+use Espo\Core\Exceptions\BadRequest;
+use Espo\Core\Select\Primary\Applier as PrimaryFilterApplier;
+use Espo\Core\Select\Primary\Filter as PrimaryFilter;
+use Espo\Core\Select\Primary\FilterFactory as PrimaryFilterFactory;
+use Espo\Core\Select\SelectManager;
 
-use Espo\{
-    ORM\Query\SelectBuilder as QueryBuilder,
-    Entities\User,
-};
+use Espo\Entities\User;
+use Espo\ORM\Query\SelectBuilder as QueryBuilder;
+use PHPUnit\Framework\TestCase;
 
-class PrimaryFilterApplierTest extends \PHPUnit\Framework\TestCase
+class PrimaryFilterApplierTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -109,7 +106,7 @@ class PrimaryFilterApplierTest extends \PHPUnit\Framework\TestCase
             ->with($filterName)
             ->willReturn(false);
 
-        $this->expectException(Error::class);
+        $this->expectException(BadRequest::class);
 
         $this->applier->apply($this->queryBuilder, $filterName);
     }

@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -44,12 +44,35 @@ class DateFieldView extends BaseFieldView {
     editTemplate = 'fields/date/edit'
     searchTemplate = 'fields/date/search'
 
-    validations = ['required', 'date', 'after', 'before']
+    validations = [
+        'required',
+        'date',
+        'after',
+        'before',
+    ]
 
     searchTypeList = [
-        'lastSevenDays', 'ever', 'isEmpty', 'currentMonth', 'lastMonth', 'nextMonth', 'currentQuarter',
-        'lastQuarter', 'currentYear', 'lastYear', 'today', 'past', 'future', 'lastXDays', 'nextXDays',
-        'olderThanXDays', 'afterXDays', 'on', 'after', 'before', 'between',
+        'lastSevenDays',
+        'ever',
+        'isEmpty',
+        'currentMonth',
+        'lastMonth',
+        'nextMonth',
+        'currentQuarter',
+        'lastQuarter',
+        'currentYear',
+        'lastYear',
+        'today',
+        'past',
+        'future',
+        'lastXDays',
+        'nextXDays',
+        'olderThanXDays',
+        'afterXDays',
+        'on',
+        'after',
+        'before',
+        'between',
     ]
 
     initialSearchIsNotIdle = true
@@ -70,8 +93,9 @@ class DateFieldView extends BaseFieldView {
         }
     }
 
+    // noinspection JSCheckFunctionSignatures
     data() {
-        let data = super.data();
+        const data = super.data();
 
         data.dateValue = this.getDateStringValue();
 
@@ -83,30 +107,25 @@ class DateFieldView extends BaseFieldView {
         }
 
         if (this.isSearchMode()) {
-            let value = this.getSearchParamsData().value || this.searchParams.dateValue;
-            let valueTo = this.getSearchParamsData().valueTo || this.searchParams.dateValueTo;
+            const value = this.getSearchParamsData().value || this.searchParams.dateValue;
+            const valueTo = this.getSearchParamsData().valueTo || this.searchParams.dateValueTo;
 
             data.dateValue = this.getDateTime().toDisplayDate(value);
             data.dateValueTo = this.getDateTime().toDisplayDate(valueTo);
 
-            if (~['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays']
-                    .indexOf(this.getSearchType())
-            ) {
+            if (['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays'].includes(this.getSearchType())) {
                 data.number = this.searchParams.value;
             }
         }
 
+        // noinspection JSValidateTypes
         return data;
     }
 
     setupSearch() {
-        this.events = _.extend({
-            'change select.search-type': (e) => {
-                let type = $(e.currentTarget).val();
-
-                this.handleSearchType(type);
-            },
-        }, this.events || {});
+        this.addHandler('change', 'select.search-type', (e, /** HTMLSelectElement */target) => {
+            this.handleSearchType(target.value);
+        });
     }
 
     stringifyDateValue(value) {
@@ -139,17 +158,17 @@ class DateFieldView extends BaseFieldView {
             return this.getDateTime().toDisplayDate(value);
         }
 
-        let timezone = this.getDateTime().getTimeZone();
-        let internalDateTimeFormat = this.getDateTime().internalDateTimeFormat;
-        let readableFormat = this.getDateTime().getReadableDateFormat();
-        let valueWithTime = value + ' 00:00:00';
+        const timezone = this.getDateTime().getTimeZone();
+        const internalDateTimeFormat = this.getDateTime().internalDateTimeFormat;
+        const readableFormat = this.getDateTime().getReadableDateFormat();
+        const valueWithTime = value + ' 00:00:00';
 
-        let today = moment().tz(timezone).startOf('day');
+        const today = moment().tz(timezone).startOf('day');
         let dateTime = moment.tz(valueWithTime, internalDateTimeFormat, timezone);
 
-        var temp = today.clone();
+        const temp = today.clone();
 
-        var ranges = {
+        const ranges = {
             'today': [temp.unix(), temp.add(1, 'days').unix()],
             'tomorrow': [temp.unix(), temp.add(1, 'days').unix()],
             'yesterday': [temp.add(-3, 'days').unix(), temp.add(1, 'days').unix()],
@@ -182,7 +201,7 @@ class DateFieldView extends BaseFieldView {
             return -1;
         }
 
-        var value = this.model.get(this.name);
+        const value = this.model.get(this.name);
 
         return this.stringifyDateValue(value);
     }
@@ -195,7 +214,7 @@ class DateFieldView extends BaseFieldView {
 
             // @todo Introduce ui/date-picker.
 
-            this.$element.on('change', (e) => {
+            this.$element.on('change', /** Record */e => {
                 if (!wait) {
                     this.trigger('change');
                     wait = true;
@@ -210,10 +229,11 @@ class DateFieldView extends BaseFieldView {
             });
 
             this.$element.on('click', () => {
+                // noinspection JSUnresolvedReference
                 this.$element.datepicker('show');
             });
 
-            let options = {
+            const options = {
                 format: this.getDateTime().dateFormat.toLowerCase(),
                 weekStart: this.getDateTime().weekStart,
                 autoclose: true,
@@ -230,9 +250,11 @@ class DateFieldView extends BaseFieldView {
                     'body',
             };
 
-            let language = this.getConfig().get('language');
+            const language = this.getConfig().get('language');
 
+            // noinspection JSUnresolvedReference
             if (!(language in $.fn.datepicker.dates)) {
+                // noinspection JSUnresolvedReference
                 $.fn.datepicker.dates[language] = {
                     days: this.translate('dayNames', 'lists'),
                     daysShort: this.translate('dayNamesShort', 'lists'),
@@ -246,46 +268,63 @@ class DateFieldView extends BaseFieldView {
 
             options.language = language;
 
+            // noinspection JSUnresolvedReference
             this.$element.datepicker(options);
 
             if (this.mode === this.MODE_SEARCH) {
-                let $elAdd = this.$el.find('input.additional');
+                this.$el.find('select.search-type').on('change', () => this.trigger('change'));
+                this.$el.find('input.number').on('change', () => this.trigger('change'));
 
-                $elAdd.datepicker(options);
+                // noinspection JSUnresolvedReference
+                this.$el.find('.input-group.additional').datepicker(options);
 
-                $elAdd.parent().find('button.date-picker-btn').on('click', () => {
-                    $elAdd.datepicker('show');
-                });
-
-                this.$el.find('select.search-type').on('change', () => {
-                    this.trigger('change');
-                });
-
-                $elAdd.on('change', e => {
-                    this.trigger('change');
-
-                    if (e.isTrigger) {
-                        if (document.activeElement !== $elAdd.get(0)) {
-                            $elAdd.focus();
-                        }
-                    }
-                });
-
-                $elAdd.on('click', () => {
-                    $elAdd.datepicker('show');
-                });
+                this.initDatePickerEventHandlers('input.filter-from', options);
+                this.initDatePickerEventHandlers('input.filter-to', options);
             }
 
             this.$element.parent().find('button.date-picker-btn').on('click', () => {
+                // noinspection JSUnresolvedReference
                 this.$element.datepicker('show');
             });
 
             if (this.mode === this.MODE_SEARCH) {
-                let $searchType = this.$el.find('select.search-type');
+                const $searchType = this.$el.find('select.search-type');
 
                 this.handleSearchType($searchType.val());
             }
         }
+    }
+
+    /**
+     * @private
+     * @param {string} selector
+     * @param {Record} options
+     */
+    initDatePickerEventHandlers(selector, options) {
+        const $input = this.$el.find(selector);
+
+        // noinspection JSUnresolvedReference
+        //$input.datepicker(options);
+
+        //$input.parent().find('button.date-picker-btn').on('click', () => {
+            // noinspection JSUnresolvedReference
+        //    $input.datepicker('show');
+        //});
+
+        $input.on('change', /** Record */e => {
+            this.trigger('change');
+
+            if (e.isTrigger) {
+                if (document.activeElement !== $input.get(0)) {
+                    $input.focus();
+                }
+            }
+        });
+
+        $input.on('click', () => {
+            // noinspection JSUnresolvedReference
+            $input.datepicker('show');
+        });
     }
 
     handleSearchType(type) {
@@ -293,14 +332,14 @@ class DateFieldView extends BaseFieldView {
         this.$el.find('div.additional').addClass('hidden');
         this.$el.find('div.additional-number').addClass('hidden');
 
-        if (~['on', 'notOn', 'after', 'before'].indexOf(type)) {
+        if (['on', 'notOn', 'after', 'before'].includes(type)) {
             this.$el.find('div.primary').removeClass('hidden');
         }
-        else if (~['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays'].indexOf(type)) {
+        else if (['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays'].includes(type)) {
             this.$el.find('div.additional-number').removeClass('hidden');
         }
         else if (type === 'between') {
-            this.$el.find('div.primary').removeClass('hidden');
+            this.$el.find('div.primary').addClass('hidden');
             this.$el.find('div.additional').removeClass('hidden');
         }
     }
@@ -323,7 +362,7 @@ class DateFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetch() {
-        let data = {};
+        const data = {};
 
         data[this.name] = this.parse(this.$element.val());
 
@@ -332,39 +371,39 @@ class DateFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetchSearch() {
-        let value = this.parseDate(this.$element.val());
-
-        let type = this.fetchSearchType();
-        let data;
+        const type = this.fetchSearchType();
 
         if (type === 'between') {
-            if (!value) {
+            const valueFrom = this.parseDate(this.$el.find('input.filter-from').val());
+            const valueTo = this.parseDate(this.$el.find('input.filter-to').val());
+
+            if (!valueFrom || !valueTo) {
                 return null;
             }
 
-            let valueTo = this.parseDate(this.$el.find('input.additional').val());
-
-            if (!valueTo) {
-                return null;
-            }
-
-            data = {
+            return {
                 type: type,
-                value: [value, valueTo],
+                value: [valueFrom, valueTo],
                 data: {
-                    value: value,
-                    valueTo: valueTo
+                    value: valueFrom,
+                    valueTo: valueTo,
                 },
             };
-        } else if (~['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays'].indexOf(type)) {
-            let number = this.$el.find('input.number').val();
+        }
+
+        let data;
+        const value = this.parseDate(this.$element.val());
+
+        if (['lastXDays', 'nextXDays', 'olderThanXDays', 'afterXDays'].includes(type)) {
+            const number = this.$el.find('input.number').val();
 
             data = {
                 type: type,
                 value: number,
+                date: true,
             };
         }
-        else if (~['on', 'notOn', 'after', 'before'].indexOf(type)) {
+        else if (['on', 'notOn', 'after', 'before'].includes(type)) {
             if (!value) {
                 return null;
             }
@@ -388,6 +427,7 @@ class DateFieldView extends BaseFieldView {
         else {
             data = {
                 type: type,
+                date: true,
             };
         }
 
@@ -404,7 +444,7 @@ class DateFieldView extends BaseFieldView {
         }
 
         if (this.model.get(this.name) === null) {
-            let msg = this.translate('fieldIsRequired', 'messages')
+            const msg = this.translate('fieldIsRequired', 'messages')
                 .replace('{field}', this.getLabelText());
 
             this.showValidationMessage(msg);
@@ -416,7 +456,7 @@ class DateFieldView extends BaseFieldView {
     // noinspection JSUnusedGlobalSymbols
     validateDate() {
         if (this.model.get(this.name) === -1) {
-            let msg = this.translate('fieldShouldBeDate', 'messages')
+            const msg = this.translate('fieldShouldBeDate', 'messages')
                 .replace('{field}', this.getLabelText());
 
             this.showValidationMessage(msg);
@@ -427,21 +467,21 @@ class DateFieldView extends BaseFieldView {
 
     // noinspection JSUnusedGlobalSymbols
     validateAfter() {
-        let field = this.model.getFieldParam(this.name, 'after');
+        const field = this.model.getFieldParam(this.name, 'after');
 
         if (!field) {
             return false;
         }
 
-        let value = this.model.get(this.name);
-        let otherValue = this.model.get(field);
+        const value = this.model.get(this.name);
+        const otherValue = this.model.get(field);
 
         if (!(value && otherValue)) {
             return;
         }
 
         if (moment(value).unix() <= moment(otherValue).unix()) {
-            let msg = this.translate('fieldShouldAfter', 'messages')
+            const msg = this.translate('fieldShouldAfter', 'messages')
                 .replace('{field}', this.getLabelText())
                 .replace('{otherField}', this.translate(field, 'fields', this.entityType));
 
@@ -453,21 +493,21 @@ class DateFieldView extends BaseFieldView {
 
     // noinspection JSUnusedGlobalSymbols
     validateBefore() {
-        let field = this.model.getFieldParam(this.name, 'before');
+        const field = this.model.getFieldParam(this.name, 'before');
 
         if (!field) {
             return false;
         }
 
-        let value = this.model.get(this.name);
-        let otherValue = this.model.get(field);
+        const value = this.model.get(this.name);
+        const otherValue = this.model.get(field);
 
         if (!(value && otherValue)) {
             return;
         }
 
         if (moment(value).unix() >= moment(otherValue).unix()) {
-            let msg = this.translate('fieldShouldBefore', 'messages')
+            const msg = this.translate('fieldShouldBefore', 'messages')
                 .replace('{field}', this.getLabelText())
                 .replace('{otherField}', this.translate(field, 'fields', this.entityType));
 

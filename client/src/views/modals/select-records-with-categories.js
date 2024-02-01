@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,9 +33,12 @@ class SelectRecordsWithCategoriesModalView extends SelectRecordsModal {
 
     template = 'modals/select-records-with-categories'
 
-    categoryScope = ''
+    // Used in applyCategoryToCollection.
+    // noinspection JSUnusedGlobalSymbols
     categoryField = 'category'
+    // noinspection JSUnusedGlobalSymbols
     categoryFilterType = 'inCategory'
+    categoryScope = ''
     isExpanded = true
 
     data() {
@@ -56,60 +59,60 @@ class SelectRecordsWithCategoriesModalView extends SelectRecordsModal {
         super.setup();
     }
 
-    loadList() {
+    setupList() {
         if (!this.categoriesDisabled) {
-            this.loadCategories();
+            this.setupCategories();
         }
 
-        super.loadList();
+        super.setupList();
     }
 
-    loadCategories() {
+    setupCategories() {
         this.getCollectionFactory().create(this.categoryScope, collection => {
+            this.treeCollection = collection;
+
             collection.url = collection.entityType + '/action/listTree';
             collection.data.onlyNotEmpty = true;
 
-            this.listenToOnce(collection, 'sync', () => {
-                this.createView('categories', 'views/record/list-tree', {
-                    collection: collection,
-                    selector: '.categories-container',
-                    selectable: true,
-                    readOnly: true,
-                    showRoot: true,
-                    rootName: this.translate(this.scope, 'scopeNamesPlural'),
-                    buttonsDisabled: true,
-                    checkboxes: false,
-                    isExpanded: this.isExpanded,
-                }, view => {
-                    if (this.isRendered()) {
-                        view.render();
-                    } else {
-                        this.listenToOnce(this, 'after:render', () => view.render());
-                    }
+            collection.fetch()
+                .then(() => this.createCategoriesView());
+        });
+    }
 
-                    this.listenTo(view, 'select', model => {
-                        this.currentCategoryId = null;
-                        this.currentCategoryName = '';
+    createCategoriesView() {
+        this.createView('categories', 'views/record/list-tree', {
+            collection: this.treeCollection,
+            selector: '.categories-container',
+            selectable: true,
+            readOnly: true,
+            showRoot: true,
+            rootName: this.translate(this.scope, 'scopeNamesPlural'),
+            buttonsDisabled: true,
+            checkboxes: false,
+            isExpanded: this.isExpanded,
+        }, view => {
+            if (this.isRendered()) {
+                view.render();
+            } else {
+                this.listenToOnce(this, 'after:render', () => view.render());
+            }
 
-                        if (model && model.id) {
-                            this.currentCategoryId = model.id;
-                            this.currentCategoryName = model.get('name');
-                        }
+            this.listenTo(view, 'select', model => {
+                this.currentCategoryId = null;
+                this.currentCategoryName = '';
 
-                        this.applyCategoryToCollection();
+                if (model && model.id) {
+                    this.currentCategoryId = model.id;
+                    this.currentCategoryName = model.get('name');
+                }
 
-                        Espo.Ui.notify(' ... ');
+                this.applyCategoryToCollection();
 
-                        this.listenToOnce(this.collection, 'sync', () => {
-                            Espo.Ui.notify(false);
-                        });
+                Espo.Ui.notify(' ... ');
 
-                        this.collection.fetch();
-                    });
-                });
+                this.collection.fetch()
+                    .then(() => Espo.Ui.notify(false));
             });
-
-            collection.fetch();
         });
     }
 

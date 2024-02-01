@@ -43,6 +43,10 @@
             "type": "bool"
         },
         {
+            "name": "readOnlyAfterCreate",
+            "type": "bool"
+        },
+        {
             "name": "noSpellCheck",
             "type": "bool",
             "default": false,
@@ -62,10 +66,14 @@
     "mandatoryValidationList": [
         "maxLength"
     ],
+    "sanitizerClassNameList": [
+        "Espo\\Classes\\FieldSanitizers\\StringTrim"
+    ],
     "filter": true,
     "personalData": true,
     "textFilter": true,
     "textFilterForeign": true,
     "dynamicLogicOptions": true,
-    "fullTextSearch": true
+    "fullTextSearch": true,
+    "default": null
 }

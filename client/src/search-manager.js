@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,9 +33,11 @@
  *
  * @typedef {Object} module:search-manager~data
  *
- * @property {string} primary A primary filter.
- * @property {Object.<string,boolean>} bool Bool filters.
- * @property {{string: module:search-manager~advancedFilter}} advanced Advanced filters (field filters).
+ * @property {string} [presetName] A preset.
+ * @property {string} [textFilter] A text filter.
+ * @property {string} [primary] A primary filter.
+ * @property {Object.<string, boolean>} [bool] Bool filters.
+ * @property {{string: module:search-manager~advancedFilter}} [advanced] Advanced filters (field filters).
  * Contains data needed for both the backend and frontend. Keys are field names.
  */
 
@@ -48,7 +50,7 @@
  * @property {string} [attribute] An attribute (field).
  * @property {module:search-manager~whereItem[]|string|number|boolean|null} [value] A value.
  * @property {boolean} [dateTime] Is a date-time item.
- * @property {string} [timeZone] A time-zone (for date-time items).
+ * @property {string} [timeZone] A time-zone.
  */
 
 /**
@@ -66,6 +68,12 @@
  * A search manager.
  */
 class SearchManager {
+
+    /**
+     * @type {string|null}
+     * @private
+     */
+    timeZone
 
     /**
      * @param {module:collection} collection A collection.
@@ -135,7 +143,7 @@ class SearchManager {
         if (defaultData) {
             this.defaultData = defaultData;
 
-            for (let p in this.emptyData) {
+            for (const p in this.emptyData) {
                 if (!(p in defaultData)) {
                     defaultData[p] = Espo.Utils.clone(this.emptyData[p]);
                 }
@@ -170,7 +178,7 @@ class SearchManager {
      * @returns {module:search-manager~whereItem[]}
      */
     getWhere() {
-        let where = [];
+        const where = [];
 
         if (this.data.textFilter && this.data.textFilter !== '') {
             where.push({
@@ -180,12 +188,12 @@ class SearchManager {
         }
 
         if (this.data.bool) {
-            let o = {
+            const o = {
                 type: 'bool',
                 value: [],
             };
 
-            for (let name in this.data.bool) {
+            for (const name in this.data.bool) {
                 if (this.data.bool[name]) {
                     o.value.push(name);
                 }
@@ -197,7 +205,7 @@ class SearchManager {
         }
 
         if (this.data.primary) {
-            let o = {
+            const o = {
                 type: 'primary',
                 value: this.data.primary,
             };
@@ -208,14 +216,14 @@ class SearchManager {
         }
 
         if (this.data.advanced) {
-            for (let name in this.data.advanced) {
-                let defs = this.data.advanced[name];
+            for (const name in this.data.advanced) {
+                const defs = this.data.advanced[name];
 
                 if (!defs) {
                     continue;
                 }
 
-                let part = this.getWherePart(name, defs);
+                const part = this.getWherePart(name, defs);
 
                 where.push(part);
             }
@@ -240,15 +248,15 @@ class SearchManager {
             return defs.where;
         }
 
-        let type = defs.type;
+        const type = defs.type;
         let value;
 
         if (type === 'or' || type === 'and') {
-            let a = [];
+            const a = [];
 
             value = defs.value || {};
 
-            for (let n in value) {
+            for (const n in value) {
                 a.push(this.getWherePart(n, value[n]));
             }
 
@@ -266,14 +274,30 @@ class SearchManager {
             attribute = defs.attribute;
         }
 
-        if (defs.dateTime) {
-            return {
+        if (defs.dateTime || defs.date) {
+            const timeZone = this.timeZone !== undefined ?
+                this.timeZone :
+                this.dateTime.getTimeZone();
+
+            const data = {
                 type: type,
                 attribute: attribute,
                 value: defs.value,
-                dateTime: true,
-                timeZone: this.dateTime.timeZone || 'UTC',
             };
+
+            if (defs.dateTime) {
+                data.dateTime = true;
+            }
+
+            if (defs.date) {
+                data.date = true;
+            }
+
+            if (timeZone) {
+                data.timeZone = timeZone;
+            }
+
+            return data;
         }
 
         value = defs.value;
@@ -386,6 +410,17 @@ class SearchManager {
         if (this.storage) {
             this.storage.clear(this.type + 'Search', this.scope);
         }
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Set a time zone. Null will not add a time zone.
+     *
+     * @type {string|null}
+     * @internal Is used. Do not remove.
+     */
+    setTimeZone(timeZone) {
+        this.timeZone = timeZone;
     }
 }
 

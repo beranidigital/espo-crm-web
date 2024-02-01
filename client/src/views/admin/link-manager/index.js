@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -40,26 +40,31 @@ class LinkManagerIndexView extends View {
         return {
             linkDataList: this.linkDataList,
             scope: this.scope,
+            isCreatable: this.isCustomizable,
         };
     }
 
     events = {
         /** @this LinkManagerIndexView */
         'click a[data-action="editLink"]': function (e) {
-            var link = $(e.currentTarget).data('link');
+            const link = $(e.currentTarget).data('link');
 
             this.editLink(link);
         },
         /** @this LinkManagerIndexView */
-        'click button[data-action="createLink"]': function (e) {
+        'click button[data-action="createLink"]': function () {
             this.createLink();
         },
         /** @this LinkManagerIndexView */
         'click [data-action="removeLink"]': function (e) {
-            var link = $(e.currentTarget).data('link');
-            this.confirm(this.translate('confirmation', 'messages'), function () {
+            const link = $(e.currentTarget).data('link');
+
+            const msg = this.translate('confirmRemoveLink', 'messages', 'EntityManager')
+                .replace('{link}', link);
+
+            this.confirm(msg, () => {
                 this.removeLink(link);
-            }, this);
+            });
         },
         /** @this LinkManagerIndexView */
         'keyup input[data-name="quick-search"]': function (e) {
@@ -68,67 +73,74 @@ class LinkManagerIndexView extends View {
     }
 
     computeRelationshipType(type, foreignType) {
-        if (type == 'hasMany') {
-            if (foreignType == 'hasMany') {
+        if (type === 'hasMany') {
+            if (foreignType === 'hasMany') {
                 return 'manyToMany';
             }
-            else if (foreignType == 'belongsTo') {
+            else if (foreignType === 'belongsTo') {
                 return 'oneToMany';
             }
             else {
-                return;
+                return undefined;
             }
         }
-        else if (type == 'belongsTo') {
-            if (foreignType == 'hasMany') {
+        else if (type === 'belongsTo') {
+            if (foreignType === 'hasMany') {
                 return 'manyToOne';
             }
-            else if (foreignType == 'hasOne') {
+            else if (foreignType === 'hasOne') {
                 return 'oneToOneRight';
             }
             else {
-                return;
+                return undefined;
             }
         }
-        else if (type == 'belongsToParent') {
-            if (foreignType == 'hasChildren') {
+        else if (type === 'belongsToParent') {
+            if (foreignType === 'hasChildren') {
                 return 'childrenToParent'
             }
 
-            return;
+            return undefined;
         }
-        else if (type == 'hasChildren') {
-            if (foreignType == 'belongsToParent') {
+        else if (type === 'hasChildren') {
+            if (foreignType === 'belongsToParent') {
                 return 'parentToChildren'
             }
 
-            return;
+            return undefined;
         }
         else if (type === 'hasOne') {
-            if (foreignType == 'belongsTo') {
+            if (foreignType === 'belongsTo') {
                 return 'oneToOneLeft';
             }
 
-            return;
+            return undefined;
         }
     }
 
     setupLinkData() {
         this.linkDataList = [];
 
-        var links = this.getMetadata().get('entityDefs.' + this.scope + '.links');
+        this.isCustomizable =
+            !!this.getMetadata().get(`scopes.${this.scope}.customizable`) &&
+            this.getMetadata().get(`scopes.${this.scope}.entityManager.relationships`) !== false;
 
-        var linkList = Object.keys(links).sort((v1, v2) => {
+        const links = /** @type {Object.<string, Record>}*/
+            this.getMetadata().get('entityDefs.' + this.scope + '.links');
+
+        const linkList = Object.keys(links).sort((v1, v2) => {
             return v1.localeCompare(v2);
         });
 
-        linkList.forEach((link) => {
-            var d = links[link];
+        linkList.forEach(link => {
+            const d = links[link];
 
-            var linkForeign = d.foreign;
+            let type;
+
+            const linkForeign = d.foreign;
 
             if (d.type === 'belongsToParent') {
-                var type = 'childrenToParent';
+                type = 'childrenToParent';
             }
             else {
                 if (!d.entity) {
@@ -139,10 +151,10 @@ class LinkManagerIndexView extends View {
                     return;
                 }
 
-                var foreignType = this.getMetadata()
+                const foreignType = this.getMetadata()
                     .get('entityDefs.' + d.entity + '.links.' + d.foreign + '.type');
 
-                var type = this.computeRelationshipType(d.type, foreignType);
+                type = this.computeRelationshipType(d.type, foreignType);
             }
 
             if (!type) {
@@ -154,6 +166,7 @@ class LinkManagerIndexView extends View {
                 isCustom: d.isCustom,
                 isRemovable: d.isCustom,
                 customizable: d.customizable,
+                isEditable: this.isCustomizable,
                 type: type,
                 entityForeign: d.entity,
                 entity: this.scope,
@@ -240,13 +253,17 @@ class LinkManagerIndexView extends View {
     }
 
     renderHeader() {
+        const $header = $('#scope-header');
+
         if (!this.scope) {
-            $('#scope-header').html('');
+            $header.html('');
 
             return;
         }
 
-        $('#scope-header').show().html(this.getLanguage().translate(this.scope, 'scopeNames'));
+        $header
+            .show()
+            .html(this.getLanguage().translate(this.scope, 'scopeNames'));
     }
 
     updatePageTitle() {
@@ -256,7 +273,7 @@ class LinkManagerIndexView extends View {
     processQuickSearch(text) {
         text = text.trim();
 
-        let $noData = this.$noData;
+        const $noData = this.$noData;
 
         $noData.addClass('hidden');
 
@@ -266,17 +283,17 @@ class LinkManagerIndexView extends View {
             return;
         }
 
-        let matchedList = [];
+        const matchedList = [];
 
-        let lowerCaseText = text.toLowerCase();
+        const lowerCaseText = text.toLowerCase();
 
         this.linkDataList.forEach(item => {
             let matched = false;
 
-            let label = item.label || '';
-            let link = item.link || '';
-            let entityForeign = item.entityForeign || '';
-            let labelEntityForeign = item.labelEntityForeign || '';
+            const label = item.label || '';
+            const link = item.link || '';
+            const entityForeign = item.entityForeign || '';
+            const labelEntityForeign = item.labelEntityForeign || '';
 
             if (
                 label.toLowerCase().indexOf(lowerCaseText) === 0 ||
@@ -288,7 +305,7 @@ class LinkManagerIndexView extends View {
             }
 
             if (!matched) {
-                let wordList = link.split(' ')
+                const wordList = link.split(' ')
                     .concat(
                         label.split(' ')
                     )

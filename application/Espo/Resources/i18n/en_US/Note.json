@@ -17,7 +17,8 @@
     "filters": {
         "all": "All",
         "posts": "Posts",
-        "updates": "Updates"
+        "updates": "Updates",
+        "activity": "Activity"
     },
     "options": {
         "targetType": {
@@ -28,13 +29,28 @@
             "portals": "to portal users"
         },
         "type": {
-            "Post": "Post"
+            "Post": "Post",
+            "Create": "Create",
+            "CreateRelated": "Create Related",
+            "Update": "Update",
+            "Status": "Status",
+            "Assign": "Assign",
+            "Relate": "Relate",
+            "Unrelate": "Unrelate",
+            "EmailReceived": "Email Received",
+            "EmailSent": "Email Sent"
         }
+    },
+    "labels": {
+        "View Posts": "View Posts",
+        "View Activity": "View Activity"
     },
     "messages": {
         "writeMessage": "Write your message here"
     },
     "links": {
+        "portals": "Portals",
+        "attachments": "Attachments",
         "superParent": "Super Parent",
         "related": "Related"
     }

@@ -22,7 +22,7 @@
         "type": {
             "type": "enum",
             "readOnly": true,
-            "view": "views/fields/enum",
+            "view": "views/note/fields/type",
             "options": [
                 "Post",
                 "Create",
@@ -35,6 +35,7 @@
                 "EmailReceived",
                 "EmailSent"
             ],
+            "maxLength": 24,
             "customizationDisabled": true,
             "default": "Post"
         },
@@ -47,16 +48,19 @@
                 "users",
                 "portals"
             ],
+            "maxLength": 7,
             "customizationDisabled": true
         },
         "parent": {
             "type": "linkParent",
-            "customizationDisabled": true
+            "customizationDisabled": true,
+            "view": "views/note/fields/parent"
         },
         "related": {
             "type": "linkParent",
             "readOnly": true,
-            "customizationDisabled": true
+            "customizationDisabled": true,
+            "view": "views/note/fields/related"
         },
         "attachments": {
             "type": "attachmentMultiple",
@@ -174,7 +178,9 @@
     "collection": {
         "orderBy": "number",
         "order": "desc",
-        "textFilterFields": ["post"]
+        "textFilterFields": ["post"],
+        "fullTextSearch": true,
+        "fullTextSearchOrderType": "original"
     },
     "statusStyles": {
         "Lead": {
@@ -198,16 +204,40 @@
             "type": "index",
             "columns": ["createdAt"]
         },
-        "parent": {
-            "type": "index",
-            "columns": ["parentId", "parentType"]
-        },
-        "parentAndSuperParent": {
-            "type": "index",
-            "columns": ["parentId", "parentType", "superParentId", "superParentType"]
-        },
         "createdByNumber": {
             "columns": ["createdById", "number"]
+        },
+        "type": {
+            "type": "index",
+            "columns": ["type"]
+        },
+        "targetType": {
+            "type": "index",
+            "columns": ["targetType"]
+        },
+        "parentId": {
+            "type": "index",
+            "columns": ["parentId"]
+        },
+        "parentType": {
+            "type": "index",
+            "columns": ["parentType"]
+        },
+        "relatedId": {
+            "type": "index",
+            "columns": ["relatedId"]
+        },
+        "relatedType": {
+            "type": "index",
+            "columns": ["relatedType"]
+        },
+        "superParentType": {
+            "type": "index",
+            "columns": ["superParentType"]
+        },
+        "superParentId": {
+            "type": "index",
+            "columns": ["superParentId"]
         }
     }
 }

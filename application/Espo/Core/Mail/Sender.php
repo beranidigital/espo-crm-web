@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -85,6 +85,7 @@ class Sender
         private FileStorageManager $fileStorageManager
     ) {
 
+        /** @noinspection PhpDeprecationInspection */
         $this->useGlobal();
     }
 
@@ -149,6 +150,7 @@ class Sender
             throw new InvalidArgumentException();
         }
 
+        /** @noinspection PhpDeprecationInspection */
         return $this->useSmtp($params);
     }
 
@@ -171,6 +173,7 @@ class Sender
      */
     public function withEnvelopeOptions(array $options): self
     {
+        /** @noinspection PhpDeprecationInspection */
         return $this->setEnvelopeOptions($options);
     }
 
@@ -252,8 +255,9 @@ class Sender
             $authMechanism = $params['authMechanism'] ?? $params['smtpAuthMechanism'] ?? null;
 
             if ($authMechanism) {
-                $authMechanism = preg_replace("([\.]{2,})", '', $authMechanism);
+                $authMechanism = preg_replace("([.]{2,})", '', $authMechanism);
 
+                /** @noinspection SpellCheckingInspection */
                 if (in_array($authMechanism, ['login', 'crammd5', 'plain'])) {
                     $options['connectionClass'] = $authMechanism;
                 }
@@ -571,7 +575,7 @@ class Sender
                 empty($messageId) ||
                 !is_string($messageId) ||
                 strlen($messageId) < 4 ||
-                strpos($messageId, 'dummy:') === 0
+                str_starts_with($messageId, 'dummy:')
             ) {
                 $messageId = $this->generateMessageId($email);
 
@@ -594,16 +598,20 @@ class Sender
             $this->transport->send($message);
 
             $email->setStatus(Email::STATUS_SENT);
-            $email->set('dateSent', DateTime::createNow()->getString());
+            $email->set('dateSent', DateTime::createNow()->toString());
         }
         catch (Exception $e) {
+            /** @noinspection PhpDeprecationInspection */
             $this->resetParams();
+            /** @noinspection PhpDeprecationInspection */
             $this->useGlobal();
 
             $this->handleException($e);
         }
 
+        /** @noinspection PhpDeprecationInspection */
         $this->resetParams();
+        /** @noinspection PhpDeprecationInspection */
         $this->useGlobal();
     }
 
@@ -642,14 +650,14 @@ class Sender
     private function handleException(Exception $e): void
     {
         if ($e instanceof ProtocolRuntimeException) {
-            $message = "Unknown error.";
+            $message = "unknownError";
 
             if (
                 stripos($e->getMessage(), 'password') !== false ||
                 stripos($e->getMessage(), 'credentials') !== false ||
                 stripos($e->getMessage(), '5.7.8') !== false
             ) {
-                $message = 'Invalid credentials.';
+                $message = 'invalidCredentials';
             }
 
             $this->log->error("Email sending error: " . $e->getMessage());
@@ -671,7 +679,7 @@ class Sender
         }
         else {
             $messageId =
-                '' . md5($email->get('name')) . '/' .time() . '/' .
+                md5($email->get('name')) . '/' .time() . '/' .
                 $rand .  '@espo';
         }
 

@@ -1,89 +1,97 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-define('views/role/modals/add-field', ['views/modal'], function (Dep) {
+import ModalView from 'views/modal';
 
-    return Dep.extend({
+class RoleAddFieldModalView extends ModalView {
 
-        template: 'role/modals/add-field',
+    template = 'role/modals/add-field'
 
-        events: {
-            'click a[data-action="addField"]': function (e) {
-                this.trigger('add-field', $(e.currentTarget).data().name);
+    backdrop = true
+
+    events = {
+        /** @this RoleAddFieldModalView */
+        'click a[data-action="addField"]': function (e) {
+            this.trigger('add-field', $(e.currentTarget).data().name);
+        }
+    }
+
+    data() {
+        const dataList = [];
+
+        this.fieldList.forEach((field, i) => {
+            if (i % 4 === 0) {
+                dataList.push([]);
             }
-        },
 
-        data: function () {
-            var dataList = [];
-
-            this.fieldList.forEach((field, i) => {
-                if (i % 4 === 0) {
-                    dataList.push([]);
-                }
-
-                dataList[dataList.length -1].push(field);
+            dataList[dataList.length -1].push({
+                name: field,
+                label: this.translate(field, 'fields', this.scope),
             });
+        });
 
-            return {
-                dataList: dataList,
-                scope: this.scope
-            };
-        },
+        console.log(dataList);
 
-        setup: function () {
-            this.headerText = this.translate('Add Field');
+        return {
+            dataList: dataList,
+            scope: this.scope,
+        };
+    }
 
-            var scope = this.scope = this.options.scope;
-            var fields = this.getMetadata().get('entityDefs.' + scope + '.fields') || {};
-            var fieldList = [];
+    setup() {
+        const scope = this.scope = this.options.scope;
 
-            Object.keys(fields).forEach(field => {
-                var d = fields[field];
+        this.headerText = this.translate(scope, 'scopeNamesPlural') + ' · ' + this.translate('Add Field');
 
-                if (field in this.options.ignoreFieldList) {
-                    return;
-                }
+        const fields = this.getMetadata().get(`entityDefs.${scope}.fields`) || {};
+        const fieldList = [];
 
-                if (d.disabled) {
-                    return;
-                }
+        Object.keys(fields).forEach(field => {
+            if (field in this.options.ignoreFieldList) {
+                return;
+            }
 
-                if (
-                    this.getMetadata()
-                        .get(['app', this.options.type, 'mandatory', 'scopeFieldLevel', this.scope, field]) !== null
-                ) {
-                    return;
-                }
+            if (!this.getFieldManager().isEntityTypeFieldAvailable(scope, field)) {
+                return;
+            }
 
-                fieldList.push(field);
-            });
+            const mandatoryLevel = this.getMetadata()
+                .get(['app', this.options.type, 'mandatory', 'scopeFieldLevel', this.scope, field]);
 
-            this.fieldList = this.getLanguage().sortFieldList(scope, fieldList);
-        },
-    });
-});
+            if (mandatoryLevel != null) {
+                return;
+            }
+
+            fieldList.push(field);
+        });
+
+        this.fieldList = this.getLanguage().sortFieldList(scope, fieldList);
+    }
+}
+
+export default RoleAddFieldModalView;

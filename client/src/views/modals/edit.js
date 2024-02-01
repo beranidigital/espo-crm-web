@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -87,7 +87,7 @@ class EditModalView extends ModalView {
             e.stopPropagation();
             e.preventDefault();
 
-            let focusedFieldView = this.getRecordView().getFocusedFieldView();
+            const focusedFieldView = this.getRecordView().getFocusedFieldView();
 
             if (focusedFieldView) {
                 this.model.set(focusedFieldView.fetch(), {skipReRender: true});
@@ -141,7 +141,7 @@ class EditModalView extends ModalView {
             title: 'Esc',
         });
 
-        this.scope = this.scope || this.options.scope;
+        this.scope = this.scope || this.options.scope || this.options.entityType;
         this.entityType = this.options.entityType || this.scope;
         this.id = this.options.id;
 
@@ -190,13 +190,13 @@ class EditModalView extends ModalView {
      * @param {function} [callback]
      */
     createRecordView(model, callback) {
-        let viewName =
+        const viewName =
             this.editView ||
             this.getMetadata().get(['clientDefs', model.entityType, 'recordViews', 'editSmall']) ||
             this.getMetadata().get(['clientDefs', model.entityType, 'recordViews', 'editQuick']) ||
             'views/record/edit-small';
 
-        let options = {
+        const options = {
             model: model,
             fullSelector: this.containerSelector + ' .edit-container',
             type: 'editSmall',
@@ -215,7 +215,7 @@ class EditModalView extends ModalView {
                 this.listenTo(view, 'before:save', () => this.trigger('before:save', model));
 
                 if (this.options.relate && ('link' in this.options.relate)) {
-                    let link = this.options.relate.link;
+                    const link = this.options.relate.link;
 
                     if (
                         model.hasField(link) &&
@@ -257,7 +257,7 @@ class EditModalView extends ModalView {
                 .get(0).outerHTML;
         }
         else {
-            let text = this.getLanguage().translate('Edit') + ' · ' +
+            const text = this.getLanguage().translate('Edit') + ' · ' +
                 this.getLanguage().translate(this.scope, 'scopeNames');
 
             html = $('<span>')
@@ -266,7 +266,7 @@ class EditModalView extends ModalView {
         }
 
         if (!this.fullFormDisabled) {
-            let url = this.id ?
+            const url = this.id ?
                 '#' + this.scope + '/edit/' + this.id :
                 '#' + this.scope + '/create';
 
@@ -288,18 +288,18 @@ class EditModalView extends ModalView {
     actionSave(data) {
         data = data || {};
 
-        let editView = this.getRecordView();
+        const editView = this.getRecordView();
 
-        let model = editView.model;
+        const model = editView.model;
 
-        let $buttons = this.dialog.$el.find('.modal-footer button');
+        const $buttons = this.dialog.$el.find('.modal-footer button');
 
         $buttons.addClass('disabled').attr('disabled', 'disabled');
 
         editView
             .save()
             .then(() => {
-                let wasNew = !this.id;
+                const wasNew = !this.id;
 
                 if (wasNew) {
                     this.id = model.id;
@@ -311,10 +311,10 @@ class EditModalView extends ModalView {
                     this.dialog.close();
 
                     if (wasNew) {
-                        let url = '#' + this.scope + '/view/' + model.id;
-                        let name = model.get('name');
+                        const url = '#' + this.scope + '/view/' + model.id;
+                        const name = model.get('name') || this.model.id;
 
-                        let msg = this.translate('Created')  + '\n' +
+                        const msg = this.translate('Created') + '\n' +
                             `[${name}](${url})`;
 
                         Espo.Ui.notify(msg, 'success', 4000, {suppress: true});
@@ -340,7 +340,7 @@ class EditModalView extends ModalView {
     // noinspection JSUnusedGlobalSymbols
     actionFullForm() {
         let url;
-        let router = this.getRouter();
+        const router = this.getRouter();
 
         let attributes;
         let model;

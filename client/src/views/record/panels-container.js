@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -138,7 +138,7 @@ class PanelsContainerRecordView extends View {
     mode = 'detail'
 
     data() {
-        let tabDataList = this.hasTabs ? this.getTabDataList() : [];
+        const tabDataList = this.hasTabs ? this.getTabDataList() : [];
 
         return {
             panelList: this.panelList,
@@ -150,14 +150,14 @@ class PanelsContainerRecordView extends View {
 
     events = {
         'click .action': function (e) {
-            let $target = $(e.currentTarget);
-            let panel = $target.data('panel');
+            const $target = $(e.currentTarget);
+            const panel = $target.data('panel');
 
             if (!panel) {
                 return;
             }
 
-            let panelView = this.getView(panel);
+            const panelView = this.getView(panel);
 
             if (!panelView) {
                 return;
@@ -200,7 +200,7 @@ class PanelsContainerRecordView extends View {
         'click .panels-show-more-delimiter [data-action="showMorePanels"]': 'actionShowMorePanels',
         /** @this module:views/record/panels-container */
         'click .tabs > button': function (e) {
-            let tab = parseInt($(e.currentTarget).attr('data-tab'));
+            const tab = parseInt($(e.currentTarget).attr('data-tab'));
 
             this.selectTab(tab);
         },
@@ -215,21 +215,21 @@ class PanelsContainerRecordView extends View {
             return;
         }
 
-        let $panels = this.$el.find('> .panel');
+        const $panels = this.$el.find('> .panel');
 
         $panels
             .removeClass('first')
             .removeClass('last')
             .removeClass('in-middle');
 
-        let $visiblePanels = $panels.filter(`:not(.tab-hidden):not(.hidden)`);
+        const $visiblePanels = $panels.filter(`:not(.tab-hidden):not(.hidden)`);
 
-        let groups = [];
+        const groups = [];
         let currentGroup = [];
         let inTab = false;
 
         $visiblePanels.each((i, el) => {
-            let $el = $(el);
+            const $el = $(el);
 
             let breakGroup = false;
 
@@ -304,7 +304,7 @@ class PanelsContainerRecordView extends View {
                 this.applyAccessToActions(item.actionList);
 
                 if (this.isRendered()) {
-                    let actionsView = this.getView(item.actionsViewKey);
+                    const actionsView = this.getView(item.actionsViewKey);
 
                     if (actionsView) {
                         actionsView.reRender();
@@ -352,7 +352,7 @@ class PanelsContainerRecordView extends View {
      */
     setupPanelViews() {
         this.panelList.forEach(p => {
-            let name = p.name;
+            const name = p.name;
 
             let options = {
                 model: this.model,
@@ -365,6 +365,7 @@ class PanelsContainerRecordView extends View {
                 readOnly: this.readOnly,
                 disabled: p.hidden || false,
                 recordViewObject: this.recordViewObject,
+                dataObject: this.options.dataObject,
             };
 
             options = _.extend(options, p.options);
@@ -421,7 +422,7 @@ class PanelsContainerRecordView extends View {
         let fields = {};
 
         this.panelList.forEach(p => {
-            let panelView = this.getView(p.name);
+            const panelView = this.getView(p.name);
 
             if ((!panelView.disabled || withHidden) && 'getFieldViews' in panelView) {
                 fields = _.extend(fields, panelView.getFieldViews());
@@ -449,7 +450,7 @@ class PanelsContainerRecordView extends View {
         let data = {};
 
         this.panelList.forEach(p => {
-            let panelView = this.getView(p.name);
+            const panelView = this.getView(p.name);
 
             if (!panelView.disabled && 'fetch' in panelView) {
                 data = _.extend(data, panelView.fetch());
@@ -508,8 +509,8 @@ class PanelsContainerRecordView extends View {
     }
 
     showPanelFinalize(name, callback, wasShown) {
-        let process = (wasRendered) => {
-            let view = this.getView(name);
+        const process = (wasRendered) => {
+            const view = this.getView(name);
 
             if (view) {
                 view.$el.closest('.panel').removeClass('hidden');
@@ -519,10 +520,10 @@ class PanelsContainerRecordView extends View {
                 view.trigger('panel-show-propagated');
 
                 if (wasRendered && !wasShown && view.getFieldViews) {
-                    let fields = view.getFieldViews();
+                    const fields = view.getFieldViews();
 
                     if (fields) {
-                        for (let i in fields) {
+                        for (const i in fields) {
                             fields[i].reRender();
                         }
                     }
@@ -549,7 +550,7 @@ class PanelsContainerRecordView extends View {
 
     hidePanelFinalize(name, callback) {
         if (this.isRendered()) {
-            let view = this.getView(name);
+            const view = this.getView(name);
 
             if (view) {
                 view.$el.closest('.panel').addClass('hidden');
@@ -583,18 +584,18 @@ class PanelsContainerRecordView extends View {
         }
 
         if (softLockedType) {
-            let param = 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked';
+            const param = 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked';
 
             this.recordHelper.setPanelStateParam(name, param, false);
 
             for (let i = 0; i < this.panelSoftLockedTypeList.length; i++) {
-                let iType = this.panelSoftLockedTypeList[i];
+                const iType = this.panelSoftLockedTypeList[i];
 
                 if (iType === softLockedType) {
                     continue;
                 }
 
-                let iParam = 'hidden' +  Espo.Utils.upperCaseFirst(iType) + 'Locked';
+                const iParam = 'hidden' + Espo.Utils.upperCaseFirst(iType) + 'Locked';
 
                 if (this.recordHelper.getPanelStateParam(name, iParam)) {
                     return;
@@ -602,7 +603,7 @@ class PanelsContainerRecordView extends View {
             }
         }
 
-        let wasShown = this.recordHelper.getPanelStateParam(name, 'hidden') === false;
+        const wasShown = this.recordHelper.getPanelStateParam(name, 'hidden') === false;
 
         this.recordHelper.setPanelStateParam(name, 'hidden', false);
 
@@ -621,7 +622,7 @@ class PanelsContainerRecordView extends View {
         }
 
         if (softLockedType) {
-            let param = 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked';
+            const param = 'hidden' + Espo.Utils.upperCaseFirst(softLockedType) + 'Locked';
 
             this.recordHelper.setPanelStateParam(name, param, true);
         }
@@ -632,12 +633,12 @@ class PanelsContainerRecordView extends View {
     alterPanels(layoutData) {
         layoutData = layoutData || this.layoutData || {};
 
-        let tabBreakIndexList = [];
+        const tabBreakIndexList = [];
 
-        let tabDataList = [];
+        const tabDataList = [];
 
-        for (let name in layoutData) {
-            let item = layoutData[name];
+        for (const name in layoutData) {
+            const item = layoutData[name];
 
             if (name === '_delimiter_') {
                 this.panelList.push({
@@ -661,7 +662,11 @@ class PanelsContainerRecordView extends View {
          */
         this.tabDataList = tabDataList.sort((v1, v2) => v1.index - v2.index);
 
-        let newList = [];
+        this.panelList = this.panelList.filter(item => {
+            return !this.recordHelper.getPanelStateParam(item.name, 'hiddenLocked');
+        });
+
+        const newList = [];
 
         this.panelList.forEach((item, i) => {
             item.index = ('index' in item) ? item.index : i;
@@ -669,7 +674,7 @@ class PanelsContainerRecordView extends View {
             let allowedInLayout = false;
 
             if (item.name) {
-                let itemData = layoutData[item.name] || {};
+                const itemData = layoutData[item.name] || {};
 
                 if (itemData.disabled) {
                     return;
@@ -679,7 +684,7 @@ class PanelsContainerRecordView extends View {
                     allowedInLayout = true;
                 }
 
-                for (let i in itemData) {
+                for (const i in itemData) {
                     item[i] = itemData[i];
                 }
             }
@@ -700,7 +705,7 @@ class PanelsContainerRecordView extends View {
 
         newList.sort((v1, v2) => v1.index - v2.index);
 
-        let firstTabIndex = newList.findIndex(item => item.tabNumber !== -1);
+        const firstTabIndex = newList.findIndex(item => item.tabNumber !== -1);
 
         if (firstTabIndex !== -1) {
             newList[firstTabIndex].isTabsBeginning = true;
@@ -727,7 +732,7 @@ class PanelsContainerRecordView extends View {
         this.panelList = newList;
 
         if (this.recordViewObject && this.recordViewObject.dynamicLogic) {
-            let dynamicLogic = this.recordViewObject.dynamicLogic;
+            const dynamicLogic = this.recordViewObject.dynamicLogic;
 
             this.panelList.forEach(item => {
                 if (item.dynamicLogicVisible) {
@@ -786,10 +791,6 @@ class PanelsContainerRecordView extends View {
             this.panelList.splice(index, 1);
         }
 
-        this.panelList = this.panelList.filter((p) => {
-            return !this.recordHelper.getPanelStateParam(p.name, 'hiddenLocked');
-        });
-
         this.panelsAreSet = true;
 
         this.trigger('panels-set');
@@ -835,7 +836,7 @@ class PanelsContainerRecordView extends View {
                 label = this.translate(label.substring(1), 'tabs', this.scope);
             }
 
-            let hidden = this.panelList
+            const hidden = this.panelList
                 .filter(panel => panel.tabNumber === i)
                 .findIndex(panel => !this.recordHelper.getPanelStateParam(panel.name, 'hidden')) === -1;
 
@@ -865,7 +866,7 @@ class PanelsContainerRecordView extends View {
         this.panelList
             .filter(item => item.tabNumber === tab && item.name)
             .forEach(item => {
-                let view = this.getView(item.name);
+                const view = this.getView(item.name);
 
                 if (view) {
                     view.trigger('tab-show');
@@ -879,7 +880,7 @@ class PanelsContainerRecordView extends View {
         this.panelList
             .filter(item => item.tabNumber !== tab && item.name)
             .forEach(item => {
-                let view = this.getView(item.name);
+                const view = this.getView(item.name);
 
                 if (view) {
                     view.trigger('tab-hide');
@@ -895,8 +896,8 @@ class PanelsContainerRecordView extends View {
 
     /** @private */
     storeTab() {
-        let key = 'tab_' + this.name;
-        let keyRecord = 'tab_' + this.name + '_record';
+        const key = 'tab_' + this.name;
+        const keyRecord = 'tab_' + this.name + '_record';
 
         this.getSessionStorage().set(key, this.currentTab);
         this.getSessionStorage().set(keyRecord, this.entityType + '_' + this.model.id);
@@ -904,16 +905,16 @@ class PanelsContainerRecordView extends View {
 
     /** @private */
     isStoredTabForThisRecord() {
-        let keyRecord = 'tab_' + this.name + '_record';
+        const keyRecord = 'tab_' + this.name + '_record';
 
         return this.getSessionStorage().get(keyRecord) === this.entityType + '_' + this.model.id;
     }
 
     /** @private */
     selectStoredTab() {
-        let key = 'tab_' + this.name;
+        const key = 'tab_' + this.name;
 
-        let tab = this.getSessionStorage().get(key);
+        const tab = this.getSessionStorage().get(key);
 
         if (tab > 0) {
             this.selectTab(tab);
@@ -947,24 +948,24 @@ class PanelsContainerRecordView extends View {
             return;
         }
 
-        let panelList = this.panelList.filter(panel => panel.tabNumber === tab);
+        const panelList = this.panelList.filter(panel => panel.tabNumber === tab);
 
-        let allIsHidden = panelList
+        const allIsHidden = panelList
             .findIndex(panel => !this.recordHelper.getPanelStateParam(panel.name, 'hidden')) === -1;
 
         if (!allIsHidden) {
             return;
         }
 
-        let $tab = this.$el.find(`.tabs > [data-tab="${tab.toString()}"]`);
+        const $tab = this.$el.find(`.tabs > [data-tab="${tab.toString()}"]`);
 
         $tab.addClass('hidden');
 
         if (this.currentTab === tab) {
-            let firstVisiblePanel = this.panelList
+            const firstVisiblePanel = this.panelList
                 .find(panel => panel.tabNumber > -1 && !panel.hidden);
 
-            let firstVisibleTab = firstVisiblePanel ?
+            const firstVisibleTab = firstVisiblePanel ?
                 firstVisiblePanel.tabNumber : 0;
 
             this.selectTab(firstVisibleTab);

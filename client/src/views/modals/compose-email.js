@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -65,7 +65,7 @@ class ComposeEmailModalView extends EditModalView {
             e.stopPropagation();
             e.preventDefault();
 
-            let focusedFieldView = this.getRecordView().getFocusedFieldView();
+            const focusedFieldView = this.getRecordView().getFocusedFieldView();
 
             if (focusedFieldView) {
                 this.model.set(focusedFieldView.fetch());
@@ -111,12 +111,12 @@ class ComposeEmailModalView extends EditModalView {
             this.getPreferences().get('emailUseExternalClient') ||
             !this.getAcl().checkScope('Email', 'create')
         ) {
-            var attributes = this.options.attributes || {};
+            const attributes = this.options.attributes || {};
 
             Espo.loader.require('email-helper', EmailHelper => {
                 this.getRouter().confirmLeaveOut = false;
 
-                let emailHelper = new EmailHelper();
+                const emailHelper = new EmailHelper();
 
                 document.location.href = emailHelper
                     .composeMailToLink(attributes, this.getConfig().get('outboundEmailBccAddress'));
@@ -141,10 +141,10 @@ class ComposeEmailModalView extends EditModalView {
     }
 
     createRecordView(model, callback) {
-        let viewName = this.getMetadata().get('clientDefs.' + model.entityType + '.recordViews.compose') ||
+        const viewName = this.getMetadata().get('clientDefs.' + model.entityType + '.recordViews.compose') ||
             'views/email/record/compose';
 
-        let options = {
+        const options = {
             model: model,
             fullSelector: this.containerSelector + ' .edit-container',
             type: 'editSmall',
@@ -162,14 +162,14 @@ class ComposeEmailModalView extends EditModalView {
     }
 
     actionSend() {
-        let dialog = this.dialog;
+        const dialog = this.dialog;
 
-        /** @type {module:views/email/record/edit} editView */
-        let editView = this.getRecordView();
 
-        let model = editView.model;
+        const editView = /** @type {module:views/email/record/compose} */this.getRecordView();
 
-        let afterSend = () => {
+        const model = editView.model;
+
+        const afterSend = () => {
             this.dialogIsHidden = false;
 
             this.trigger('after:save', model);
@@ -183,7 +183,7 @@ class ComposeEmailModalView extends EditModalView {
             this.remove();
         };
 
-        let beforeSave = () => {
+        const beforeSave = () => {
             this.dialogIsHidden = true;
 
             dialog.hideWithBackdrop();
@@ -195,7 +195,7 @@ class ComposeEmailModalView extends EditModalView {
             }
         };
 
-        let errorSave = () => {
+        const errorSave = () => {
             this.dialogIsHidden = false;
 
             if (this.isRendered()) {
@@ -225,15 +225,14 @@ class ComposeEmailModalView extends EditModalView {
     }
 
     actionSaveDraft(options) {
-        /** @type {module:views/email/record/edit} editView */
-        let editView = this.getRecordView();
+        const editView = /** @type {module:views/email/record/compose} */this.getRecordView();
 
-        let model = editView.model;
+        const model = editView.model;
 
         this.disableButton('send');
         this.disableButton('saveDraft');
 
-        let afterSave = () => {
+        const afterSave = () => {
             this.enableButton('send');
             this.enableButton('saveDraft');
 
@@ -259,7 +258,7 @@ class ComposeEmailModalView extends EditModalView {
     initiateForceRemove() {
         this.forceRemoveIsInitiated = true;
 
-        let parentView = this.getParentView();
+        const parentView = this.getParentView();
 
         if (!parentView) {
             return true;
@@ -292,10 +291,9 @@ class ComposeEmailModalView extends EditModalView {
 
     beforeCollapse() {
         if (this.wasModified) {
-            this.actionSaveDraft({skipNotModifiedWarning: true});
+            this.actionSaveDraft({skipNotModifiedWarning: true})
+                .then(() => this.getRecordView().setConfirmLeaveOut(false));
         }
-
-        this.getRecordView().setConfirmLeaveOut(false);
 
         return super.beforeCollapse();
     }

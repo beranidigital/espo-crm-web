@@ -2,42 +2,39 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Acl;
 
 use Espo\Core\ORM\Entity as CoreEntity;
-
 use Espo\Repositories\User as UserRepository;
-
 use Espo\ORM\Defs;
 use Espo\ORM\Entity;
 use Espo\ORM\EntityManager;
 use Espo\Entities\User;
-
 use Espo\Core\AclManager;
 
 /**
@@ -48,7 +45,6 @@ class DefaultAssignmentChecker implements AssignmentChecker
     protected const FIELD_ASSIGNED_USERS = 'assignedUsers';
     protected const FIELD_TEAMS = 'teams';
     protected const ATTR_ASSIGNED_USER_ID = 'assignedUserId';
-    protected const ATTR_TEAMS_IDS = 'teamsIds';
     protected const ATTR_ASSIGNED_USERS_IDS = 'assignedUsersIds';
 
     public function __construct(
@@ -141,7 +137,7 @@ class DefaultAssignmentChecker implements AssignmentChecker
             }
         }
         else if ($assignmentPermission === Table::LEVEL_TEAM) {
-            $teamIdList = $user->get(self::ATTR_TEAMS_IDS);
+            $teamIdList = $user->getTeamIdList();
 
             if (
                 !$this->getUserRepository()->checkBelongsToAnyOfTeams($assignedUserId, $teamIdList)
@@ -210,7 +206,6 @@ class DefaultAssignmentChecker implements AssignmentChecker
             return true;
         }
 
-        /** @var string[] $userTeamIdList */
         $userTeamIdList = $user->getLinkMultipleIdList(self::FIELD_TEAMS);
 
         foreach ($newIdList as $id) {
@@ -276,7 +271,8 @@ class DefaultAssignmentChecker implements AssignmentChecker
         $toProcess = false;
 
         if (!$entity->isNew()) {
-            $userIdList = $entity->getLinkMultipleIdList(self::FIELD_ASSIGNED_USERS);
+            // Might be on purpose.
+            $entity->getLinkMultipleIdList(self::FIELD_ASSIGNED_USERS);
 
             if ($entity->isAttributeChanged(self::ATTR_ASSIGNED_USERS_IDS)) {
                 $toProcess = true;
@@ -313,7 +309,6 @@ class DefaultAssignmentChecker implements AssignmentChecker
 
     private function isPermittedAssignedUsersLevelNo(User $user, CoreEntity $entity): bool
     {
-        /** @var string[] $userIdList */
         $userIdList = $entity->getLinkMultipleIdList(self::FIELD_ASSIGNED_USERS);
 
         $fetchedAssignedUserIdList = $entity->getFetched(self::ATTR_ASSIGNED_USERS_IDS);
@@ -333,12 +328,10 @@ class DefaultAssignmentChecker implements AssignmentChecker
 
     private function isPermittedAssignedUsersLevelTeam(User $user, CoreEntity $entity): bool
     {
-        /** @var string[] $userIdList */
         $userIdList = $entity->getLinkMultipleIdList(self::FIELD_ASSIGNED_USERS);
 
         $fetchedAssignedUserIdList = $entity->getFetched(self::ATTR_ASSIGNED_USERS_IDS);
 
-        /** @var string[] $teamIdList */
         $teamIdList = $user->getLinkMultipleIdList(self::FIELD_TEAMS);
 
         foreach ($userIdList as $userId) {

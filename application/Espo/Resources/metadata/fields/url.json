@@ -30,6 +30,10 @@
         {
             "name": "readOnly",
             "type": "bool"
+        },
+        {
+            "name": "readOnlyAfterCreate",
+            "type": "bool"
         }
     ],
     "validationList": [
@@ -45,5 +49,9 @@
     "fieldDefs": {
         "type": "varchar"
     },
-    "personalData": true
+    "sanitizerClassNameList": [
+        "Espo\\Classes\\FieldSanitizers\\StringTrim"
+    ],
+    "personalData": true,
+    "default": null
 }

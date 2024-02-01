@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -127,7 +127,7 @@ class DetailView extends MainView {
             return;
         }
 
-        let redirect = () => {
+        const redirect = () => {
             Espo.Ui.success(this.translate('Created'));
 
             setTimeout(() => {
@@ -186,7 +186,7 @@ class DetailView extends MainView {
      * Set up a record.
      */
     setupRecord() {
-        let o = {
+        const o = {
             model: this.model,
             fullSelector: '#main > .record',
             scope: this.scope,
@@ -206,7 +206,9 @@ class DetailView extends MainView {
             o.readOnly = true;
         }
 
-        return this.createView('record', this.getRecordViewName(), o);
+        return this.createView('record', this.getRecordViewName(), o, view => {
+            this.listenTo(view, 'after:mode-change', () => this.getHeaderView().reRender());
+        });
     }
 
     /**
@@ -234,7 +236,7 @@ class DetailView extends MainView {
 
     /** @private */
     addFollowButtons() {
-        let isFollowed = this.model.get('isFollowed');
+        const isFollowed = this.model.get('isFollowed');
 
         this.addMenuItem('buttons', {
             name: 'unfollow',
@@ -259,7 +261,7 @@ class DetailView extends MainView {
 
     /** @private */
     controlFollowButtons() {
-        let isFollowed = this.model.get('isFollowed');
+        const isFollowed = this.model.get('isFollowed');
 
         if (isFollowed) {
             this.hideHeaderActionItem('follow');
@@ -321,9 +323,9 @@ class DetailView extends MainView {
      * @inheritDoc
      */
     getHeader() {
-        let name = this.model.get('name') || this.model.id;
+        const name = this.model.get('name') || this.model.id;
 
-        let $name =
+        const $name =
             $('<span>')
                 .addClass('font-size-flexible title')
                 .text(name);
@@ -332,8 +334,8 @@ class DetailView extends MainView {
             $name.css('text-decoration', 'line-through');
         }
 
-        let headerIconHtml = this.getHeaderIconHtml();
-        let scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
+        const headerIconHtml = this.getHeaderIconHtml();
+        const scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
 
         let $root = $('<span>').text(scopeLabel);
 
@@ -384,10 +386,10 @@ class DetailView extends MainView {
      * @param {string} name A relationship name.
      */
     updateRelationshipPanel(name) {
-        let bottom = this.getView('record').getView('bottom');
+        const bottom = this.getView('record').getView('bottom');
 
         if (bottom) {
-            let rel = bottom.getView(name);
+            const rel = bottom.getView(name);
 
             if (rel) {
                 rel.collection.fetch();
@@ -435,9 +437,9 @@ class DetailView extends MainView {
     actionCreateRelated(data) {
         data = data || {};
 
-        let link = data.link;
-        let scope = this.model.defs['links'][link].entity;
-        let foreignLink = this.model.defs['links'][link].foreign;
+        const link = data.link;
+        const scope = this.model.defs['links'][link].entity;
+        const foreignLink = this.model.defs['links'][link].foreign;
 
         let attributes = {};
 
@@ -448,8 +450,8 @@ class DetailView extends MainView {
             attributes = _.extend(this.relatedAttributeFunctions[link].call(this), attributes);
         }
 
-        let attributeMap = this.getMetadata()
-            .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createAttributeMap']) ||
+        const attributeMap = this.getMetadata()
+                .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createAttributeMap']) ||
             this.relatedAttributeMap[link] || {};
 
         Object.keys(attributeMap)
@@ -459,7 +461,7 @@ class DetailView extends MainView {
 
         Espo.Ui.notify(' ... ');
 
-        let handler = this.getMetadata()
+        const handler = this.getMetadata()
             .get(['clientDefs', this.scope, 'relationshipPanels', link, 'createHandler']);
 
         new Promise(resolve => {
@@ -478,7 +480,7 @@ class DetailView extends MainView {
         }).then(additionalAttributes => {
             attributes = {...attributes, ...additionalAttributes};
 
-            let viewName = this.getMetadata()
+            const viewName = this.getMetadata()
                 .get(['clientDefs', scope, 'modalViews', 'edit']) || 'views/modals/edit';
 
             this.createView('quickCreate', viewName, {
@@ -513,26 +515,26 @@ class DetailView extends MainView {
      * @param {Object.<string, *>} data
      */
     actionSelectRelated(data) {
-        let link = data.link;
+        const link = data.link;
 
         if (!data.foreignEntityType && !this.model.defs['links'][link]) {
             throw new Error('Link ' + link + ' does not exist.');
         }
 
-        let scope = data.foreignEntityType || this.model.defs['links'][link].entity;
-        let massRelateEnabled = data.massSelect;
+        const scope = data.foreignEntityType || this.model.defs['links'][link].entity;
+        const massRelateEnabled = data.massSelect;
 
         /** @var {Object.<string, *>} */
-        let panelDefs = this.getMetadata().get(['clientDefs', this.scope, 'relationshipPanels', link]) || {};
+        const panelDefs = this.getMetadata().get(['clientDefs', this.scope, 'relationshipPanels', link]) || {};
 
         let advanced = {};
 
         if (link in this.selectRelatedFilters) {
             advanced = Espo.Utils.cloneDeep(this.selectRelatedFilters[link]) || advanced;
 
-            for (let filterName in advanced) {
+            for (const filterName in advanced) {
                 if (typeof advanced[filterName] === 'function') {
-                    let filtersData = advanced[filterName].call(this);
+                    const filtersData = advanced[filterName].call(this);
 
                     if (filtersData) {
                         advanced[filterName] = filtersData;
@@ -543,13 +545,13 @@ class DetailView extends MainView {
             }
         }
 
-        let foreignLink = this.model.getLinkParam(link, 'foreign');
+        const foreignLink = this.model.getLinkParam(link, 'foreign');
 
         if (foreignLink && scope) {
             // Select only records not related with any.
-            let foreignLinkType = this.getMetadata()
+            const foreignLinkType = this.getMetadata()
                 .get(['entityDefs', scope, 'links', foreignLink, 'type']);
-            let foreignLinkFieldType = this.getMetadata()
+            const foreignLinkFieldType = this.getMetadata()
                 .get(['entityDefs', scope, 'fields', foreignLink, 'type']);
 
             if (
@@ -582,8 +584,7 @@ class DetailView extends MainView {
 
         let boolFilterList = dataBoolFilterList ||
             panelDefs.selectBoolFilterList ||
-            this.selectBoolFilterLists[link] ||
-            [];
+            this.selectBoolFilterLists[link];
 
         if (typeof boolFilterList === 'function') {
             boolFilterList = boolFilterList.call(this);
@@ -591,17 +592,17 @@ class DetailView extends MainView {
 
         boolFilterList = Espo.Utils.clone(boolFilterList);
 
-        primaryFilterName = primaryFilterName || panelDefs.selectPrimaryFilter || null;
+        primaryFilterName = primaryFilterName || panelDefs.selectPrimaryFilterName || null;
 
-        let viewKey = data.viewKey || 'select';
+        const viewKey = data.viewKey || 'select';
 
-        let viewName = panelDefs.selectModalView ||
+        const viewName = panelDefs.selectModalView ||
             this.getMetadata().get(['clientDefs', scope, 'modalViews', viewKey]) ||
             'views/modals/select-records';
 
         Espo.Ui.notify(' ... ');
 
-        let handler = panelDefs.selectHandler || null;
+        const handler = panelDefs.selectHandler || null;
 
         new Promise(resolve => {
             if (!handler) {
@@ -618,11 +619,20 @@ class DetailView extends MainView {
                 });
         }).then(filters => {
             advanced = {...advanced, ...(filters.advanced || {})};
-            boolFilterList = [...boolFilterList, ...(filters.bool || [])];
+
+            if (boolFilterList || filters.bool) {
+                boolFilterList = [
+                    ...(boolFilterList || []),
+                    ...(filters.bool || []),
+                ];
+            }
 
             if (filters.primary && !primaryFilterName) {
                 primaryFilterName = filters.primary;
             }
+
+            const orderBy = filters.orderBy || panelDefs.selectOrderBy;
+            const orderDirection = filters.orderBy ? filters.order : panelDefs.selectOrderDirection;
 
             this.createView('dialogSelectRelated', viewName, {
                 scope: scope,
@@ -633,6 +643,10 @@ class DetailView extends MainView {
                 massRelateEnabled: massRelateEnabled,
                 primaryFilterName: primaryFilterName,
                 boolFilterList: boolFilterList,
+                mandatorySelectAttributeList: panelDefs.selectMandatoryAttributeList,
+                layoutName: panelDefs.selectLayout,
+                orderBy: orderBy,
+                orderDirection: orderDirection,
             }, dialog => {
                 dialog.render();
 
@@ -646,10 +660,10 @@ class DetailView extends MainView {
                 });
 
                 this.listenToOnce(dialog, 'select', (selectObj) => {
-                    let data = {};
+                    const data = {};
 
                     if (Object.prototype.toString.call(selectObj) === '[object Array]') {
-                        let ids = [];
+                        const ids = [];
 
                         selectObj.forEach(model => ids.push(model.id));
 
@@ -666,7 +680,7 @@ class DetailView extends MainView {
                         }
                     }
 
-                    let url = this.scope + '/' + this.model.id + '/' + link;
+                    const url = this.scope + '/' + this.model.id + '/' + link;
 
                     Espo.Ajax.postRequest(url, data)
                         .then(() => {
@@ -694,7 +708,7 @@ class DetailView extends MainView {
             .then(attributes => {
                 Espo.Ui.notify(false);
 
-                let url = '#' + this.scope + '/create';
+                const url = '#' + this.scope + '/create';
 
                 this.getRouter().dispatch(this.scope, 'create', {
                     attributes: attributes,

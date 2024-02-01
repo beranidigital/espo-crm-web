@@ -1,63 +1,78 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-let BuildUtils = {
+const BuildUtils = {
+    /**
+     * @param {Array} libs
+     * @return {{src: string, file: string}[]}
+     */
     getBundleLibList: function(libs) {
-        let list = [];
+        const list = [];
 
-        libs.forEach(item => {
-            if (!item.bundle) {
-                return;
+        const getFile = item => {
+            if (item.amdId) {
+                return item.amdId + '.js';
             }
 
-            if (item.files) {
-                item.files.forEach(item => list.push(item.src));
+            return item.src.split('/').slice(-1);
+        };
 
-                return;
-            }
+        libs.filter(item => item.bundle)
+            .forEach(item => {
+                if (item.files) {
+                    item.files.forEach(item => list.push({
+                        src: item.src,
+                        file: getFile(item),
+                    }));
 
-            if (!item.src) {
-                throw new Error("No lib src.");
-            }
+                    return;
+                }
 
-            list.push(item.src);
-        });
+                if (!item.src) {
+                    return;
+                }
+
+                list.push({
+                    src: item.src,
+                    file: getFile(item),
+                });
+            });
 
         return list;
     },
 
     getPreparedBundleLibList: function (libs) {
         return BuildUtils.getBundleLibList(libs)
-            .map(file => 'client/lib/original/' + file.split('/').slice(-1));
+            .map(item => 'client/lib/original/' + item.file);
     },
 
     destToOriginalDest: function (dest) {
-        let path = dest.split('/');
+        const path = dest.split('/');
 
         return path.slice(0, -1)
             .concat('original')
@@ -75,19 +90,19 @@ let BuildUtils = {
      * }[]}
      */
     getCopyLibDataList: function (libs) {
-        let list = [];
+        const list = [];
 
         /**
          * @param {Object} item
          * @return {string}
          */
-        let getItemDest = item => item.dest || 'client/lib/' + item.src.split('/').pop();
+        const getItemDest = item => item.dest || 'client/lib/' + item.src.split('/').pop();
 
         /**
          * @param {Object} item
          * @return {string}
          */
-        let getItemOriginalDest = item => {
+        const getItemOriginalDest = item => {
             return BuildUtils.destToOriginalDest(
                 getItemDest(item)
             );
@@ -98,7 +113,7 @@ let BuildUtils = {
                 return;
             }
 
-            let minify = !!item.minify;
+            const minify = !!item.minify;
 
             if (item.files) {
                 item.files.forEach(item => {
@@ -114,7 +129,7 @@ let BuildUtils = {
             }
 
             if (!item.src) {
-                throw new Error("No lib src.");
+                return;
             }
 
             list.push({

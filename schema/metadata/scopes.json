@@ -83,9 +83,8 @@
             "description": "A list of available levels in Roles.",
             "type": "array",
             "items": {
-                "enum": ["all", "team", "own", "no"]
+                "enum": ["yes", "all", "team", "own", "no"]
             }
-
         },
         "aclPortalLevelList": {
             "description": "A list of available levels in Portal Roles.",
@@ -206,6 +205,14 @@
                 }
             }
         },
+        "aclFieldLevelDisabled": {
+            "type": "boolean",
+            "description": "Disable field-level security."
+        },
+        "aclPortalFieldLevelDisabled": {
+            "type": "boolean",
+            "description": "Disable field-level security for portals."
+        },
         "statusField": {
             "description": "Defines a field that should be used as a status field.",
             "type": "string"
@@ -259,6 +266,10 @@
                 "type": "string"
             }
         },
+        "kanbanOrderDisabled": {
+            "description": "Disable the ability to order items for users.",
+            "type": "boolean"
+        },
         "languageIsGlobal": {
             "description": "Language labels will be available for all users (not restricted by ACL).",
             "type": "boolean"
@@ -283,6 +294,43 @@
             "type": "array",
             "items": {
                 "type": "string"
+            }
+        },
+        "duplicateCheckFieldList": {
+            "description": "Fields to be check for duplicates. Requires recordDefs > duplicateWhereBuilderClassName set to Espo\\Classes\\DuplicateWhereBuilders\\General.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "entityManager": {
+            "description": "Entity manager items availability.",
+            "type": "object",
+            "properties": {
+                "layouts": {
+                    "type": "boolean",
+                    "description": "Layouts."
+                },
+                "edit": {
+                    "type": "boolean",
+                    "description": "Edit the entity."
+                },
+                "formula": {
+                    "type": "boolean",
+                    "description": "Formula scripts."
+                },
+                "fields": {
+                    "type": "boolean",
+                    "description": "Fields."
+                },
+                "relationships": {
+                    "type": "boolean",
+                    "description": "Relationships."
+                },
+                "addField": {
+                    "type": "boolean",
+                    "description": "The ability to add new fields."
+                }
             }
         }
     }

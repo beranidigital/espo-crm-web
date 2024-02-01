@@ -1,33 +1,35 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 import View from 'view';
 import Model from 'model';
+// noinspection NpmUsedModulesInstalled
+import intlTelInputGlobals from 'intl-tel-input-globals';
 
 class Step1ImportView extends View {
 
@@ -36,7 +38,7 @@ class Step1ImportView extends View {
     events = {
         /** @this Step1ImportView */
         'change #import-file': function (e) {
-            let files = e.currentTarget.files;
+            const files = e.currentTarget.files;
 
             if (files.length) {
                 this.loadFile(files[0]);
@@ -53,10 +55,11 @@ class Step1ImportView extends View {
     }
 
     getEntityList() {
-        let list = [];
-        let scopes = this.getMetadata().get('scopes');
+        const list = [];
+        /** @type {Object.<string, Record>} */
+        const scopes = this.getMetadata().get('scopes');
 
-        for (let scopeName in scopes) {
+        for (const scopeName in scopes) {
             if (scopes[scopeName].importable) {
                 if (!this.getAcl().checkScope(scopeName, 'create')) {
                     continue;
@@ -100,6 +103,7 @@ class Step1ImportView extends View {
             'idleMode',
             'skipDuplicateChecking',
             'manualMode',
+            'phoneNumberCountry',
         ];
 
         this.paramList.forEach(item => {
@@ -124,17 +128,16 @@ class Step1ImportView extends View {
             manualMode: false,
         };
 
-        let defaults = Espo.Utils.cloneDeep(
-            (this.getPreferences().get('importParams') || {}).default || {}
-        );
+        const defaults = Espo.Utils.cloneDeep(
+            (this.getPreferences().get('importParams') || {}).default || {});
 
         if (!this.options.formData) {
-            for (let p in defaults) {
+            for (const p in defaults) {
                 this.formData[p] = defaults[p];
             }
         }
 
-        let model = this.model = new Model;
+        const model = this.model = new Model;
 
         this.attributeList.forEach(a => {
             model.set(a, this.formData[a]);
@@ -152,24 +155,24 @@ class Step1ImportView extends View {
             });
         });
 
-        let personNameFormatList = [
+        const personNameFormatList = [
             'f l',
             'l f',
             'l, f',
         ];
 
-        let personNameFormat = this.getConfig().get('personNameFormat') || 'firstLast';
+        const personNameFormat = this.getConfig().get('personNameFormat') || 'firstLast';
 
         if (~personNameFormat.toString().toLowerCase().indexOf('middle')) {
             personNameFormatList.push('f m l');
             personNameFormatList.push('l f m');
         }
 
-        let dateFormatDataList = this.getDateFormatDataList();
-        let timeFormatDataList = this.getTimeFormatDataList();
+        const dateFormatDataList = this.getDateFormatDataList();
+        const timeFormatDataList = this.getTimeFormatDataList();
 
-        let dateFormatList = [];
-        let dateFormatOptions = {};
+        const dateFormatList = [];
+        const dateFormatOptions = {};
 
         dateFormatDataList.forEach(item => {
             dateFormatList.push(item.key);
@@ -177,8 +180,8 @@ class Step1ImportView extends View {
             dateFormatOptions[item.key] = item.label;
         });
 
-        let timeFormatList = [];
-        let timeFormatOptions = {};
+        const timeFormatList = [];
+        const timeFormatOptions = {};
 
         timeFormatDataList.forEach(item => {
             timeFormatList.push(item.key);
@@ -355,6 +358,22 @@ class Step1ImportView extends View {
             tooltipText: this.translate('manualMode', 'tooltips', 'Import'),
         });
 
+        this.createView('phoneNumberCountryField', 'views/fields/enum', {
+            selector: '.field[data-name="phoneNumberCountry"]',
+            model: this.model,
+            name: 'phoneNumberCountry',
+            mode: 'edit',
+            params: {
+                options: ['', ...intlTelInputGlobals.getCountryData().map(item => item.iso2)],
+            },
+            translatedOptions: intlTelInputGlobals.getCountryData()
+                .reduce((map, item) => {
+                    map[item.iso2] = `${item.iso2.toUpperCase()} +${item.dialCode}`;
+
+                    return map;
+                }, {})
+        });
+
         this.listenTo(this.model, 'change', (m, o) => {
             if (!o.ui) {
                 return;
@@ -410,7 +429,11 @@ class Step1ImportView extends View {
         this.controlFieldVisibility();
     }
 
+    /**
+     * @return {import('./index').default}
+     */
     getParentIndexView() {
+        // noinspection JSValidateTypes
         return this.getParentView();
     }
 
@@ -463,9 +486,9 @@ class Step1ImportView extends View {
      * @param {File} file
      */
     loadFile(file) {
-        let blob = file.slice(0, 1024 * 16);
+        const blob = file.slice(0, 1024 * 16);
 
-        let readerPreview = new FileReader();
+        const readerPreview = new FileReader();
 
         readerPreview.onloadend = e => {
             if (e.target.readyState === FileReader.DONE) {
@@ -477,16 +500,14 @@ class Step1ImportView extends View {
 
         readerPreview.readAsText(blob);
 
-        let reader = new FileReader();
+        const reader = new FileReader();
 
         reader.onloadend = e => {
             if (e.target.readyState === FileReader.DONE) {
                 this.getParentIndexView().fileContents = e.target.result;
 
                 this.setFileIsLoaded();
-
                 this.getRouter().confirmLeaveOut = true;
-
                 this.setFileName(file.name);
             }
         };
@@ -511,7 +532,7 @@ class Step1ImportView extends View {
             return;
         }
 
-        let arr = this.csvToArray(
+        const arr = this.csvToArray(
             this.formData.previewString,
             this.formData.delimiter,
             this.formData.textQualifier
@@ -519,18 +540,18 @@ class Step1ImportView extends View {
 
         this.formData.previewArray = arr;
 
-        let $table = $('<table>').addClass('table').addClass('table-bordered');
-        let $tbody = $('<tbody>').appendTo($table);
+        const $table = $('<table>').addClass('table').addClass('table-bordered');
+        const $tbody = $('<tbody>').appendTo($table);
 
         arr.forEach((row, i) => {
             if (i >= 3) {
                 return;
             }
 
-            let $row = $('<tr>');
+            const $row = $('<tr>');
 
             row.forEach((value) => {
-                let $cell = $('<td>').html(this.getHelper().sanitizeHtml(value));
+                const $cell = $('<td>').html(this.getHelper().sanitizeHtml(value));
 
                 $row.append($cell);
             });
@@ -538,7 +559,7 @@ class Step1ImportView extends View {
             $tbody.append($row);
         });
 
-        let $container = $('#import-preview');
+        const $container = $('#import-preview');
 
         $container.empty().append($table);
     }
@@ -549,7 +570,7 @@ class Step1ImportView extends View {
 
         strDelimiter = strDelimiter.replace(/\\t/, '\t');
 
-        let objPattern = new RegExp(
+        const objPattern = new RegExp(
             (
                 // Delimiters.
                 "(\\" + strDelimiter + "|\\r?\\n|\\r|^)" +
@@ -564,11 +585,11 @@ class Step1ImportView extends View {
             "gi"
         );
 
-        let arrData = [[]];
+        const arrData = [[]];
         let arrMatches = null;
 
         while (arrMatches = objPattern.exec(strData)) {
-            let strMatchedDelimiter = arrMatches[1];
+            const strMatchedDelimiter = arrMatches[1];
             let strMatchedValue;
 
             if (
@@ -578,11 +599,9 @@ class Step1ImportView extends View {
                 arrData.push([]);
             }
 
-            if (arrMatches[2]) {
-                strMatchedValue = arrMatches[2].replace(new RegExp( "\"\"", "g" ),  "\"");
-            } else {
-                strMatchedValue = arrMatches[3];
-            }
+            strMatchedValue = arrMatches[2] ?
+                arrMatches[2].replace(new RegExp("\"\"", "g"), "\"") :
+                arrMatches[3];
 
             arrData[arrData.length - 1].push(strMatchedValue);
         }
@@ -591,11 +610,11 @@ class Step1ImportView extends View {
     }
 
     saveAsDefault() {
-        let preferences = this.getPreferences();
+        const preferences = this.getPreferences();
 
-        let importParams = Espo.Utils.cloneDeep(preferences.get('importParams') || {});
+        const importParams = Espo.Utils.cloneDeep(preferences.get('importParams') || {});
 
-        let data = {};
+        const data = {};
 
         this.paramList.forEach(attribute => {
             data[attribute] = this.model.get(attribute);
@@ -634,7 +653,7 @@ class Step1ImportView extends View {
     }
 
     convertFormatToLabel(format) {
-        let formatItemLabelMap = {
+        const formatItemLabelMap = {
             'YYYY': '2021',
             'DD': '27',
             'MM': '12',
@@ -648,8 +667,8 @@ class Step1ImportView extends View {
 
         let label = format;
 
-        for (let item in formatItemLabelMap) {
-            let value = formatItemLabelMap[item];
+        for (const item in formatItemLabelMap) {
+            const value = formatItemLabelMap[item];
 
             label = label.replace(new RegExp(item, 'g'), value);
         }
@@ -658,7 +677,7 @@ class Step1ImportView extends View {
     }
 
     getDateFormatDataList() {
-        let dateFormatList = this.getMetadata().get(['clientDefs', 'Import', 'dateFormatList']) || [];
+        const dateFormatList = this.getMetadata().get(['clientDefs', 'Import', 'dateFormatList']) || [];
 
         return dateFormatList.map(item => {
             return {
@@ -669,7 +688,7 @@ class Step1ImportView extends View {
     }
 
     getTimeFormatDataList() {
-        let timeFormatList = this.getMetadata().get(['clientDefs', 'Import', 'timeFormatList']) || [];
+        const timeFormatList = this.getMetadata().get(['clientDefs', 'Import', 'timeFormatList']) || [];
 
         return timeFormatList.map(item => {
             return {

@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -105,7 +105,7 @@ class EditView extends MainView {
      * Set up a record.
      */
     setupRecord() {
-        let o = {
+        const o = {
             model: this.model,
             fullSelector: '#main > .record',
             scope: this.scope,
@@ -116,7 +116,7 @@ class EditView extends MainView {
             o[option] = this.options[option];
         });
 
-        let params = this.options.params || {};
+        const params = this.options.params || {};
 
         if (params.rootUrl) {
             o.rootUrl = params.rootUrl;
@@ -140,9 +140,9 @@ class EditView extends MainView {
 
     /** @inheritDoc */
     getHeader() {
-        let headerIconHtml = this.getHeaderIconHtml();
-        let rootUrl = this.options.rootUrl || this.options.params.rootUrl || '#' + this.scope;
-        let scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
+        const headerIconHtml = this.getHeaderIconHtml();
+        const rootUrl = this.options.rootUrl || this.options.params.rootUrl || '#' + this.scope;
+        const scopeLabel = this.getLanguage().translate(this.scope, 'scopeNamesPlural');
 
         let $root = $('<span>').text(scopeLabel);
 
@@ -163,17 +163,17 @@ class EditView extends MainView {
         }
 
         if (this.model.isNew()) {
-            let $create = $('<span>').text(this.getLanguage().translate('create'));
+            const $create = $('<span>').text(this.getLanguage().translate('create'));
 
             return this.buildHeaderHtml([$root, $create]);
         }
 
-        let name = this.model.get('name') || this.model.id;
+        const name = this.model.get('name') || this.model.id;
 
         let $name = $('<span>').text(name);
 
         if (!this.options.noHeaderLinks) {
-            let url = '#' + this.scope + '/view/' + this.model.id;
+            const url = '#' + this.scope + '/view/' + this.model.id;
 
             $name =
                 $('<a>')
@@ -188,7 +188,7 @@ class EditView extends MainView {
     /** @inheritDoc */
     updatePageTitle() {
         if (this.model.isNew()) {
-            let title = this.getLanguage().translate('Create') + ' ' +
+            const title = this.getLanguage().translate('Create') + ' ' +
                 this.getLanguage().translate(this.scope, 'scopeNames');
 
             this.setPageTitle(title);
@@ -196,9 +196,9 @@ class EditView extends MainView {
             return;
         }
 
-        let name = this.model.get('name');
+        const name = this.model.get('name');
 
-        let title = name ? name : this.getLanguage().translate(this.scope, 'scopeNames');
+        const title = name ? name : this.getLanguage().translate(this.scope, 'scopeNames');
 
         this.setPageTitle(title);
     }

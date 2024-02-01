@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -41,6 +41,7 @@ import $ from 'jquery';
  * @callback module:controller~masterViewCallback
  * @param {module:views/site/master} view A master view.
  */
+
 
 /**
  * A controller. To be extended.
@@ -281,7 +282,7 @@ class Controller {
      * @param {string} key
      */
     clearStoredMainView(key) {
-        let view = this.getStoredMainView(key);
+        const view = this.getStoredMainView(key);
 
         if (view) {
             view.remove(true);
@@ -316,12 +317,12 @@ class Controller {
      * Clear all stored main views.
      */
     clearAllStoredMainViews() {
-        for (let k in this.params) {
+        for (const k in this.params) {
             if (k.indexOf('storedMainView-') !== 0) {
                 continue;
             }
 
-            let key = k.slice(15);
+            const key = k.slice(15);
 
             this.clearStoredMainView(key);
         }
@@ -365,7 +366,7 @@ class Controller {
             return;
         }
 
-        let msg = action ?
+        const msg = action ?
             "Denied access to action '" + this.name + "#" + action + "'" :
             "Denied access to scope '" + this.name + "'";
 
@@ -383,14 +384,14 @@ class Controller {
 
         action = action || this.defaultAction;
 
-        let method = 'action' + Espo.Utils.upperCaseFirst(action);
+        const method = 'action' + Espo.Utils.upperCaseFirst(action);
 
         if (!(method in this)) {
             throw new Exceptions.NotFound("Action '" + this.name + "#" + action + "' is not found");
         }
 
-        let preMethod = 'before' + Espo.Utils.upperCaseFirst(action);
-        let postMethod = 'after' + Espo.Utils.upperCaseFirst(action);
+        const preMethod = 'before' + Espo.Utils.upperCaseFirst(action);
+        const postMethod = 'after' + Espo.Utils.upperCaseFirst(action);
 
         if (preMethod in this) {
             this[preMethod].call(this, options || {});
@@ -426,7 +427,7 @@ class Controller {
             return;
         }
 
-        let masterView = this.masterView || 'views/site/master';
+        const masterView = this.masterView || 'views/site/master';
 
         this.viewFactory.create(masterView, {fullSelector: 'body'}, /** module:view */master => {
             this.set('master', master);
@@ -444,6 +445,29 @@ class Controller {
                     callback.call(this, master);
                 })
         });
+    }
+
+    /**
+     * @param {module:views/site/master} masterView
+     * @private
+     */
+    _unchainMainView(masterView) {
+        // noinspection JSUnresolvedReference
+        if (
+            !masterView.currentViewKey ||
+            !this.hasStoredMainView(masterView.currentViewKey)
+        ) {
+            return;
+        }
+
+        const currentMainView = masterView.getView('main');
+
+        if (!currentMainView) {
+            return;
+        }
+
+        currentMainView.propagateEvent('remove', {ignoreCleaning: true});
+        masterView.unchainView('main');
     }
 
     /**
@@ -502,7 +526,7 @@ class Controller {
                     isActual = mainView.isActualForReuse();
                 }
 
-                let lastUrl = (mainView && 'lastUrl' in mainView) ? mainView.lastUrl : null;
+                const lastUrl = (mainView && 'lastUrl' in mainView) ? mainView.lastUrl : null;
 
                 if (
                     isActual &&
@@ -524,6 +548,8 @@ class Controller {
             }
 
             if (mainView) {
+                this._unchainMainView(masterView);
+
                 masterView.assignView('main', mainView, selector)
                     .then(() => {
                         dto.isSet = true;
@@ -573,14 +599,8 @@ class Controller {
         if (masterView.currentViewKey) {
             this.set('storedScrollTop-' + masterView.currentViewKey, $(window).scrollTop());
 
-            if (this.hasStoredMainView(masterView.currentViewKey)) {
-                let mainView = masterView.getView('main');
-
-                if (mainView) {
-                    mainView.propagateEvent('remove', {ignoreCleaning: true});
-                }
-
-                masterView.unchainView('main');
+            if (!dto.isSet) {
+                this._unchainMainView(masterView);
             }
         }
 
@@ -620,7 +640,7 @@ class Controller {
      * Show a loading notify-message.
      */
     showLoadingNotification() {
-        let master = this.get('master');
+        const master = this.get('master');
 
         if (!master) {
             return;
@@ -633,7 +653,7 @@ class Controller {
      * Hide a loading notify-message.
      */
     hideLoadingNotification() {
-        let master = this.get('master');
+        const master = this.get('master');
 
         if (!master) {
             return;

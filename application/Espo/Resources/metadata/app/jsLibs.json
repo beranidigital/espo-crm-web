@@ -78,6 +78,18 @@
         "exportsAs": "Selectize"
     },
     "autonumeric": {},
+    "intl-tel-input": {
+        "exportsTo": "window",
+        "exportsAs": "intlTelInput"
+    },
+    "intl-tel-input-utils": {
+        "exportsTo": "window",
+        "exportsAs": "intlTelInputUtils"
+    },
+    "intl-tel-input-globals": {
+        "exportsTo": "window",
+        "exportsAs": "intlTelInputGlobals"
+    },
     "cronstrue": {
         "path": "client/lib/cronstrue-i18n.js",
         "devPath": "client/lib/original/cronstrue-i18n.js",
@@ -120,6 +132,21 @@
         "path": "client/lib/ace.js",
         "exportsTo": "window",
         "exportsAs": "ace"
+    },
+    "ace-mode-css": {
+        "path": "client/lib/ace-mode-css.js",
+        "exportsTo": "ace.require.define.modules",
+        "exportsAs": "ace/mode/css"
+    },
+    "ace-mode-html": {
+        "path": "client/lib/ace-mode-html.js",
+        "exportsTo": "ace.require.define.modules",
+        "exportsAs": "ace/mode/html"
+    },
+    "ace-mode-handlebars": {
+        "path": "client/lib/ace-mode-handlebars.js",
+        "exportsTo": "ace.require.define.modules",
+        "exportsAs": "ace/mode/handlebars"
     },
     "ace-mode-javascript": {
         "path": "client/lib/ace-mode-javascript.js",

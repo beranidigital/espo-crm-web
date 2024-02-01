@@ -2,35 +2,36 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Select\Where;
 
-use Espo\Core\Exceptions\Error;
+use Espo\Core\Exceptions\BadRequest;
 use Espo\Core\Select\Helpers\RandomStringGenerator;
+use Espo\Core\Select\Where\Item\Type;
 use Espo\Entities\Team;
 use Espo\Entities\User;
 use Espo\ORM\Defs as ORMDefs;
@@ -38,6 +39,7 @@ use Espo\ORM\Entity;
 use Espo\ORM\Query\Part\WhereClause;
 use Espo\ORM\Query\Part\WhereItem;
 use Espo\ORM\Query\SelectBuilder as QueryBuilder;
+use InvalidArgumentException;
 
 /**
  * Converts a search where (passed from front-end) to a where clause (for ORM).
@@ -56,7 +58,7 @@ class Converter
     ) {}
 
     /**
-     * @throws Error
+     * @throws BadRequest
      */
     public function convert(QueryBuilder $queryBuilder, Item $item): WhereItem
     {
@@ -64,8 +66,15 @@ class Converter
 
         $itemList = $this->itemToList($item);
 
-        foreach ($itemList as $subItem) {
-            $part = $this->processItem($queryBuilder, Item::fromRaw($subItem));
+        foreach ($itemList as $subItemRaw) {
+            try {
+                $subItem = Item::fromRaw($subItemRaw);
+            }
+            catch (InvalidArgumentException $e) {
+                throw new BadRequest($e->getMessage());
+            }
+
+            $part = $this->processItem($queryBuilder, $subItem);
 
             if (empty($part)) {
                 continue;
@@ -81,11 +90,11 @@ class Converter
 
     /**
      * @return array<int|string, mixed>
-     * @throws Error
+     * @throws BadRequest
      */
     private function itemToList(Item $item): array
     {
-        if ($item->getType() !== 'and') {
+        if ($item->getType() !== Type::AND) {
             return [
                 $item->getRaw(),
             ];
@@ -94,7 +103,7 @@ class Converter
         $list = $item->getValue();
 
         if (!is_array($list)) {
-            throw new Error("Bad where item value.");
+            throw new BadRequest("Bad where item value.");
         }
 
         return $list;
@@ -102,7 +111,7 @@ class Converter
 
     /**
      * @return ?array<int|string, mixed>
-     * @throws Error
+     * @throws BadRequest
      */
     private function processItem(QueryBuilder $queryBuilder, Item $item): ?array
     {
@@ -117,7 +126,7 @@ class Converter
             // Processing special filters. Only at the top level of the tree.
 
             if (!$attribute) {
-                throw new Error("Bad where definition. Missing attribute.");
+                throw new BadRequest("Bad where definition. Missing attribute.");
             }
 
             if (!$value) {
@@ -131,13 +140,15 @@ class Converter
             return $this->applyIsUserFromTeams($queryBuilder, $attribute, $value);
         }
 
-        return $this->itemConverter->convert($queryBuilder, $item)->getRaw();
+        return $this->itemConverter
+            ->convert($queryBuilder, $item)
+            ->getRaw();
     }
 
     /**
      * @param mixed $value
      * @return array<int|string, mixed>
-     * @throws Error
+     * @throws BadRequest
      */
     private function applyInCategory(QueryBuilder $queryBuilder, string $attribute, $value): array
     {
@@ -146,7 +157,7 @@ class Converter
         $entityDefs = $this->ormDefs->getEntity($this->entityType);
 
         if (!$entityDefs->hasRelation($link)) {
-            throw new Error("Not existing '{$link}' in where item.");
+            throw new BadRequest("Not existing '$link' in where item.");
         }
 
         $defs = $entityDefs->getRelation($link);
@@ -172,7 +183,7 @@ class Converter
                 ucfirst($pathName),
                 $pathName,
                 [
-                    "{$pathName}.descendorId:" => "{$middleName}.{$key}",
+                    "$pathName.descendorId:" => "$middleName.$key",
                 ]
             );
 
@@ -188,7 +199,7 @@ class Converter
                 ucfirst($pathName),
                 $pathName,
                 [
-                    "{$pathName}.descendorId:" => "{$key}",
+                    "$pathName.descendorId:" => "$key",
                 ]
             );
 
@@ -197,13 +208,13 @@ class Converter
             ];
         }
 
-        throw new Error("Not supported link '{$link}' in where item.");
+        throw new BadRequest("Not supported link '$link' in where item.");
     }
 
     /**
      * @param mixed $value
      * @return array<int|string, mixed>
-     * @throws Error
+     * @throws BadRequest
      */
     private function applyIsUserFromTeams(QueryBuilder $queryBuilder, string $attribute, $value): array
     {
@@ -216,7 +227,7 @@ class Converter
         $entityDefs = $this->ormDefs->getEntity($this->entityType);
 
         if (!$entityDefs->hasRelation($link)) {
-            throw new Error("Not existing '{$link}' in where item.");
+            throw new BadRequest("Not existing '$link' in where item.");
         }
 
         $defs = $entityDefs->getRelation($link);
@@ -225,7 +236,7 @@ class Converter
         $entityType = $defs->getForeignEntityType();
 
         if ($entityType !== User::ENTITY_TYPE) {
-            throw new Error("Not supported link '{$link}' in where item.");
+            throw new BadRequest("Not supported link '$link' in where item.");
         }
 
         if ($relationType === Entity::BELONGS_TO) {
@@ -249,6 +260,6 @@ class Converter
             ];
         }
 
-        throw new Error("Not supported link '{$link}' in where item.");
+        throw new BadRequest("Not supported link '$link' in where item.");
     }
 }

@@ -2,54 +2,49 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\unit\Espo\Core\Select\Applier\Appliers;
 
+use Espo\Core\Exceptions\BadRequest;
 use Espo\ORM\Query\Part\OrderList;
 use Espo\ORM\Query\Part\Order;
+use Espo\Core\Select\Order\Applier as OrderApplier;
+use Espo\Core\Select\Order\Item;
+use Espo\Core\Select\Order\ItemConverter;
+use Espo\Core\Select\Order\ItemConverterFactory;
+use Espo\Core\Select\Order\MetadataProvider;
+use Espo\Core\Select\Order\Orderer;
+use Espo\Core\Select\Order\OrdererFactory;
+use Espo\Core\Select\Order\Params as OrderParams;
+use Espo\Core\Select\SearchParams;
+use Espo\ORM\Query\SelectBuilder as QueryBuilder;
+use PHPUnit\Framework\TestCase;
 
-use Espo\Core\{
-    Exceptions\Error,
-    Select\Order\Applier as OrderApplier,
-    Select\SearchParams,
-    Select\Order\Params as OrderParams,
-    Select\Order\Item,
-    Select\Order\ItemConverterFactory,
-    Select\Order\ItemConverter,
-    Select\Order\MetadataProvider,
-    Select\Order\OrdererFactory,
-    Select\Order\Orderer,
-};
-
-use Espo\{
-    ORM\Query\SelectBuilder as QueryBuilder,
-};
-
-class OrderApplierTest extends \PHPUnit\Framework\TestCase
+class OrderApplierTest extends TestCase
 {
     private ?OrdererFactory $ordererFactory = null;
 
@@ -287,7 +282,7 @@ class OrderApplierTest extends \PHPUnit\Framework\TestCase
         }
         else {
             if ($notExisting) {
-                $this->expectException(Error::class);
+                $this->expectException(BadRequest::class);
 
                 return;
             }

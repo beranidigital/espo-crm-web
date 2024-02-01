@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,6 +33,12 @@ class OidcLoginHandler extends LoginHandler {
 
     /** @inheritDoc */
     process() {
+        const proxy = window.open(
+            'about:blank',
+            'ConnectWithOAuth',
+            'location=0,status=0,width=800,height=800'
+        );
+
         Espo.Ui.notify(' ... ');
 
         return new Promise((resolve, reject) => {
@@ -40,14 +46,14 @@ class OidcLoginHandler extends LoginHandler {
                 .then(data => {
                     Espo.Ui.notify(false);
 
-                    this.processWithData(data)
+                    this.processWithData(data, proxy)
                         .then(info => {
-                            let code = info.code;
-                            let nonce = info.nonce;
+                            const code = info.code;
+                            const nonce = info.nonce;
 
-                            let authString = Base64.encode('**oidc:' + code);
+                            const authString = Base64.encode('**oidc:' + code);
 
-                            let headers = {
+                            const headers = {
                                 'Espo-Authorization': authString,
                                 'Authorization': 'Basic ' + authString,
                                 'X-Oidc-Authorization-Nonce': nonce,
@@ -56,12 +62,14 @@ class OidcLoginHandler extends LoginHandler {
                             resolve(headers);
                         })
                         .catch(() => {
+                            proxy.close();
                             reject();
                         });
                 })
                 .catch(() => {
                     Espo.Ui.notify(false)
 
+                    proxy.close();
                     reject();
                 });
         });
@@ -78,13 +86,14 @@ class OidcLoginHandler extends LoginHandler {
      *  prompt: 'login'|'consent'|'select_account',
      *  maxAge: ?Number,
      * }} data
+     * @param {WindowProxy} proxy
      * @return {Promise<{code: string, nonce: string}>}
      */
-    processWithData(data) {
-        let state = (Math.random() + 1).toString(36).substring(7);
-        let nonce = (Math.random() + 1).toString(36).substring(7);
+    processWithData(data, proxy) {
+        const state = (Math.random() + 1).toString(36).substring(4);
+        const nonce = (Math.random() + 1).toString(36).substring(4);
 
-        let params = {
+        const params = {
             client_id: data.clientId,
             redirect_uri: data.redirectUri,
             response_type: 'code',
@@ -102,14 +111,14 @@ class OidcLoginHandler extends LoginHandler {
             params.claims = data.claims;
         }
 
-        let partList = Object.entries(params)
+        const partList = Object.entries(params)
             .map(([key, value]) => {
                 return key + '=' + encodeURIComponent(value);
             });
 
-        let url = data.endpoint + '?' + partList.join('&');
+        const url = data.endpoint + '?' + partList.join('&');
 
-        return this.processWindow(url, state, nonce);
+        return this.processWindow(url, state, nonce, proxy);
     }
 
     /**
@@ -117,13 +126,14 @@ class OidcLoginHandler extends LoginHandler {
      * @param {string} url
      * @param {string} state
      * @param {string} nonce
+     * @param {WindowProxy} proxy
      * @return {Promise<{code: string, nonce: string}>}
      */
-    processWindow(url, state, nonce) {
-        let proxy = window.open(url, 'ConnectWithOAuth', 'location=0,status=0,width=800,height=800');
+    processWindow(url, state, nonce, proxy) {
+        proxy.location.href = url;
 
         return new Promise((resolve, reject) => {
-            let fail = () => {
+            const fail = () => {
                 window.clearInterval(interval);
 
                 if (!proxy.closed) {
@@ -133,7 +143,7 @@ class OidcLoginHandler extends LoginHandler {
                 reject();
             };
 
-            let interval = window.setInterval(() => {
+            const interval = window.setInterval(() => {
                 if (proxy.closed) {
                     fail();
 
@@ -153,7 +163,7 @@ class OidcLoginHandler extends LoginHandler {
                     return;
                 }
 
-                let parsedData = this.parseWindowUrl(url);
+                const parsedData = this.parseWindowUrl(url);
 
                 if (!parsedData) {
                     fail();
@@ -200,7 +210,7 @@ class OidcLoginHandler extends LoginHandler {
      */
     parseWindowUrl(url) {
         try {
-            let params = new URL(url).searchParams;
+            const params = new URL(url).searchParams;
 
             return {
                 code: params.get('code'),
@@ -209,7 +219,7 @@ class OidcLoginHandler extends LoginHandler {
                 errorDescription: params.get('errorDescription'),
             };
         }
-        catch(e) {
+        catch (e) {
             return null;
         }
     }

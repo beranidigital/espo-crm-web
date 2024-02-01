@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -32,6 +32,7 @@ import Controller from 'controller';
 
 /**
  * A record controller.
+ * @template {module:model} TModel
  */
 class RecordController extends Controller {
 
@@ -75,9 +76,9 @@ class RecordController extends Controller {
     }
 
     actionList(options) {
-        let isReturn = options.isReturn || this.getRouter().backProcessed;
+        const isReturn = options.isReturn || this.getRouter().backProcessed;
 
-        let key = this.name + 'List';
+        const key = this.name + 'List';
 
         if (!isReturn && this.getStoredMainView(key)) {
             this.clearStoredMainView(key);
@@ -96,7 +97,7 @@ class RecordController extends Controller {
             this.listenToOnce(this.baseController, 'action', abort);
             this.listenToOnce(collection, 'sync', () => this.stopListening(this.baseController, 'action', abort));
 
-            let viewOptions = {
+            const viewOptions = {
                 scope: this.name,
                 collection: collection,
                 params: options,
@@ -153,9 +154,9 @@ class RecordController extends Controller {
      * }} options
      */
     actionView(options) {
-        let id = options.id;
+        const id = options.id;
 
-        let isReturn = this.getRouter().backProcessed;
+        const isReturn = this.getRouter().backProcessed;
 
         if (isReturn) {
             if (this.lastViewActionOptions && this.lastViewActionOptions.id === id) {
@@ -181,7 +182,7 @@ class RecordController extends Controller {
         };
 
         if ('model' in options) {
-            let model = options.model;
+            const model = options.model;
 
             createView(model);
 
@@ -251,9 +252,9 @@ class RecordController extends Controller {
      */
     prepareModelCreate(model, options) {
         this.listenToOnce(model, 'before:save', () => {
-            let key = this.name + 'List';
+            const key = this.name + 'List';
 
-            let stored = this.getStoredMainView(key);
+            const stored = this.getStoredMainView(key);
 
             if (!stored) {
                 return;
@@ -265,9 +266,9 @@ class RecordController extends Controller {
         });
 
         this.listenToOnce(model, 'after:save', () => {
-            let key = this.name + 'List';
+            const key = this.name + 'List';
 
-            let stored = this.getStoredMainView(key);
+            const stored = this.getStoredMainView(key);
 
             if (!stored) {
                 return;
@@ -288,14 +289,14 @@ class RecordController extends Controller {
     create(options) {
         options = options || {};
 
-        let optionsOptions = options.options || {};
+        const optionsOptions = options.options || {};
 
         this.getModel().then(model => {
             if (options.relate) {
                 model.setRelate(options.relate);
             }
 
-            let o = {
+            const o = {
                 scope: this.name,
                 model: model,
                 returnUrl: options.returnUrl,
@@ -303,7 +304,7 @@ class RecordController extends Controller {
                 params: options,
             };
 
-            for (let k in optionsOptions) {
+            for (const k in optionsOptions) {
                 o[k] = optionsOptions[k];
             }
 
@@ -334,9 +335,9 @@ class RecordController extends Controller {
      */
     prepareModelEdit(model, options) {
         this.listenToOnce(model, 'before:save', () => {
-            let key = this.name + 'List';
+            const key = this.name + 'List';
 
-            let stored = this.getStoredMainView(key);
+            const stored = this.getStoredMainView(key);
 
             if (!stored) {
                 return;
@@ -349,9 +350,9 @@ class RecordController extends Controller {
     }
 
     actionEdit(options) {
-        let id = options.id;
+        const id = options.id;
 
-        let optionsOptions = options.options || {};
+        const optionsOptions = options.options || {};
 
         this.getModel().then(model => {
             model.id = id;
@@ -369,7 +370,7 @@ class RecordController extends Controller {
                 .then(() => {
                     this.hideLoadingNotification();
 
-                    let o = {
+                    const o = {
                         scope: this.name,
                         model: model,
                         returnUrl: options.returnUrl,
@@ -377,7 +378,7 @@ class RecordController extends Controller {
                         params: options,
                     };
 
-                    for (let k in optionsOptions) {
+                    for (const k in optionsOptions) {
                         o[k] = optionsOptions[k];
                     }
 
@@ -401,12 +402,12 @@ class RecordController extends Controller {
 
     // noinspection JSUnusedGlobalSymbols
     actionMerge(options) {
-        let ids = options.ids.split(',');
+        const ids = options.ids.split(',');
 
         this.getModel().then((model) => {
-            let models = [];
+            const models = [];
 
-            let proceed = () => {
+            const proceed = () => {
                 this.main('views/merge', {
                     models: models,
                     scope: this.name,
@@ -417,7 +418,7 @@ class RecordController extends Controller {
             let i = 0;
 
             ids.forEach(id => {
-                let current = model.clone();
+                const current = model.clone();
 
                 current.id = id;
                 models.push(current);
@@ -437,10 +438,10 @@ class RecordController extends Controller {
 
     // noinspection JSUnusedGlobalSymbols
     actionRelated(options) {
-        let id = options.id;
-        let link = options.link;
+        const id = options.id;
+        const link = options.link;
 
-        let viewName = this.getViewName('listRelated');
+        const viewName = this.getViewName('listRelated');
 
         let model;
 
@@ -452,7 +453,7 @@ class RecordController extends Controller {
                 return model.fetch({main: true});
             })
             .then(() => {
-                let foreignEntityType = model.getLinkParam(link, 'entity');
+                const foreignEntityType = model.getLinkParam(link, 'entity');
 
                 if (!foreignEntityType) {
                     this.baseController.error404();
@@ -486,10 +487,10 @@ class RecordController extends Controller {
             throw new Error('No collection for unnamed controller');
         }
 
-        let entityType = this.entityType || this.name;
+        const entityType = this.entityType || this.name;
 
         if (usePreviouslyFetched && entityType in this.collectionMap) {
-            let collection = this.collectionMap[entityType];
+            const collection = this.collectionMap[entityType];
 
             return Promise.resolve(collection);
         }
@@ -516,7 +517,7 @@ class RecordController extends Controller {
             throw new Error('No collection for unnamed controller');
         }
 
-        let modelName = this.entityType || this.name;
+        const modelName = this.entityType || this.name;
 
         return this.modelFactory.create(modelName, model => {
             if (callback) {

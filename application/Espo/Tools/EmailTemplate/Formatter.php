@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -36,6 +36,8 @@ use Espo\Core\Utils\Config;
 use Espo\Core\Utils\DateTime as DateTimeUtil;
 use Espo\Core\Utils\NumberUtil;
 use Espo\Core\Utils\Language;
+
+use Stringable;
 
 class Formatter
 {
@@ -59,7 +61,7 @@ class Formatter
         $this->language = $language;
     }
 
-    public function formatAttributeValue(Entity $entity, string $attribute): ?string
+    public function formatAttributeValue(Entity $entity, string $attribute, bool $isPlainText = false): ?string
     {
         $value = $entity->get($attribute);
 
@@ -121,6 +123,14 @@ class Formatter
                 return '';
             }
 
+            if ($fieldType === 'wysiwyg') {
+                return $value;
+            }
+
+            if ($isPlainText) {
+                return $value;
+            }
+
             return nl2br($value);
         }
 
@@ -155,7 +165,10 @@ class Formatter
             return $this->number->format($value);
         }
 
-        if (!is_string($value) && is_scalar($value) || is_callable([$value, '__toString'])) {
+        if (
+            !is_string($value) && is_scalar($value) ||
+            $value instanceof Stringable
+        ) {
             return strval($value);
         }
 

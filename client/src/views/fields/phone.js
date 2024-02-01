@@ -1,39 +1,44 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 import VarcharFieldView from 'views/fields/varchar';
 import Select from 'ui/select';
+import intlTelInput from 'intl-tel-input';
+// noinspection NpmUsedModulesInstalled
+import intlTelInputUtils from 'intl-tel-input-utils';
+// noinspection NpmUsedModulesInstalled
+import intlTelInputGlobals from 'intl-tel-input-globals';
 
 class PhoneFieldView extends VarcharFieldView {
 
     type = 'phone'
 
-    editTemplate ='fields/phone/edit'
+    editTemplate = 'fields/phone/edit'
     detailTemplate = 'fields/phone/detail'
     listTemplate = 'fields/phone/list'
 
@@ -42,9 +47,9 @@ class PhoneFieldView extends VarcharFieldView {
     events = {
         /** @this PhoneFieldView */
         'click [data-action="switchPhoneProperty"]': function (e) {
-            let $target = $(e.currentTarget);
-            let $block = $(e.currentTarget).closest('div.phone-number-block');
-            let property = $target.data('property-type');
+            const $target = $(e.currentTarget);
+            const $block = $(e.currentTarget).closest('div.phone-number-block');
+            const property = $target.data('property-type');
 
             if (property === 'primary') {
                 if (!$target.hasClass('active')) {
@@ -68,22 +73,22 @@ class PhoneFieldView extends VarcharFieldView {
         },
         /** @this PhoneFieldView */
         'click [data-action="removePhoneNumber"]': function (e) {
-            let $block = $(e.currentTarget).closest('div.phone-number-block');
+            const $block = $(e.currentTarget).closest('div.phone-number-block');
 
             this.removePhoneNumber($block);
-
             this.trigger('change');
 
-            let $last = this.$el.find('.phone-number').last();
+            const $last = this.$el.find('.phone-number').last();
 
             if ($last.length) {
+                // noinspection JSUnresolvedReference
                 $last[0].focus({preventScroll: true});
             }
         },
         /** @this PhoneFieldView */
         'change input.phone-number': function (e) {
-            let $input = $(e.currentTarget);
-            let $block = $input.closest('div.phone-number-block');
+            const $input = $(e.currentTarget);
+            const $block = $input.closest('div.phone-number-block');
 
             if (this._itemJustRemoved) {
                 return;
@@ -99,7 +104,7 @@ class PhoneFieldView extends VarcharFieldView {
             this.manageAddButton();
         },
         /** @this PhoneFieldView */
-        'keypress input.phone-number': function (e) {
+        'keypress input.phone-number': function () {
             this.manageAddButton();
         },
         /** @this PhoneFieldView */
@@ -112,9 +117,9 @@ class PhoneFieldView extends VarcharFieldView {
         },
         /** @this PhoneFieldView */
         'keydown input.phone-number': function (e) {
-            let key = Espo.Utils.getKeyFromKeyEvent(e);
+            const key = Espo.Utils.getKeyFromKeyEvent(e);
 
-            let $target = $(e.currentTarget);
+            const $target = $(e.currentTarget);
 
             if (key === 'Enter') {
                 if (!this.$el.find('[data-action="addPhoneNumber"]').hasClass('disabled')) {
@@ -127,7 +132,7 @@ class PhoneFieldView extends VarcharFieldView {
             }
 
             if (key === 'Backspace' && $target.val() === '') {
-                let $block = $target.closest('div.phone-number-block');
+                const $block = $target.closest('div.phone-number-block');
 
                 this._itemJustRemoved = true;
                 setTimeout(() => this._itemJustRemoved = false, 100);
@@ -147,7 +152,7 @@ class PhoneFieldView extends VarcharFieldView {
         }
 
         if (!this.model.get(this.name)) {
-            let msg = this.translate('fieldIsRequired', 'messages')
+            const msg = this.translate('fieldIsRequired', 'messages')
                 .replace('{field}', this.getLabelText());
 
             this.showValidationMessage(msg, 'div.phone-number-block:nth-child(1) input.phone-number');
@@ -156,39 +161,67 @@ class PhoneFieldView extends VarcharFieldView {
         }
     }
 
+    // noinspection JSUnusedGlobalSymbols
     validatePhoneData() {
-        let data = this.model.get(this.dataFieldName);
+        const data = this.model.get(this.dataFieldName);
 
         if (!data || !data.length) {
             return;
         }
 
         /** @var {string} */
-        let pattern = '^' + this.getMetadata().get(['app', 'regExpPatterns', 'phoneNumberLoose', 'pattern']) + '$';
-        let regExp = new RegExp(pattern);
+        const pattern = '^' + this.getMetadata().get(['app', 'regExpPatterns', 'phoneNumberLoose', 'pattern']) + '$';
+        const regExp = new RegExp(pattern);
 
-        let numberList = [];
+        const numberList = [];
         let notValid = false;
 
         data.forEach((row, i) => {
-            let number = row.phoneNumber;
+            const msg = this.translate('fieldValueDuplicate', 'messages')
+                .replace('{field}', this.getLabelText());
+            const number = row.phoneNumber;
+
+            const n = (i + 1).toString();
+            const selector = `div.phone-number-block:nth-child(${n}) input.phone-number`;
 
             if (!regExp.test(number)) {
                 notValid = true;
 
-                let msg = this.translate('fieldPhoneInvalidCharacters', 'messages')
+                const msg = this.translate('fieldPhoneInvalidCharacters', 'messages')
                     .replace('{field}', this.getLabelText());
 
-                this.showValidationMessage(msg, 'div.phone-number-block:nth-child(' + (i + 1)
-                    .toString() + ') input.phone-number');
+                this.showValidationMessage(msg, selector);
             }
 
-            let numberClean = String(number).replace(/[\s\+]/g, '');
+            if (this.useInternational) {
+                const element = this.$el.find(selector).get(0);
+
+                if (element) {
+                    const obj = this.intlTelInputMap.get(element);
+
+                    if (obj && !obj.isPossibleNumber()) {
+                        notValid = true;
+
+                        const code = obj.getValidationError();
+
+                        const key = [
+                            'fieldPhoneInvalid',
+                            'fieldPhoneInvalidCode',
+                            'fieldPhoneTooShort',
+                            'fieldPhoneTooLong',
+                        ][code || 0] || 'fieldPhoneInvalid';
+
+                        const msg = this.translate(key, 'messages')
+                            .replace('{field}', this.getLabelText());
+
+                        this.showValidationMessage(msg, selector);
+                    }
+                }
+            }
+
+            const numberClean = String(number).replace(/[\s+]/g, '');
 
             if (~numberList.indexOf(numberClean)) {
-                let msg = this.translate('fieldValueDuplicate', 'messages')
-                    .replace('{field}', this.getLabelText());
-
                 this.showValidationMessage(msg, 'div.phone-number-block:nth-child(' + (i + 1)
                     .toString() + ') input.phone-number');
 
@@ -206,6 +239,7 @@ class PhoneFieldView extends VarcharFieldView {
     }
 
     data() {
+        const number = this.model.get(this.name);
         let phoneNumberData;
 
         if (this.mode === this.MODE_EDIT) {
@@ -237,13 +271,17 @@ class PhoneFieldView extends VarcharFieldView {
         if (phoneNumberData) {
             phoneNumberData = Espo.Utils.cloneDeep(phoneNumberData);
 
-            phoneNumberData.forEach((item) => {
-                let number = item.phoneNumber || '';
+            phoneNumberData.forEach(item => {
+                const number = item.phoneNumber || '';
 
                 item.erased = number.indexOf(this.erasedPlaceholder) === 0;
 
                 if (!item.erased) {
                     item.valueForLink = number.replace(/ /g, '');
+
+                    if (this.isReadMode()) {
+                        item.phoneNumber = this.formatNumber(item.phoneNumber);
+                    }
                 }
 
                 item.lineThrough = item.optOut || item.invalid || this.model.get('doNotCall');
@@ -251,13 +289,15 @@ class PhoneFieldView extends VarcharFieldView {
         }
 
         if ((!phoneNumberData || phoneNumberData.length === 0) && this.model.get(this.name)) {
-            let number = this.model.get(this.name);
-
-            let o = {
-                phoneNumber: number,
+            const o = {
+                phoneNumber: this.formatNumber(number),
                 primary: true,
                 valueForLink: number.replace(/ /g, ''),
             };
+
+            if (this.isReadMode()) {
+                o.phoneNumber = this.formatNumber(o.phoneNumber);
+            }
 
             if (this.mode === 'edit' && this.model.isNew()) {
                 o.type = this.defaultType;
@@ -266,7 +306,9 @@ class PhoneFieldView extends VarcharFieldView {
             phoneNumberData = [o];
         }
 
-        let data = {
+
+
+        const data = {
             ...super.data(),
             phoneNumberData: phoneNumberData,
             doNotCall: this.model.get('doNotCall'),
@@ -286,6 +328,7 @@ class PhoneFieldView extends VarcharFieldView {
             }
 
             data.valueIsSet = this.model.has(this.name);
+            data.value = this.formatNumber(data.value);
         }
 
         data.itemMaxLength = this.itemMaxLength;
@@ -294,11 +337,12 @@ class PhoneFieldView extends VarcharFieldView {
     }
 
     focusOnLast(cursorAtEnd) {
-        let $item = this.$el.find('input.form-control').last();
+        const $item = this.$el.find('input.form-control').last();
 
         $item.focus();
 
         if (cursorAtEnd && $item[0]) {
+            // noinspection JSUnresolvedReference
             $item[0].setSelectionRange($item[0].value.length, $item[0].value.length);
         }
     }
@@ -313,10 +357,23 @@ class PhoneFieldView extends VarcharFieldView {
         this.trigger('change');
     }
 
-    addPhoneNumber() {
-        let data = Espo.Utils.cloneDeep(this.fetchPhoneNumberData());
+    formatNumber(value) {
+        if (!value || value === '' || !this.useInternational) {
+            return value;
+        }
 
-        let o = {
+        // noinspection JSUnresolvedReference
+        return intlTelInputUtils.formatNumber(
+            value,
+            null,
+            intlTelInputUtils.numberFormat.INTERNATIONAL
+        );
+    }
+
+    addPhoneNumber() {
+        const data = Espo.Utils.cloneDeep(this.fetchPhoneNumberData());
+
+        const o = {
             phoneNumber: '',
             primary: !data.length,
             type: false,
@@ -345,6 +402,39 @@ class PhoneFieldView extends VarcharFieldView {
         }
     }
 
+    afterRenderEdit() {
+        super.afterRenderEdit();
+
+        if (this.useInternational) {
+            const inputElements = this.element.querySelectorAll('input.phone-number');
+
+            inputElements.forEach(inputElement => {
+                // noinspection JSUnusedGlobalSymbols
+                const obj = intlTelInput(inputElement, {
+                    nationalMode: false,
+                    autoInsertDialCode: false,
+                    separateDialCode: true,
+                    showFlags: false,
+                    preferredCountries: this.preferredCountryList,
+                    localizedCountries: this._codeNames,
+                    customPlaceholder: /** string */placeholder => {
+                        return placeholder.replace(/[0-9]/g, '0');
+                    },
+                });
+
+                this.intlTelInputMap.set(inputElement, obj);
+
+                inputElement.addEventListener('blur', () => {
+                    if (!obj.isPossibleNumber()) {
+                        return;
+                    }
+
+                    obj.setNumber(obj.getNumber());
+                });
+            });
+        }
+    }
+
     removePhoneNumberBlock($block) {
         let changePrimary = false;
 
@@ -367,10 +457,11 @@ class PhoneFieldView extends VarcharFieldView {
     }
 
     manageAddButton() {
-        let $input = this.$el.find('input.phone-number');
+        const $input = this.$el.find('input.phone-number');
         let c = 0;
 
         $input.each((i, input) => {
+            // noinspection JSUnresolvedReference
             if (input.value !== '') {
                 c++;
             }
@@ -390,9 +481,9 @@ class PhoneFieldView extends VarcharFieldView {
     }
 
     manageButtonsVisibility() {
-        let $primary = this.$el.find('button[data-property-type="primary"]');
-        let $remove = this.$el.find('button[data-action="removePhoneNumber"]');
-        let $container = this.$el.find('.phone-number-block-container');
+        const $primary = this.$el.find('button[data-property-type="primary"]');
+        const $remove = this.$el.find('button[data-action="removePhoneNumber"]');
+        const $container = this.$el.find('.phone-number-block-container');
 
         if ($primary.length > 1) {
             $primary.removeClass('hidden');
@@ -417,6 +508,17 @@ class PhoneFieldView extends VarcharFieldView {
         this.isInvalidFieldName = this.name + 'IsInvalid';
 
         this.phoneNumberOptedOutByDefault = this.getConfig().get('phoneNumberIsOptedOutByDefault');
+        this.useInternational = this.getConfig().get('phoneNumberInternational') || false;
+        this.preferredCountryList = this.getConfig().get('phoneNumberPreferredCountryList') || [];
+
+        if (this.useInternational && !this.isListMode() && !this.isSearchMode()) {
+            this._codeNames = intlTelInputGlobals.getCountryData()
+                .reduce((map, item) => {
+                    map[item.iso2] = item.iso2.toUpperCase();
+
+                    return map;
+                }, {});
+        }
 
         if (this.model.has('doNotCall')) {
             this.listenTo(this.model, 'change:doNotCall', (model, value, o) => {
@@ -436,19 +538,40 @@ class PhoneFieldView extends VarcharFieldView {
 
         this.itemMaxLength = this.getMetadata()
             .get(['entityDefs', 'PhoneNumber', 'fields', 'name', 'maxLength']);
+
+        this.intlTelInputMap = new Map();
+
+        this.once('remove', () => {
+            for (const obj of this.intlTelInputMap.values()) {
+                obj.destroy();
+            }
+
+            this.intlTelInputMap.clear();
+        })
     }
 
     fetchPhoneNumberData() {
-        let data = [];
+        const data = [];
 
-        let $list = this.$el.find('div.phone-number-block');
+        const $list = this.$el.find('div.phone-number-block');
 
         if ($list.length) {
             $list.each((i, d) => {
-                let row = {};
-                let $d = $(d);
+                const row = {};
+                const $d = $(d);
 
-                row.phoneNumber = $d.find('input.phone-number').val().trim();
+                /** @type {HTMLInputElement} */
+                const inputElement = $d.find('input.phone-number').get(0);
+
+                if (!inputElement) {
+                    return;
+                }
+
+                row.phoneNumber = inputElement.value.trim();
+
+                if (this.intlTelInputMap.has(inputElement)) {
+                    row.phoneNumber = this.intlTelInputMap.get(inputElement).getNumber();
+                }
 
                 if (row.phoneNumber === '') {
                     return;
@@ -467,9 +590,9 @@ class PhoneFieldView extends VarcharFieldView {
     }
 
     fetch() {
-        let data = {};
+        const data = {};
 
-        let addressData = this.fetchPhoneNumberData() || [];
+        const addressData = this.fetchPhoneNumberData() || [];
 
         data[this.dataFieldName] = addressData;
         data[this.name] = null;
@@ -493,7 +616,7 @@ class PhoneFieldView extends VarcharFieldView {
         });
 
         if (addressData.length && primaryIndex > 0) {
-            let t = addressData[0];
+            const t = addressData[0];
 
             addressData[0] = addressData[primaryIndex];
             addressData[primaryIndex] = t;
@@ -508,6 +631,62 @@ class PhoneFieldView extends VarcharFieldView {
 
         return data;
     }
+
+    /** @inheritDoc */
+    fetchSearch() {
+        const type = this.fetchSearchType() || 'startsWith';
+
+        const isNumeric = this.getConfig().get('phoneNumberNumericSearch');
+
+        const name = isNumeric ?
+            this.name + 'Numeric' :
+            this.name;
+
+        if (~['isEmpty', 'isNotEmpty'].indexOf(type)) {
+            if (type === 'isEmpty') {
+                return {
+                    type: 'isNull',
+                    attribute: name,
+                    data: {
+                        type: type,
+                    },
+                };
+            }
+
+            return {
+                type: 'isNotNull',
+                attribute: name,
+                data: {
+                    type: type,
+                },
+            };
+        }
+
+        /** @type {string} */
+        let value = this.$element.val()
+            .toString()
+            .trim();
+
+        const originalValue = value;
+
+        if (isNumeric && value) {
+            value = value.replace(/[^0-9]/g, '');
+        }
+
+        if (!value) {
+            return null;
+        }
+
+        return {
+            type: type,
+            value: value,
+            attribute: name,
+            data: {
+                type: type,
+                value: originalValue,
+            },
+        };
+    }
 }
 
-export default VarcharFieldView;
+export default PhoneFieldView;

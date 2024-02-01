@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -32,6 +32,7 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
 
         dataAttributeList: [
             'name',
+            'widthComplex',
             'width',
             'widthPx',
             'link',
@@ -40,49 +41,65 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
             'align',
             'view',
             'customLabel',
+            'label',
+            'hidden',
         ],
 
         dataAttributesDefs: {
+            widthComplex: {
+                label: 'width',
+                type: 'base',
+                view: 'views/admin/layouts/fields/width-complex',
+                tooltip: 'width',
+                notStorable: true,
+            },
             link: {
                 type: 'bool',
-                tooltip: true
+                tooltip: true,
             },
             width: {
                 type: 'float',
                 min: 0,
                 max: 100,
-                tooltip: true
+                hidden: true,
             },
             widthPx: {
                 type: 'int',
                 min: 0,
                 max: 720,
-                tooltip: true
+                hidden: true,
             },
             notSortable: {
                 type: 'bool',
-                tooltip: true
+                tooltip: true,
             },
             align: {
                 type: 'enum',
-                options: ['left', 'right']
+                options: ['left', 'right'],
             },
             view: {
                 type: 'varchar',
-                readOnly: true
+                readOnly: true,
             },
             noLabel: {
                 type: 'bool',
-                tooltip: true
+                tooltip: true,
             },
             customLabel: {
                 type: 'varchar',
-                readOnly: true
+                readOnly: true,
             },
             name: {
                 type: 'varchar',
-                readOnly: true
-            }
+                readOnly: true,
+            },
+            label: {
+                type: 'varchar',
+                readOnly: true,
+            },
+            hidden: {
+                type: 'bool',
+            },
         },
 
         dataAttributesDynamicLogicDefs: {
@@ -101,11 +118,8 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
         },
 
         editable: true,
-
         languageCategory: 'fields',
-
         ignoreList: [],
-
         ignoreTypeList: [],
 
         setup: function () {
@@ -131,9 +145,9 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
         },
 
         readDataFromLayout: function (model, layout) {
-            var allFields = [];
+            const allFields = [];
 
-            for (let field in model.defs.fields) {
+            for (const field in model.defs.fields) {
                 if (this.checkFieldType(model.getFieldParam(field, 'type')) && this.isFieldEnabled(model, field)) {
 
                     allFields.push(field);
@@ -150,11 +164,11 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
             this.enabledFields = [];
             this.disabledFields = [];
 
-            var labelList = [];
-            var duplicateLabelList = [];
+            const labelList = [];
+            const duplicateLabelList = [];
 
-            for (let i in layout) {
-                let label = this.getLanguage().translate(layout[i].name, 'fields', this.scope);
+            for (const i in layout) {
+                const label = this.getLanguage().translate(layout[i].name, 'fields', this.scope);
 
                 if (~labelList.indexOf(label)) {
                     duplicateLabelList.push(label);
@@ -170,9 +184,9 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
                 this.enabledFieldsList.push(layout[i].name);
             }
 
-            for (let i in allFields) {
+            for (const i in allFields) {
                 if (!_.contains(this.enabledFieldsList, allFields[i])) {
-                    let label = this.getLanguage().translate(allFields[i], 'fields', this.scope);
+                    const label = this.getLanguage().translate(allFields[i], 'fields', this.scope);
 
                     if (~labelList.indexOf(label)) {
 
@@ -181,14 +195,14 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
 
                     labelList.push(label);
 
-                    let fieldName = allFields[i];
+                    const fieldName = allFields[i];
 
-                    let o = {
+                    const o = {
                         name: fieldName,
                         label: label,
                     };
 
-                    let fieldType = this.getMetadata().get(['entityDefs', this.scope, 'fields', fieldName, 'type']);
+                    const fieldType = this.getMetadata().get(['entityDefs', this.scope, 'fields', fieldName, 'type']);
 
                     if (fieldType) {
                         if (this.getMetadata().get(['fields', fieldType, 'notSortable'])) {
@@ -217,7 +231,7 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
 
             this.rowLayout = layout;
 
-            for (let i in this.rowLayout) {
+            for (const i in this.rowLayout) {
                 let label = this.getLanguage().translate(this.rowLayout[i].name, 'fields', this.scope);
 
                 this.enabledFields.forEach(item => {
@@ -231,6 +245,7 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
             }
         },
 
+        // noinspection JSUnusedLocalSymbols
         checkFieldType: function (type) {
             return true;
         },
@@ -244,10 +259,27 @@ define('views/admin/layouts/list', ['views/admin/layouts/rows'], function (Dep) 
                 return false;
             }
 
-            var layoutList = model.getFieldParam(name, 'layoutAvailabilityList');
+            /** @type {string[]|null} */
+            const layoutList = model.getFieldParam(name, 'layoutAvailabilityList');
 
-            if (layoutList && !~layoutList.indexOf(this.type)) {
-                return;
+            let realType = this.realType;
+
+            if (realType === 'listSmall') {
+                realType = 'list';
+            }
+
+            if (
+                layoutList &&
+                !layoutList.includes(this.type) &&
+                !layoutList.includes(realType)
+            ) {
+                return false;
+            }
+
+            const layoutIgnoreList = model.getFieldParam(name, 'layoutIgnoreList') || [];
+
+            if (layoutIgnoreList.includes(realType)) {
+                return false;
             }
 
             return !model.getFieldParam(name, 'disabled') &&

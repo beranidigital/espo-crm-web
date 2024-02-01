@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -106,15 +106,16 @@ class RDBRelationSelectBuilder
         return $this->createSelectBuilder()->clone($newQuery);
     }
 
-    protected function createSelectBuilder(): SelectBuilder
+    private function createSelectBuilder(): SelectBuilder
     {
         return new SelectBuilder();
     }
 
-    protected function getMapper(): RDBMapper
+    private function getMapper(): RDBMapper
     {
         $mapper = $this->entityManager->getMapper();
 
+        /** @noinspection PhpConditionAlreadyCheckedInspection */
         if (!$mapper instanceof RDBMapper) {
             throw new LogicException();
         }
@@ -155,7 +156,7 @@ class RDBRelationSelectBuilder
      * @param array<string|int, mixed> $where
      * @return array<string|int, mixed>
      */
-    protected function applyMiddleAliasToWhere(array $where): array
+    private function applyMiddleAliasToWhere(array $where): array
     {
         $transformedWhere = [];
 
@@ -293,7 +294,7 @@ class RDBRelationSelectBuilder
      * * `where(string $key, string $value)`
      *
      * @param WhereItem|array<int|string, mixed>|string $clause A key or where clause.
-     * @param mixed[]|scalar|null $value A value. Should be omitted if the first argument is not string.
+     * @param array<int, mixed>|scalar|null $value A value. Should be omitted if the first argument is not string.
      */
     public function where($clause = [], $value = null): self
     {
@@ -322,8 +323,8 @@ class RDBRelationSelectBuilder
      * * `having(array $clause)`
      * * `having(string $key, string $value)`
      *
-     * @param WhereItem|array<mixed, mixed>|string $clause A key or where clause.
-     * @param mixed[]|string|null $value A value. Should be omitted if the first argument is not string.
+     * @param WhereItem|array<int|string, mixed>|string $clause A key or where clause.
+     * @param array<int, mixed>|string|null $value A value. Should be omitted if the first argument is not string.
      */
     public function having($clause = [], $value = null): self
     {
@@ -411,7 +412,7 @@ class RDBRelationSelectBuilder
         return $this->group($groupBy);
     }
 
-    protected function getMiddleTableAlias(): ?string
+    private function getMiddleTableAlias(): ?string
     {
         if (!$this->isManyMany()) {
             return null;
@@ -430,7 +431,7 @@ class RDBRelationSelectBuilder
         return $this->middleTableAlias;
     }
 
-    protected function applyRelationAliasToWhereClauseKey(string $item): string
+    private function applyRelationAliasToWhereClauseKey(string $item): string
     {
         if (!$this->isManyMany()) {
             return $item;
@@ -445,7 +446,7 @@ class RDBRelationSelectBuilder
      * @param array<int|string, mixed> $where
      * @return array<int|string, mixed>
      */
-    protected function applyRelationAliasToWhereClause(array $where): array
+    private function applyRelationAliasToWhereClause(array $where): array
     {
         if (!$this->isManyMany()) {
             return $where;
@@ -456,10 +457,6 @@ class RDBRelationSelectBuilder
         foreach ($where as $key => $value) {
             $transformedKey = $key;
             $transformedValue = $value;
-
-            if (is_int($key)) {
-                $transformedKey = $key;
-            }
 
             if (is_string($key)) {
                 $transformedKey = $this->applyRelationAliasToWhereClauseKey($key);
@@ -475,7 +472,7 @@ class RDBRelationSelectBuilder
         return $transformedWhere;
     }
 
-    protected function isManyMany(): bool
+    private function isManyMany(): bool
     {
         return $this->relationType === Entity::MANY_MANY;
     }
@@ -484,7 +481,7 @@ class RDBRelationSelectBuilder
      * @param Collection<Entity> $collection
      * @return Collection<Entity>
      */
-    protected function handleReturnCollection(Collection $collection): Collection
+    private function handleReturnCollection(Collection $collection): Collection
     {
         if (!$collection instanceof SthCollection) {
             return $collection;
@@ -499,6 +496,7 @@ class RDBRelationSelectBuilder
 
     /**
      * @return mixed
+     * @noinspection PhpSameParameterValueInspection
      */
     private function getRelationParam(string $param)
     {

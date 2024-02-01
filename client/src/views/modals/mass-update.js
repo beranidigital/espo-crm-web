@@ -1,33 +1,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 import ModalView from 'views/modal';
 import MassActionHelper from 'helpers/mass-action';
+import Select from 'ui/select';
 
 class MassUpdateModalView extends ModalView {
 
@@ -52,7 +53,7 @@ class MassUpdateModalView extends ModalView {
     events = {
         /** @this MassUpdateModalView */
         'click a[data-action="add-field"]': function (e) {
-            let field = $(e.currentTarget).data('name');
+            const field = $(e.currentTarget).data('name');
 
             this.addField(field);
         },
@@ -86,7 +87,7 @@ class MassUpdateModalView extends ModalView {
 
         this.hasActionMap = {};
 
-        let totalCount = this.options.totalCount;
+        const totalCount = this.options.totalCount;
 
         this.helper = new MassActionHelper(this);
 
@@ -99,7 +100,7 @@ class MassUpdateModalView extends ModalView {
                 $('<span>').text(this.translate('Mass Update'))
             )
 
-        var forbiddenList = this.getAcl().getScopeForbiddenFieldList(this.entityType, 'edit') || [];
+        const forbiddenList = this.getAcl().getScopeForbiddenFieldList(this.entityType, 'edit') || [];
 
         this.wait(true);
 
@@ -139,11 +140,11 @@ class MassUpdateModalView extends ModalView {
 
         this.addedFieldList.push(name);
 
-        let label = this.getHelper().escapeString(
+        const label = this.getHelper().escapeString(
             this.translate(name, 'fields', this.entityType)
         );
 
-        let $cell =
+        const $cell =
             $('<div>')
                 .addClass('cell form-group')
                 .attr('data-name', name)
@@ -158,7 +159,7 @@ class MassUpdateModalView extends ModalView {
                         .attr('data-name', name)
                 );
 
-        let $row =
+        const $row =
             $('<div>')
                 .addClass('item grid-auto-fill-md')
                 .attr('data-name', name)
@@ -166,13 +167,13 @@ class MassUpdateModalView extends ModalView {
 
         this.$el.find('.fields-container').append($row);
 
-        let type = this.model.getFieldType(name);
-        let viewName = this.model.getFieldParam(name, 'view') || this.getFieldManager().getViewName(type);
+        const type = this.model.getFieldType(name);
+        const viewName = this.model.getFieldParam(name, 'view') || this.getFieldManager().getViewName(type);
 
-        let actionList = this.getMetadata().get(['entityDefs', this.entityType, name, 'massUpdateActionList']) ||
+        const actionList = this.getMetadata().get(['entityDefs', this.entityType, name, 'massUpdateActionList']) ||
             this.getMetadata().get(['fields', type, 'massUpdateActionList']);
 
-        let hasActionDropdown = actionList !== null;
+        const hasActionDropdown = actionList !== null;
 
         this.hasActionMap[name] = hasActionDropdown;
 
@@ -192,13 +193,13 @@ class MassUpdateModalView extends ModalView {
         });
 
         if (hasActionDropdown) {
-            let $select =
+            const $select =
                 $('<select>')
                     .addClass('item-action form-control')
                     .attr('data-name', name);
 
             actionList.forEach(action => {
-                let label = this.translate(Espo.Utils.upperCaseFirst(action));
+                const label = this.translate(Espo.Utils.upperCaseFirst(action));
 
                 $select.append(
                     $('<option>')
@@ -207,7 +208,7 @@ class MassUpdateModalView extends ModalView {
                 );
             });
 
-            let $cellAction =
+            const $cellAction =
                 $('<div>')
                     .addClass('cell call-action form-group')
                     .attr('data-name', name)
@@ -224,6 +225,8 @@ class MassUpdateModalView extends ModalView {
                     );
 
             $row.append($cellAction);
+
+            Select.init($select.get(0));
         }
     }
 
@@ -239,14 +242,14 @@ class MassUpdateModalView extends ModalView {
     actionUpdate() {
         this.disableButton('update');
 
-        let attributes = {};
-        let actions = {};
+        const attributes = {};
+        const actions = {};
 
         this.addedFieldList.forEach(field => {
-            let action = this.fetchAction(field);
-            let itemAttributes = this.getFieldView(field).fetch();
+            const action = this.fetchAction(field);
+            const itemAttributes = this.getFieldView(field).fetch();
 
-            let itemActualAttributes = {};
+            const itemActualAttributes = {};
 
             this.getFieldManager()
                 .getEntityTypeFieldActualAttributeList(this.entityType, field)
@@ -264,7 +267,7 @@ class MassUpdateModalView extends ModalView {
         let notValid = false;
 
         this.addedFieldList.forEach(field => {
-            let view = this.getFieldView(field);
+            const view = this.getFieldView(field);
 
             notValid = view.validate() || notValid;
         });
@@ -328,7 +331,7 @@ class MassUpdateModalView extends ModalView {
             return this.ACTION_UPDATE;
         }
 
-        let $dropdown = this.$el.find('select.item-action[data-name="' + name + '"]');
+        const $dropdown = this.$el.find('select.item-action[data-name="' + name + '"]');
 
         return $dropdown.val() || this.ACTION_UPDATE;
     }

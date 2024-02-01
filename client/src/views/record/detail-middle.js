@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -70,7 +70,7 @@ class DetailMiddleRecordView extends View {
             this.$el.find('.panel[data-name="'+name+'"]').removeClass('hidden');
         }
 
-        let wasShown = !this.recordHelper.getPanelStateParam(name, 'hidden');
+        const wasShown = !this.recordHelper.getPanelStateParam(name, 'hidden');
 
         if (
             !wasShown &&
@@ -78,7 +78,7 @@ class DetailMiddleRecordView extends View {
             this.options.panelFieldListMap[name]
         ) {
             this.options.panelFieldListMap[name].forEach(field => {
-                var view = this.getFieldView(field);
+                const view = this.getFieldView(field);
 
                 if (!view) {
                     return;
@@ -118,13 +118,13 @@ class DetailMiddleRecordView extends View {
     hideField(name) {
         this.recordHelper.setFieldStateParam(name, 'hidden', true);
 
-        var processHtml = () => {
-            var fieldView = this.getFieldView(name);
+        const processHtml = () => {
+            const fieldView = this.getFieldView(name);
 
             if (fieldView) {
-                var $field = fieldView.$el;
-                var $cell = $field.closest('.cell[data-name="' + name + '"]');
-                var $label = $cell.find('label.control-label[data-name="' + name + '"]');
+                const $field = fieldView.$el;
+                const $cell = $field.closest('.cell[data-name="' + name + '"]');
+                const $label = $cell.find('label.control-label[data-name="' + name + '"]');
 
                 $field.addClass('hidden');
                 $label.addClass('hidden');
@@ -146,7 +146,7 @@ class DetailMiddleRecordView extends View {
             });
         }
 
-        var view = this.getFieldView(name);
+        const view = this.getFieldView(name);
 
         if (view) {
             view.setDisabled();
@@ -165,13 +165,13 @@ class DetailMiddleRecordView extends View {
 
         this.recordHelper.setFieldStateParam(name, 'hidden', false);
 
-        var processHtml = () => {
-            var fieldView = this.getFieldView(name);
+        const processHtml = () => {
+            const fieldView = this.getFieldView(name);
 
             if (fieldView) {
-                var $field = fieldView.$el;
-                var $cell = $field.closest('.cell[data-name="' + name + '"]');
-                var $label = $cell.find('label.control-label[data-name="' + name + '"]');
+                const $field = fieldView.$el;
+                const $cell = $field.closest('.cell[data-name="' + name + '"]');
+                const $label = $cell.find('label.control-label[data-name="' + name + '"]');
 
                 $field.removeClass('hidden');
                 $label.removeClass('hidden');
@@ -193,7 +193,7 @@ class DetailMiddleRecordView extends View {
             });
         }
 
-        var view = this.getFieldView(name);
+        const view = this.getFieldView(name);
 
         if (view) {
             if (!view.disabledLocked) {
@@ -215,10 +215,11 @@ class DetailMiddleRecordView extends View {
      * @return {Object.<string, module:views/fields/base>}
      */
     getFieldViews() {
-        let fieldViews = {};
+        const fieldViews = {};
 
-        for (let viewKey in this.nestedViews) {
-            let name = this.nestedViews[viewKey].name;
+        for (const viewKey in this.nestedViews) {
+            // noinspection JSUnresolvedReference
+            const name = this.nestedViews[viewKey].name;
 
             fieldViews[name] = this.nestedViews[viewKey];
         }

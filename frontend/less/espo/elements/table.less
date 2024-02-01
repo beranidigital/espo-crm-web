@@ -61,7 +61,6 @@ th {
     background-color: @table-bg-accent;
 }
 
-
 table.table-bordered-inside {
     border-collapse: collapse;
     border-style: hidden;
@@ -69,6 +68,10 @@ table.table-bordered-inside {
     td, th {
         border: 1px solid var(--default-border-color);
     }
+}
+
+table.table-bottom-bordered {
+    border-bottom: 1px solid var(--default-border-color);
 }
 
 table.table > tbody td > .list-row-buttons button {
@@ -135,4 +138,26 @@ table th.cell-nowrap {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+}
+
+table td {
+    > .btn-group.row-dropdown-group {
+        > .btn.dropdown-toggle {
+            margin-top: -6px;
+            margin-bottom: -6px;
+
+            > .caret {
+                top: -1px;
+                position: relative;
+            }
+        }
+    }
+}
+
+.table {
+    td.cell {
+        .text-bold {
+            font-weight: 700;
+        }
+    }
 }

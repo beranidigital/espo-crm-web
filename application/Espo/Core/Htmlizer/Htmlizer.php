@@ -2,34 +2,38 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Htmlizer;
 
 use Closure;
+use DOMDocument;
+use DOMElement;
+use DOMException;
+use DOMXPath;
 use Espo\Core\ORM\Entity as CoreEntity;
 use Espo\Entities\Attachment;
 use Espo\Repositories\Attachment as AttachmentRepository;
@@ -51,6 +55,7 @@ use Espo\ORM\EntityManager;
 use LightnCandy\Flags;
 use LightnCandy\LightnCandy as LightnCandy;
 
+use LogicException;
 use RuntimeException;
 use stdClass;
 
@@ -95,7 +100,7 @@ class Htmlizer
         bool $skipInlineAttachmentHandling = false
     ): string {
 
-        $template = str_replace('<tcpdf ', '', $template);
+        $template = $this->prepare($template);
 
         $code = LightnCandy::compile($template, [
             'flags' => Flags::FLAG_HANDLEBARSJS | Flags::FLAG_ERROR_EXCEPTION,
@@ -832,5 +837,100 @@ class Htmlizer
         }
 
         return [[$orderBy, $order]];
+    }
+
+    private function handleIteration(string $template): string
+    {
+        if (!extension_loaded('dom')) {
+            $this->log?->warning("Extension 'dom' is not enabled. HTML templating functionality is restricted.");
+
+            return $template;
+        }
+
+        $xml = new DOMDocument();
+
+        $loadResult = $xml->loadHTML($template);
+
+        if ($loadResult === false) {
+            $this->log?->warning("HTML template parsing error.");
+
+            return $template;
+        }
+
+        $xpath = new DOMXPath($xml);
+
+        $found = false;
+
+        $elements = $xpath->query("//*[@iterate]");
+
+        if (!$elements) {
+            return $template;
+        }
+
+        foreach ($elements as $element) {
+            if (!$element instanceof DOMElement) {
+                continue;
+            }
+
+            try {
+                $wrapperElement = $xml->createElement('iteration-wrapper');
+
+                if (!$wrapperElement) {
+                    throw new LogicException();
+                }
+
+                $wrapperElement->setAttribute('v', $element->getAttribute('iterate'));
+            }
+            catch (DOMException $e) {
+                throw new LogicException($e->getMessage());
+            }
+
+            $parentNode = $element->parentNode;
+
+            if (!$parentNode) {
+                throw new LogicException();
+            }
+
+            $newElement = $xml->importNode($element->cloneNode(true));
+
+            if (!$newElement instanceof DOMElement) {
+                throw new LogicException();
+            }
+
+            $newElement->removeAttribute('iterate');
+
+            $wrapperElement->appendChild($newElement);
+            $parentNode->replaceChild($wrapperElement, $element);
+
+            $found = true;
+        }
+
+        if (!$found) {
+            return $template;
+        }
+
+        $newTemplate = $xml->saveXML();
+
+        if ($newTemplate === false || !is_string($newTemplate)) {
+            $this->log?->warning("DOM save error.");
+
+            return $template;
+        }
+
+        $newTemplate = str_replace('</iteration-wrapper>', '{{/each}}', $newTemplate);
+
+        $from = strpos($newTemplate,'<body>') + 6;
+        $to = strrpos($newTemplate, '</body>') - strlen($newTemplate);
+
+        $newTemplate = substr($newTemplate, $from, $to);
+
+        return preg_replace('/<iteration-wrapper v="{{(.*)}}">/', '{{#each $1}}', $newTemplate) ?? '';
+    }
+
+    private function prepare(string $template): string
+    {
+        $template = str_replace('<tcpdf ', '', $template);
+
+        return $this->handleIteration($template);
     }
 }

@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -242,11 +242,11 @@ class Collection {
     remove(models, options) {
         options = {...options};
 
-        let singular = !_.isArray(models);
+        const singular = !_.isArray(models);
 
         models = singular ? [models] : models.slice();
 
-        let removed = this._removeModels(models, options);
+        const removed = this._removeModels(models, options);
 
         if (!options.silent && removed.length) {
             options.changes = {
@@ -286,7 +286,7 @@ class Collection {
             models = this.prepareAttributes(models, options) || [];
         }
 
-        let singular = !_.isArray(models);
+        const singular = !_.isArray(models);
         models = singular ? [models] : models.slice();
 
         let at = options.at;
@@ -303,22 +303,22 @@ class Collection {
             at += this.length + 1;
         }
 
-        let set = [];
-        let toAdd = [];
-        let toMerge = [];
-        let toRemove = [];
-        let modelMap = {};
+        const set = [];
+        const toAdd = [];
+        const toMerge = [];
+        const toRemove = [];
+        const modelMap = {};
 
-        let add = options.add;
-        let merge = options.merge;
-        let remove = options.remove;
+        const add = options.add;
+        const merge = options.merge;
+        const remove = options.remove;
 
         let model, i;
 
         for (i = 0; i < models.length; i++) {
             model = models[i];
 
-            let existing = this._get(model);
+            const existing = this._get(model);
 
             if (existing) {
                 if (merge && model !== existing) {
@@ -371,7 +371,7 @@ class Collection {
         }
 
         let orderChanged = false;
-        let replace = add && remove;
+        const replace = add && remove;
 
         if (set.length && replace) {
             orderChanged =
@@ -478,7 +478,7 @@ class Collection {
      * @return {Model|null}
      */
     pop(options) {
-        let model = this.at(this.length - 1);
+        const model = this.at(this.length - 1);
 
         if (!model) {
             return null;
@@ -513,7 +513,7 @@ class Collection {
      * @return {Model|null}
      */
     shift(options) {
-        let model = this.at(0);
+        const model = this.at(0);
 
         if (!model) {
             return null;
@@ -755,7 +755,7 @@ class Collection {
         this.order = options.order || this.order;
         this.where = options.where || this.where;
 
-        let length = this.length + this.lengthCorrection;
+        const length = this.length + this.lengthCorrection;
 
         if (!('maxSize' in options)) {
             options.data.maxSize = options.more ? this.maxSize : (
@@ -777,7 +777,7 @@ class Collection {
 
         options = {prepare: true, ...options};
 
-        let success = options.success;
+        const success = options.success;
 
         options.success = response => {
             options.reset ?
@@ -791,7 +791,7 @@ class Collection {
             this.trigger('sync', this, response, options);
         };
 
-        let error = options.error;
+        const error = options.error;
 
         options.error = response => {
             if (error) {
@@ -922,22 +922,22 @@ class Collection {
 
     /** @private */
     _removeModels(models, options) {
-        let removed = [];
+        const removed = [];
 
         for (let i = 0; i < models.length; i++) {
-            let model = this.get(models[i]);
+            const model = this.get(models[i]);
 
             if (!model) {
                 continue;
             }
 
-            let index = this.models.indexOf(model);
+            const index = this.models.indexOf(model);
 
             this.models.splice(index, 1);
             this.length--;
 
             delete this._byId[model.cid];
-            let id = this.modelId(model.attributes);
+            const id = this.modelId(model.attributes);
 
             if (id != null) {
                 delete this._byId[id];
@@ -961,7 +961,7 @@ class Collection {
     _addReference(model) {
         this._byId[model.cid] = model;
 
-        let id = this.modelId(model.attributes);
+        const id = this.modelId(model.attributes);
 
         if (id != null) {
             this._byId[id] = model;
@@ -974,7 +974,7 @@ class Collection {
     _removeReference(model) {
         delete this._byId[model.cid];
 
-        let id = this.modelId(model.attributes);
+        const id = this.modelId(model.attributes);
 
         if (id != null) {
             delete this._byId[id];
@@ -1008,8 +1008,8 @@ class Collection {
         }
 
         if (event === 'change') {
-            let prevId = this.modelId(model.previousAttributes());
-            let id = this.modelId(model.attributes);
+            const prevId = this.modelId(model.previousAttributes());
+            const id = this.modelId(model.attributes);
 
             if (prevId !== id) {
                 if (prevId != null) {
@@ -1065,8 +1065,8 @@ const addOptions = {
 const splice = (array, insert, at) => {
     at = Math.min(Math.max(at, 0), array.length);
 
-    let tail = Array(array.length - at);
-    let length = insert.length;
+    const tail = Array(array.length - at);
+    const length = insert.length;
     let i;
 
     for (i = 0; i < tail.length; i++) {

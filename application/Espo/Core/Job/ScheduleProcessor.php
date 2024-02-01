@@ -2,33 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Job;
 
+use DateTimeZone;
 use Espo\Core\Job\Preparator\Data as PreparatorData;
 use Espo\Core\ORM\EntityManager;
 use Espo\Core\Utils\DateTime as DateTimeUtil;
@@ -64,7 +65,8 @@ class ScheduleProcessor
         private QueueUtil $queueUtil,
         private ScheduleUtil $scheduleUtil,
         private PreparatorFactory $preparatorFactory,
-        private MetadataProvider $metadataProvider
+        private MetadataProvider $metadataProvider,
+        private ConfigDataProvider $configDataProvider
     ) {}
 
     public function process(): void
@@ -81,7 +83,7 @@ class ScheduleProcessor
             catch (Throwable $e) {
                 $id = $scheduledJob->getId();
 
-                $this->log->error("Scheduled Job '{$id}': " . $e->getMessage());
+                $this->log->error("Scheduled Job '$id': " . $e->getMessage());
             }
         }
     }
@@ -166,19 +168,24 @@ class ScheduleProcessor
         }
         catch (Exception $e) {
             $this->log->error(
-                "Scheduled Job '{$id}': Scheduling expression error: " .
+                "Scheduled Job '$id': Scheduling expression error: " .
                 $e->getMessage() . '.');
 
             return null;
         }
 
+        $timeZone = $this->configDataProvider->getTimeZone();
+
         try {
-            return $cronExpression->getNextRunDate()->format(DateTimeUtil::SYSTEM_DATE_TIME_FORMAT);
+            $next = $cronExpression->getNextRunDate(timeZone: $timeZone)
+                ->setTimezone(new DateTimeZone('UTC'));
         }
         catch (Exception) {
-            $this->log->error("Scheduled Job '{$id}': Unsupported scheduling expression '{$scheduling}'.");
+            $this->log->error("Scheduled Job '$id': Unsupported scheduling expression '$scheduling'.");
 
             return null;
         }
+
+        return $next->format(DateTimeUtil::SYSTEM_DATE_TIME_FORMAT);
     }
 }

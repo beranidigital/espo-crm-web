@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -50,21 +50,21 @@ class LinkParentFieldView extends BaseFieldView {
      *
      * @type {string}
      */
-    nameName = null
+    nameName
 
     /**
      * An ID attribute name.
      *
      * @type {string}
      */
-    idName = null
+    idName
 
     /**
      * A type attribute name.
      *
      * @type {string}
      */
-    typeName = null
+    typeName
 
     /**
      * A current foreign entity type.
@@ -159,6 +159,14 @@ class LinkParentFieldView extends BaseFieldView {
     /** @inheritDoc */
     initialSearchIsNotIdle = true
 
+    /**
+     * Trigger autocomplete on empty input.
+     *
+     * @protected
+     * @type {boolean}
+     */
+    autocompleteOnEmpty
+
     /** @inheritDoc */
     events = {
         /** @this LinkParentFieldView */
@@ -167,7 +175,7 @@ class LinkParentFieldView extends BaseFieldView {
                 return;
             }
 
-            let isCombination = e.button === 1 && (e.ctrlKey || e.metaKey);
+            const isCombination = e.button === 1 && (e.ctrlKey || e.metaKey);
 
             if (!isCombination) {
                 return;
@@ -180,6 +188,7 @@ class LinkParentFieldView extends BaseFieldView {
         },
     }
 
+    // noinspection JSCheckFunctionSignatures
     data() {
         let nameValue = this.model.get(this.nameName);
 
@@ -199,6 +208,7 @@ class LinkParentFieldView extends BaseFieldView {
             iconHtml = this.getHelper().getScopeColorIconHtml(this.foreignScope);
         }
 
+        // noinspection JSValidateTypes
         return {
             ...super.data(),
             idName: this.idName,
@@ -286,6 +296,8 @@ class LinkParentFieldView extends BaseFieldView {
             this.foreignScope = this.model.get(this.typeName) || this.foreignScopeList[0];
         });
 
+        this.autocompleteOnEmpty = this.params.autocompleteOnEmpty || this.autocompleteOnEmpty;
+
         if ('createDisabled' in this.options) {
             this.createDisabled = this.options.createDisabled;
         }
@@ -294,11 +306,10 @@ class LinkParentFieldView extends BaseFieldView {
             this.addActionHandler('selectLink', () => {
                 Espo.Ui.notify(' ... ');
 
-                let viewName = this.getMetadata()
-                        .get('clientDefs.' + this.foreignScope + '.modalViews.select') ||
+                const viewName = this.getMetadata().get(`clientDefs.${this.foreignScope}.modalViews.select`) ||
                     this.selectRecordsView;
 
-                let createButton = !this.createDisabled && this.isEditMode();
+                const createButton = !this.createDisabled && this.isEditMode();
 
                 this.createView('dialog', viewName, {
                     scope: this.foreignScope,
@@ -343,7 +354,7 @@ class LinkParentFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     setupSearch() {
-        let type = this.getSearchParamsData().type;
+        const type = this.getSearchParamsData().type;
 
         if (type === 'is' || !type) {
             this.searchData.idValue = this.getSearchParamsData().idValue ||
@@ -355,7 +366,7 @@ class LinkParentFieldView extends BaseFieldView {
         }
 
         this.events['change select.search-type'] = e => {
-            let type = $(e.currentTarget).val();
+            const type = $(e.currentTarget).val();
 
             this.handleSearchType(type);
         };
@@ -368,7 +379,7 @@ class LinkParentFieldView extends BaseFieldView {
      * @param {string} type A type.
      */
     handleSearchType(type) {
-        if (~['is'].indexOf(type)) {
+        if (['is'].includes(type)) {
             this.$el.find('div.primary').removeClass('hidden');
         } else {
             this.$el.find('div.primary').addClass('hidden');
@@ -423,13 +434,15 @@ class LinkParentFieldView extends BaseFieldView {
         return this.getConfig().get('recordsPerPage');
     }
 
+    // noinspection JSUnusedLocalSymbols
     /**
      * Compose an autocomplete URL. Can be extended.
      *
      * @protected
+     * @type {string} [q]
      * @return {string}
      */
-    getAutocompleteUrl() {
+    getAutocompleteUrl(q) {
         let url = this.foreignScope + '?maxSize=' + this.getAutocompleteMaxCount();
 
         if (!this.isForceSelectAllAttributes()) {
@@ -442,13 +455,13 @@ class LinkParentFieldView extends BaseFieldView {
             url += '&select=' + select.join(',');
         }
 
-        let boolList = this.getSelectBoolFilterList();
+        const boolList = this.getSelectBoolFilterList();
 
         if (boolList) {
             url += '&' + $.param({'boolFilterList': boolList});
         }
 
-        let primary = this.getSelectPrimaryFilterName();
+        const primary = this.getSelectPrimaryFilterName();
 
         if (primary) {
             url += '&' + $.param({'primaryFilter': primary});
@@ -496,22 +509,22 @@ class LinkParentFieldView extends BaseFieldView {
                     serviceUrl: (q) => {
                         return this.getAutocompleteUrl(q);
                     },
-                    minChars: 1,
+                    minChars: this.autocompleteOnEmpty ? 0 : 1,
                     paramName: 'q',
-                    noCache: true,
                     triggerSelectOnValidInput: false,
                     autoSelectFirst: true,
+                    noCache: true,
                     beforeRender: ($c) => {
                         if (this.$elementName.hasClass('input-sm')) {
                             $c.addClass('small');
                         }
                     },
-                    formatResult: (suggestion) => {
+                    formatResult: (/** Record */suggestion) => {
                         return this.getHelper().escapeString(suggestion.name);
                     },
                     transformResult: (response) => {
                         response = JSON.parse(response);
-                        let list = [];
+                        const list = [];
 
                         response.list.forEach(item => {
                             list.push({
@@ -525,7 +538,7 @@ class LinkParentFieldView extends BaseFieldView {
 
                         return {suggestions: list};
                     },
-                    onSelect: (s) => {
+                    onSelect: (/** Record */s) => {
                         this.getModelFactory().create(this.foreignScope, (model) => {
                             model.set(s.attributes);
 
@@ -536,14 +549,23 @@ class LinkParentFieldView extends BaseFieldView {
                 });
 
                 this.$elementName.off('focus.autocomplete');
-                this.$elementName.on('focus', () => this.$elementName.get(0).select());
+
+                this.$elementName.on('focus', () => {
+                    if (this.$elementName.val()) {
+                        this.$elementName.get(0).select();
+
+                        return;
+                    }
+
+                    this.$elementName.autocomplete('onFocus');
+                });
 
                 this.$elementName.attr('autocomplete', 'espo-' + this.name);
 
                 Select.init(this.$elementType, {});
             }
 
-            let $elementName = this.$elementName;
+            const $elementName = this.$elementName;
 
             this.once('render', () => {
                 $elementName.autocomplete('dispose');
@@ -554,8 +576,8 @@ class LinkParentFieldView extends BaseFieldView {
             });
         }
 
-        if (this.mode === 'search') {
-            let type = this.$el.find('select.search-type').val();
+        if (this.isSearchMode()) {
+            const type = this.$el.find('select.search-type').val();
 
             this.handleSearchType(type);
 
@@ -574,7 +596,7 @@ class LinkParentFieldView extends BaseFieldView {
     validateRequired() {
         if (this.isRequired()) {
             if (this.model.get(this.idName) === null || !this.model.get(this.typeName)) {
-                let msg = this.translate('fieldIsRequired', 'messages')
+                const msg = this.translate('fieldIsRequired', 'messages')
                     .replace('{field}', this.getLabelText());
 
                 this.showValidationMessage(msg);
@@ -586,7 +608,7 @@ class LinkParentFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetch() {
-        let data = {};
+        const data = {};
 
         data[this.typeName] = this.$elementType.val() || null;
         data[this.nameName] = this.$elementName.val() || null;
@@ -601,7 +623,7 @@ class LinkParentFieldView extends BaseFieldView {
 
     /** @inheritDoc */
     fetchSearch() {
-        let type = this.$el.find('select.search-type').val();
+        const type = this.$el.find('select.search-type').val();
 
         if (type === 'isEmpty') {
             return {
@@ -623,9 +645,9 @@ class LinkParentFieldView extends BaseFieldView {
             };
         }
 
-        let entityType = this.$elementType.val();
-        let entityName = this.$elementName.val()
-        let entityId = this.$elementId.val();
+        const entityType = this.$elementType.val();
+        const entityName = this.$elementName.val();
+        const entityId = this.$elementId.val();
 
         if (!entityType) {
             return null;
@@ -686,14 +708,14 @@ class LinkParentFieldView extends BaseFieldView {
      * @protected
      */
     quickView() {
-        let id = this.model.get(this.idName);
-        let entityType = this.model.get(this.typeName);
+        const id = this.model.get(this.idName);
+        const entityType = this.model.get(this.typeName);
 
         if (!id || !entityType) {
             return;
         }
 
-        let helper = new RecordModal(this.getMetadata(), this.getAcl());
+        const helper = new RecordModal(this.getMetadata(), this.getAcl());
 
         helper.showDetail(this, {
             id: id,

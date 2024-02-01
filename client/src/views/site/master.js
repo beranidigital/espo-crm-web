@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -69,23 +69,23 @@ class MasterSiteView extends View {
     }
 
     afterRender() {
-        let params = this.getThemeManager().getParam('params');
+        const params = this.getThemeManager().getParam('params');
 
-        let $body = $('body');
+        const $body = $('body');
 
-        for (let param in params) {
-            let value = this.getThemeManager().getParam(param);
+        for (const param in params) {
+            const value = this.getThemeManager().getParam(param);
 
             $body.attr('data-' + Espo.Utils.camelCaseToHyphen(param), value);
         }
 
-        let footerView = this.getView('footer | unhijack this');
+        let footerView = this.getView('footer');
 
         if (footerView) {
-            let html = footerView.$el.html() || '';
+            const html = footerView.$el.html() || '';
 
             if ((html.match(/espocrm/gi) || []).length < 2) {
-                let text = 'PHAgY2xhc3M9ImNyZWRpdCBzbWFsbCI+JmNvcHk7IDxhIGhyZWY9Imh0dHA6Ly93d3cuZXNwb2Nyb' +
+                const text = 'PHAgY2xhc3M9ImNyZWRpdCBzbWFsbCI+JmNvcHk7IDxhIGhyZWY9Imh0dHA6Ly93d3cuZXNwb2Nyb' +
                     'S5jb20iPkVzcG9DUk08L2E+PC9wPg==';
 
                 let decText;
@@ -106,7 +106,7 @@ class MasterSiteView extends View {
 
         this.adjustContent();
 
-        let extensions = this.getHelper().getAppParam('extensions') || [];
+        const extensions = this.getHelper().getAppParam('extensions') || [];
 
         if (this.getConfig().get('maintenanceMode')) {
             this.createView('dialog', 'views/modal', {
@@ -144,13 +144,13 @@ class MasterSiteView extends View {
 
             let height = window.innerHeight - this.$content.get(0).getBoundingClientRect().top;
 
-            let $navbarCollapse = $('#navbar .navbar-body');
+            const $navbarCollapse = $('#navbar .navbar-body');
 
             if ($navbarCollapse.hasClass('in') || $navbarCollapse.hasClass('collapsing')) {
                 height += $navbarCollapse.height();
             }
 
-            let footerHeight = $('#footer').height() || 26;
+            const footerHeight = $('#footer').height() || 26;
 
             height -= footerHeight;
 
@@ -181,14 +181,14 @@ class MasterSiteView extends View {
      * }[]} list
      */
     processExtensions(list) {
-        let messageList = [];
+        const messageList = [];
 
         list.forEach(item => {
             if (!item.notify) {
                 return;
             }
 
-            let message = item.licenseStatusMessage ??
+            const message = item.licenseStatusMessage ??
                 'extensionLicense' +
                 Espo.Utils.upperCaseFirst(
                     Espo.Utils.hyphenToCamelCase(item.licenseStatus.toLowerCase())
@@ -208,7 +208,7 @@ class MasterSiteView extends View {
 
         message = this.getHelper().transformMarkdownText(message);
 
-        let dialog = new Espo.Ui.Dialog({
+        const dialog = new Espo.Ui.Dialog({
             backdrop: 'static',
             buttonList: [
                 {

@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -52,6 +52,7 @@ use Espo\ORM\Query\Part\Condition;
 use Espo\ORM\Query\Select;
 use Espo\ORM\Query\Update;
 
+use Espo\ORM\QueryComposer\Util;
 use LogicException;
 use RuntimeException;
 
@@ -1930,7 +1931,7 @@ class MysqlQueryComposerTest extends \PHPUnit\Framework\TestCase
             'withDeleted' => true
         ]));
         $expectedSql =
-            "SELECT IF('1' OR '0', '1', ' ') AS `IF:(OR:('1','0'),'1',' ')` FROM `comment`";
+            "SELECT IF(('1' OR '0'), '1', ' ') AS `IF:(OR:('1','0'),'1',' ')` FROM `comment`";
         $this->assertEquals($expectedSql, $sql);
     }
 
@@ -2227,6 +2228,15 @@ class MysqlQueryComposerTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(in_array('comment.test', $list));
     }
 
+    public function testGetAllAttributesFromComplexExpression3()
+    {
+        $expression = "SUM:(test, #test, sq.#test)";
+
+        $list = Util::getAllAttributesFromComplexExpression($expression);
+
+        $this->assertEquals(['test'], $list);
+    }
+
     public function testCustomWhere1()
     {
         $queryBuilder = new QueryBuilder();
@@ -2498,6 +2508,31 @@ class MysqlQueryComposerTest extends \PHPUnit\Framework\TestCase
             "FROM `test_where` ".
             "WHERE test_where.test = 4";
 
+        $this->assertEquals($expectedSql, $sql);
+    }
+
+    public function testWhereExpression5(): void
+    {
+        $expectedSql =
+            "SELECT post.id AS `id` FROM `post` " .
+            "WHERE ((1 OR 0) AND 1)";
+
+        $query = SelectBuilder::create()
+            ->from('Post')
+            ->select('id')
+            ->where(
+                Expression::and(
+                    Expression::or(
+                        Expression::value(1),
+                        Expression::value(0)
+                    ),
+                    Expression::value(1)
+                )
+            )
+            ->withDeleted()
+            ->build();
+
+        $sql = $this->query->composeSelect($query);
         $this->assertEquals($expectedSql, $sql);
     }
 
@@ -3266,5 +3301,90 @@ class MysqlQueryComposerTest extends \PHPUnit\Framework\TestCase
         $sql = $this->query->composeSelect($query);
 
         $this->assertIsString($sql);
+    }
+
+    public function testAlias1(): void
+    {
+        $query = SelectBuilder::create()
+            ->select('id')
+            ->from('Post')
+            ->where(['subQuery.#someId' => '1'])
+            ->withDeleted()
+            ->build();
+
+        $expectedSql = "SELECT post.id AS `id` FROM `post` WHERE subQuery.someId = '1'";
+
+        $sql = $this->query->composeSelect($query);
+
+        $this->assertEquals($expectedSql, $sql);
+    }
+
+    public function testAlias2(): void
+    {
+        $query = SelectBuilder::create()
+            ->select('id')
+            ->from('Post')
+            ->where(['#someId' => '1'])
+            ->withDeleted()
+            ->build();
+
+        $expectedSql = "SELECT post.id AS `id` FROM `post` WHERE someId = '1'";
+
+        $sql = $this->query->composeSelect($query);
+
+        $this->assertEquals($expectedSql, $sql);
+    }
+
+    public function testAlias3(): void
+    {
+        $query = SelectBuilder::create()
+            ->select('id')
+            ->from('Post')
+            ->leftJoin(
+                'Test',
+                'test',
+                ['test.#testId' => '1']
+            )
+            ->withDeleted()
+            ->build();
+
+        $expectedSql = "SELECT post.id AS `id` FROM `post` LEFT JOIN `test` AS `test` ON test.testId = '1'";
+
+        $sql = $this->query->composeSelect($query);
+
+        $this->assertEquals($expectedSql, $sql);
+    }
+
+    public function testAlias4(): void
+    {
+        $subQuery =
+            SelectBuilder::create()
+                ->select('id', 'someId')
+                ->from('Test')
+                ->withDeleted()
+                ->build();
+
+        $query = SelectBuilder::create()
+            ->select('id')
+            ->from('Post')
+            ->leftJoin(
+                Join::createWithSubQuery($subQuery, 'sqAlias')
+                    ->withConditions(
+                        Condition::equal(
+                            Expression::alias('sqAlias.someId'),
+                            Expression::column('id')
+                        )
+                    )
+            )
+            ->withDeleted()
+            ->build();
+
+        $expectedSql =
+            "SELECT post.id AS `id` FROM `post` LEFT JOIN " .
+            "(SELECT test.id AS `someId` FROM `test`) AS `sqAlias` ON sqAlias.someId = post.id";
+
+        $sql = $this->query->composeSelect($query);
+
+        $this->assertEquals($expectedSql, $sql);
     }
 }

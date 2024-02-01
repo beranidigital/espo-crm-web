@@ -2,83 +2,82 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\unit\Espo\Core\Htmlizer;
 
 use Espo\Core\Htmlizer\Htmlizer;
+use Espo\Core\Utils\File\Manager;
 use Espo\Core\Utils\NumberUtil;
 use Espo\Core\Utils\DateTime;
 
 use Espo\Core\ORM\Entity;
 
-use StdClass;
+use Espo\ORM\EntityManager;
+use PHPUnit\Framework\TestCase;
+use stdClass;
 
-class HtmlizerTest extends \PHPUnit\Framework\TestCase
+class HtmlizerTest extends TestCase
 {
-    protected $htmlizer;
-
-    protected $fileManager;
-
-    protected $config;
-
-    protected $dateTime;
-
-    protected $number;
+    private ?Htmlizer $htmlizer;
+    private ?Manager $fileManager;
+    private ?DateTime $dateTime;
+    private ?NumberUtil $number;
+    private ?EntityManager $entityManager;
 
     private $entityAttributes = [
-        'id' => array(
+        'id' => [
             'type' => Entity::ID,
-        ),
-        'name' => array(
+        ],
+        'name' => [
             'type' => Entity::VARCHAR,
             'len' => 255,
-        ),
-        'date' => array(
+        ],
+        'date' => [
             'type' => Entity::DATE
-        ),
-        'dateTime' => array(
+        ],
+        'dateTime' => [
             'type' => Entity::DATETIME
-        ),
-        'int' => array(
+        ],
+        'int' => [
             'type' => Entity::INT
-        ),
-        'float' => array(
+        ],
+        'float' => [
             'type' => Entity::FLOAT
-        ),
-        'list' => array(
+        ],
+        'list' => [
             'type' => Entity::JSON_ARRAY
-        ),
-        'object' => array(
+        ],
+        'object' => [
             'type' => Entity::JSON_OBJECT
-        ),
-        'deleted' => array(
+        ],
+        'deleted' => [
             'type' => Entity::BOOL,
             'default' => 0,
-        )
+        ]
     ];
 
     protected function setUp(): void
@@ -86,13 +85,13 @@ class HtmlizerTest extends \PHPUnit\Framework\TestCase
         date_default_timezone_set('UTC');
 
         $this->entityManager =
-            $this->getMockBuilder('Espo\\Core\\ORM\\EntityManager')
+            $this->getMockBuilder(EntityManager::class)
             ->disableOriginalConstructor()
             ->getMock();
 
-        $obj = new \StdClass();
+        $obj = new stdClass();
 
-        $this->fileManager = $this->getMockBuilder('Espo\\Core\\Utils\\File\\Manager')
+        $this->fileManager = $this->getMockBuilder(Manager::class)
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -107,13 +106,11 @@ class HtmlizerTest extends \PHPUnit\Framework\TestCase
             ->expects($this->any())
             ->method('getPhpContents')
             ->will(
-                $this->returnCallback(function($fileName) use ($obj) {
+                $this->returnCallback(function () use ($obj) {
                     $obj->contents = str_replace('<?php ', '', $obj->contents);
                     $obj->contents = str_replace('?>', '', $obj->contents);
 
-                    $data = eval($obj->contents . ';');
-
-                    return $data;
+                    return eval($obj->contents . ';');
                 })
             );
 
@@ -123,9 +120,7 @@ class HtmlizerTest extends \PHPUnit\Framework\TestCase
                     ->method('unlink');
 
         $this->dateTime = new DateTime('MM/DD/YYYY', 'hh:mm A', 'Europe/Kiev');
-
         $this->number = new NumberUtil('.', ',');
-
         $this->htmlizer = new Htmlizer($this->fileManager, $this->dateTime, $this->number);
     }
 
@@ -227,5 +222,23 @@ class HtmlizerTest extends \PHPUnit\Framework\TestCase
         $entity->set('name', '1');
         $html = $this->htmlizer->render($entity, $template);
         $this->assertEquals('test', $html);
+    }
+
+    public function testIterate(): void
+    {
+        /** @noinspection HtmlUnknownAttribute */
+        $template = "<ul><li iterate=\"{{items}}\">{{name}}</li></ul>";
+
+        $html = $this->htmlizer->render(null, $template, null, [
+            'items' => [
+                ['name' => '1'],
+                ['name' => '2'],
+            ],
+        ]);
+
+        /** @noinspection HtmlUnknownAttribute */
+        $expected = "<ul><li>1</li><li>2</li></ul>";
+
+        $this->assertEquals($expected, $html);
     }
 }

@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -45,7 +45,7 @@ class EditDashboardModalView extends ModalView {
     events = {
         /** @this EditDashboardModalView */
         'click button.add': function (e) {
-            let name = $(e.currentTarget).data('name');
+            const name = $(e.currentTarget).data('name');
 
             this.getParentDashboardView().addDashlet(name);
             this.close();
@@ -78,9 +78,9 @@ class EditDashboardModalView extends ModalView {
             }
         ];
 
-        let dashboardLayout = this.options.dashboardLayout || [];
+        const dashboardLayout = this.options.dashboardLayout || [];
 
-        let dashboardTabList = [];
+        const dashboardTabList = [];
 
         dashboardLayout.forEach(item => {
             if (item.name) {
@@ -88,7 +88,7 @@ class EditDashboardModalView extends ModalView {
             }
         });
 
-        let model = this.model = new Model({}, {entityType: 'Preferences'});
+        const model = this.model = new Model({}, {entityType: 'Preferences'});
 
         model.set('dashboardTabList', dashboardTabList);
 
@@ -150,7 +150,7 @@ class EditDashboardModalView extends ModalView {
             return;
         }
 
-        let attributes = {};
+        const attributes = {};
 
         attributes.dashboardTabList = this.model.get('dashboardTabList');
 
@@ -158,11 +158,11 @@ class EditDashboardModalView extends ModalView {
             attributes.dashboardLocked = this.model.get('dashboardLocked');
         }
 
-        let names = this.model.get('translatedOptions');
+        const names = this.model.get('translatedOptions');
 
-        let renameMap = {};
+        const renameMap = {};
 
-        for (let name in names) {
+        for (const name in names) {
             if (name !== names[name]) {
                 renameMap[name] = names[name];
             }

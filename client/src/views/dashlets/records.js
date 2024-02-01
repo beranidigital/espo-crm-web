@@ -1,80 +1,78 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
-define('views/dashlets/records', ['views/dashlets/abstract/record-list'], function (Dep) {
+import RecordListDashletView from 'views/dashlets/abstract/record-list';
 
-    return Dep.extend({
+class RecordsDashletView extends RecordListDashletView {
 
-        name: 'Records',
+    name = 'Records'
 
-        scope: null,
+    rowActionsView = 'views/record/row-actions/view-and-edit'
+    listView = 'views/email/record/list-expanded'
 
-        rowActionsView: 'views/record/row-actions/view-and-edit',
+    init() {
+        super.init();
 
-        listView: 'views/email/record/list-expanded',
+        this.scope = this.getOption('entityType');
+    }
 
-        init: function () {
-            Dep.prototype.init.call(this);
+    getSearchData() {
+        const data = {
+            primary: /** @type string */this.getOption('primaryFilter'),
+        };
 
-            this.scope = this.getOption('entityType');
-        },
+        if (data.primary === 'all') {
+            delete data.primary;
+        }
 
-        getSearchData: function () {
-            var data = {
-                primary: this.getOption('primaryFilter'),
-            };
+        const bool = {};
 
-            if (data.primary === 'all') {
-                data.primary = null;
-            }
+        (this.getOption('boolFilterList') || []).forEach(item => {
+            bool[item] = true;
+        });
 
-            var bool = {};
+        data.bool = bool;
 
-            (this.getOption('boolFilterList') || []).forEach(item => {
-                bool[item] = true;
+        return data;
+    }
+
+    setupActionList() {
+        const scope = this.getOption('entityType');
+
+        if (scope && this.getAcl().checkScope(scope, 'create')) {
+            this.actionList.unshift({
+                name: 'create',
+                text: this.translate('Create ' + scope, 'labels', scope),
+                iconHtml: '<span class="fas fa-plus"></span>',
+                url: '#' + scope + '/create',
             });
+        }
+    }
+}
 
-            data.bool = bool;
-
-            return data;
-        },
-
-        setupActionList: function () {
-            var scope = this.getOption('entityType');
-
-            if (scope && this.getAcl().checkScope(scope, 'create')) {
-                this.actionList.unshift({
-                    name: 'create',
-                    text: this.translate('Create ' + scope, 'labels', scope),
-                    iconHtml: '<span class="fas fa-plus"></span>',
-                    url: '#' + scope + '/create',
-                });
-            }
-        },
-    });
-});
+export default RecordsDashletView;

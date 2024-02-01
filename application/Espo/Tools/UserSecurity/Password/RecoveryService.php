@@ -2,33 +2,36 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Tools\UserSecurity\Password;
 
+use Espo\Core\Exceptions\Forbidden;
+use Espo\Core\Exceptions\NotFound;
+use Espo\Core\Exceptions\Error;
 use Espo\Core\ApplicationState;
 use Espo\Core\Authentication\Util\MethodProvider as AuthenticationMethodProvider;
 use Espo\Core\Exceptions\ForbiddenSilent;
@@ -37,21 +40,13 @@ use Espo\Core\Mail\Exceptions\NoSmtp;
 use Espo\Core\Mail\Exceptions\SendingError;
 use Espo\Core\Mail\SmtpParams;
 use Espo\Core\Utils\Util;
-use Espo\Core\Utils\Json;
-
 use Espo\Entities\Email;
+use Espo\Entities\SystemData;
 use Espo\Entities\User;
 use Espo\Entities\PasswordChangeRequest;
 use Espo\Entities\Portal;
-
 use Espo\Repositories\Portal as PortalRepository;
-
-use Espo\Core\Exceptions\Forbidden;
-use Espo\Core\Exceptions\NotFound;
-use Espo\Core\Exceptions\Error;
-
 use Espo\Core\Field\DateTime;
-
 use Espo\Core\Authentication\Logins\Espo as EspoLogin;
 use Espo\Core\Htmlizer\HtmlizerFactory as HtmlizerFactory;
 use Espo\Core\Job\QueueName;
@@ -61,6 +56,7 @@ use Espo\Core\Utils\Config;
 use Espo\Core\Utils\Log;
 use Espo\Core\Utils\TemplateFileManager;
 use Espo\Tools\UserSecurity\Password\Jobs\RemoveRecoveryRequest;
+use Espo\Tools\UserSecurity\Password\Recovery\UrlValidator;
 
 class RecoveryService
 {
@@ -69,6 +65,7 @@ class RecoveryService
     private const REQUEST_LIFETIME = '3 hours';
     private const NEW_USER_REQUEST_LIFETIME = '2 days';
     private const EXISTING_USER_REQUEST_LIFETIME = '2 days';
+    private const INTERNAL_SMTP_INTERVAL_PERIOD = '1 hour';
 
     public function __construct(
         private EntityManager $entityManager,
@@ -79,7 +76,8 @@ class RecoveryService
         private Log $log,
         private JobSchedulerFactory $jobSchedulerFactory,
         private ApplicationState $applicationState,
-        private AuthenticationMethodProvider $authenticationMethodProvider
+        private AuthenticationMethodProvider $authenticationMethodProvider,
+        private UrlValidator $urlValidator
     ) {}
 
     /**
@@ -142,6 +140,10 @@ class RecoveryService
 
         if ($config->get('passwordRecoveryDisabled')) {
             throw new Forbidden("Password recovery: Disabled.");
+        }
+
+        if ($url) {
+            $this->urlValidator->validate($url);
         }
 
         /** @var ?User $user */
@@ -239,7 +241,9 @@ class RecoveryService
             $this->send($request->getRequestId(), $emailAddress, $user);
         }
         catch (SendingError $e) {
-            $this->log->error("Email sending error: " . $e->getMessage());
+            $message = "Email sending error. " . $e->getMessage();
+
+            $this->log->error($message);
 
             throw new Error("Email sending error.");
         }
@@ -295,6 +299,7 @@ class RecoveryService
 
     /**
      * @throws Error
+     * @throws Forbidden
      */
     public function createAndSendRequestForExistingUser(User $user, ?string $url = null): PasswordChangeRequest
     {
@@ -316,7 +321,14 @@ class RecoveryService
 
         $this->createCleanupRequestJob($entity->getId(), $lifetime);
 
-        $this->send($entity->getRequestId(), $emailAddress, $user);
+        try {
+            $this->send($entity->getRequestId(), $emailAddress, $user);
+        }
+        catch (SendingError $e) {
+            $this->log->error("Email sending error. " . $e->getMessage());
+
+            throw new Error("Email sending error.");
+        }
 
         return $entity;
     }
@@ -347,7 +359,7 @@ class RecoveryService
             ->setTime(
                 DateTime::createNow()
                     ->modify('+' . $lifetime)
-                    ->getDateTime()
+                    ->toDateTime()
             )
             ->setQueue(QueueName::Q1)
             ->schedule();
@@ -370,6 +382,7 @@ class RecoveryService
     /**
      * @throws Error
      * @throws SendingError
+     * @throws Forbidden
      */
     private function send(string $requestId, string $emailAddress, User $user): void
     {
@@ -382,6 +395,10 @@ class RecoveryService
 
         if (!$this->emailSender->hasSystemSmtp() && !$this->config->get('internalSmtpServer')) {
             throw new Error("Password recovery: SMTP credentials are not defined.");
+        }
+
+        if (!$this->emailSender->hasSystemSmtp()) {
+            $this->checkIntervalForInternalSmtp();
         }
 
         $sender = $this->emailSender->create();
@@ -441,7 +458,7 @@ class RecoveryService
             $port = $this->config->get('internalSmtpPort');
 
             if (!$server || $port === null) {
-                throw new NoSmtp();
+                throw new NoSmtp("No internal SMTP");
             }
 
             $smtpParams = SmtpParams
@@ -451,14 +468,15 @@ class RecoveryService
                 ->withPassword($this->config->get('internalSmtpPassword'))
                 ->withSecurity($this->config->get('internalSmtpSecurity'))
                 ->withFromName(
-                    $this->config->get('internalOutboundEmailFromAddress') ??
-                    $this->config->get('outboundEmailFromAddress')
+                    $this->config->get('outboundEmailFromName')
                 );
 
             $sender->withSmtpParams($smtpParams);
         }
 
         $sender->send($email);
+
+        $this->lastPasswordRecoveryDate();
     }
 
     /**
@@ -495,5 +513,56 @@ class RecoveryService
     {
         /** @var PortalRepository */
         return $this->entityManager->getRDBRepository(Portal::ENTITY_TYPE);
+    }
+
+    /**
+     * @throws Forbidden
+     */
+    private function checkIntervalForInternalSmtp(): void
+    {
+        /** @var string $period */
+        $period = $this->config->get('passwordRecoveryInternalIntervalPeriod') ??
+            self::INTERNAL_SMTP_INTERVAL_PERIOD;
+
+        $data = $this->entityManager->getEntityById(SystemData::ENTITY_TYPE, SystemData::ONLY_ID);
+
+        if (!$data) {
+            return;
+        }
+
+        /** @var ?string $lastPasswordRecoveryDate */
+        $lastPasswordRecoveryDate = $data->get('lastPasswordRecoveryDate');
+
+        if (!$lastPasswordRecoveryDate) {
+            return;
+        }
+
+        $notPassed = DateTime::fromString($lastPasswordRecoveryDate)
+            ->modify('+' . $period)
+            ->isGreaterThan(DateTime::createNow());
+
+        if (!$notPassed) {
+            return;
+        }
+
+        throw Forbidden::createWithBody(
+            'Internal password recovery attempt interval failure.',
+            Error\Body::create()
+                ->withMessageTranslation('attemptIntervalFailure')
+                ->encode()
+        );
+    }
+
+    private function lastPasswordRecoveryDate(): void
+    {
+        $data = $this->entityManager->getEntityById(SystemData::ENTITY_TYPE, SystemData::ONLY_ID);
+
+        if (!$data) {
+            return;
+        }
+
+        $data->set('lastPasswordRecoveryDate', DateTime::createNow()->toString());
+
+        $this->entityManager->saveEntity($data);
     }
 }

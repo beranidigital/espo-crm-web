@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -71,10 +71,10 @@ class DynamicLogic {
      * Process.
      */
     process() {
-        let fields = this.defs.fields || {};
+        const fields = this.defs.fields || {};
 
         Object.keys(fields).forEach(field => {
-            var item = (fields[field] || {});
+            const item = (fields[field] || {});
 
             this.fieldTypeList.forEach(type => {
                 if (!(type in item)) {
@@ -85,13 +85,13 @@ class DynamicLogic {
                     return;
                 }
 
-                let typeItem = (item[type] || {});
+                const typeItem = (item[type] || {});
 
                 if (!typeItem.conditionGroup) {
                     return;
                 }
 
-                let result = this.checkConditionGroup(typeItem.conditionGroup);
+                const result = this.checkConditionGroup(typeItem.conditionGroup);
 
                 let methodName;
 
@@ -106,7 +106,7 @@ class DynamicLogic {
             });
         });
 
-        let panels = this.defs.panels || {};
+        const panels = this.defs.panels || {};
 
         Object.keys(panels).forEach(panel => {
             this.panelTypeList.forEach(type => {
@@ -114,10 +114,10 @@ class DynamicLogic {
             });
         });
 
-        let options = this.defs.options || {};
+        const options = this.defs.options || {};
 
         Object.keys(options).forEach(field => {
-            let itemList = options[field];
+            const itemList = options[field];
 
             if (!options[field]) {
                 return;
@@ -125,8 +125,8 @@ class DynamicLogic {
 
             let isMet = false;
 
-            for (let i in itemList) {
-                let item = itemList[i];
+            for (const i in itemList) {
+                const item = itemList[i];
 
                 if (this.checkConditionGroup(item.conditionGroup)) {
                     this.setOptionList(field, item.optionList || []);
@@ -149,20 +149,20 @@ class DynamicLogic {
      * @private
      */
     processPanel(panel, type) {
-        let panels = this.defs.panels || {};
-        let item = (panels[panel] || {});
+        const panels = this.defs.panels || {};
+        const item = (panels[panel] || {});
 
         if (!(type in item)) {
             return;
         }
 
-        let typeItem = (item[type] || {});
+        const typeItem = (item[type] || {});
 
         if (!typeItem.conditionGroup) {
             return;
         }
 
-        let result = this.checkConditionGroup(typeItem.conditionGroup);
+        const result = this.checkConditionGroup(typeItem.conditionGroup);
 
         let methodName;
 
@@ -193,7 +193,7 @@ class DynamicLogic {
 
             result = true;
 
-            for (let i in list) {
+            for (const i in list) {
                 if (!this.checkCondition(list[i])) {
                     result = false;
 
@@ -204,7 +204,7 @@ class DynamicLogic {
         else if (type === 'or') {
             list =  data || [];
 
-            for (let i in list) {
+            for (const i in list) {
                 if (this.checkCondition(list[i])) {
                     result = true;
 
@@ -222,6 +222,24 @@ class DynamicLogic {
     }
 
     /**
+     * @private
+     * @param {string} attribute
+     */
+    getAttributeValue(attribute) {
+        if (attribute.startsWith('$')) {
+            if (attribute === '$user.id') {
+                return this.recordView.getUser().id;
+            }
+
+            if (attribute === '$user.teamsIds') {
+                return this.recordView.getUser().getTeamIdList();
+            }
+        }
+
+        return this.recordView.model.get(attribute);
+    }
+
+    /**
      * Check a condition.
      *
      * @param {Object} defs Definitions.
@@ -230,20 +248,20 @@ class DynamicLogic {
     checkCondition(defs) {
         defs = defs || {};
 
-        let type = defs.type || 'equals';
+        const type = defs.type || 'equals';
 
         if (['or', 'and', 'not'].includes(type)) {
             return this.checkConditionGroup(defs.value, /** @type {'or'|'and'|'not'} */ type);
         }
 
-        let attribute = defs.attribute;
-        let value = defs.value;
+        const attribute = defs.attribute;
+        const value = defs.value;
 
         if (!attribute) {
             return false;
         }
 
-        var setValue = this.recordView.model.get(attribute);
+        const setValue = this.getAttributeValue(attribute);
 
         if (type === 'equals') {
             if (!value) {
@@ -322,7 +340,7 @@ class DynamicLogic {
                 return false;
             }
 
-            let match = /^\/(.*)\/([a-z]*)$/.exec(value);
+            const match = /^\/(.*)\/([a-z]*)$/.exec(value);
 
             if (!match || match.length < 2) {
                 return false;
@@ -356,7 +374,7 @@ class DynamicLogic {
         }
 
         if (type === 'isToday') {
-            let dateTime = this.recordView.getDateTime();
+            const dateTime = this.recordView.getDateTime();
 
             if (!setValue) {
                 return false;
@@ -370,7 +388,7 @@ class DynamicLogic {
         }
 
         if (type === 'inFuture') {
-            let dateTime = this.recordView.getDateTime();
+            const dateTime = this.recordView.getDateTime();
 
             if (!setValue) {
                 return false;
@@ -384,7 +402,7 @@ class DynamicLogic {
         }
 
         if (type === 'inPast') {
-            let dateTime = this.recordView.getDateTime();
+            const dateTime = this.recordView.getDateTime();
 
             if (!setValue) {
                 return false;

@@ -2,36 +2,36 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Authentication;
 
-
 use Espo\Core\Exceptions\Forbidden;
 use Espo\Core\Exceptions\NotFound;
+use Espo\Core\Utils\Language\LanguageProxy;
 use Espo\Repositories\UserData as UserDataRepository;
 use Espo\Entities\Portal;
 use Espo\Entities\User;
@@ -87,7 +87,8 @@ class Authentication
         private Log $log,
         private LogoutFactory $logoutFactory,
         private MethodProvider $methodProvider,
-        private Util $util
+        private Util $util,
+        private LanguageProxy $language
     ) {}
 
     /**
@@ -107,7 +108,7 @@ class Authentication
             !$this->configDataProvider->authenticationMethodIsApi($method)
         ) {
             $this->log
-                ->warning("AUTH: Trying to use not allowed authentication method '{$method}'.");
+                ->warning("AUTH: Trying to use not allowed authentication method '$method'.");
 
             return $this->processFail(Result::fail(FailReason::METHOD_NOT_ALLOWED), $data, $request);
         }
@@ -156,7 +157,7 @@ class Authentication
 
         if (($byTokenAndUsername || $byTokenOnly) && !$authToken) {
             if ($username) {
-                $this->log->info("AUTH: Trying to login as user '{$username}' by token but token is not found.");
+                $this->log->info("AUTH: Trying to login as user '$username' by token but token is not found.");
             }
 
             return $this->processFail(Result::fail(FailReason::TOKEN_NOT_FOUND), $data, $request);
@@ -204,8 +205,7 @@ class Authentication
             throw ServiceUnavailable::createWithBody(
                 "Application is in maintenance mod1e.",
                 Body::create()
-                    ->withMessageTranslation('maintenanceModeError', 'messages')
-                    ->encode()
+                    ->withMessage($this->language->translateLabel('maintenanceModeError', 'messages'))
             );
         }
 
@@ -405,7 +405,7 @@ class Authentication
             if (!$isPortalRelatedToUser) {
                 $this->log->info(
                     "AUTH: Trying to login to portal as user '" . $user->getUserName() . "' ".
-                    "which is portal user but does not belongs to portal.");
+                    "which is portal user but does not belong to portal.");
 
                 $this->logDenied($authLogRecord, AuthLogRecord::DENIAL_REASON_USER_IS_NOT_IN_PORTAL);
 
@@ -484,6 +484,7 @@ class Authentication
             $this->setSecretInCookie($authToken->getSecret(), $response, $request);
         }
 
+        /** @noinspection PhpConditionAlreadyCheckedInspection */
         if (
             $this->configDataProvider->preventConcurrentAuthToken() &&
             $authToken instanceof AuthTokenEntity
@@ -729,11 +730,7 @@ class Authentication
             ->where(['id' => $authToken->getUserId()])
             ->findOne();
 
-        if (!$user) {
-            return null;
-        }
-
-        return $user->getUserName();
+        return $user?->getUserName();
     }
 
     /**
@@ -769,6 +766,8 @@ class Authentication
         if (!$loggedUser->isRegular()) {
             return [null, FailReason::ANOTHER_USER_NOT_ALLOWED];
         }
+
+        $loggedUser->loadLinkMultipleField('teams');
 
         return [$loggedUser, null];
     }

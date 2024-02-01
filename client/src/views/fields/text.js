@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -43,12 +43,13 @@ class TextFieldView extends BaseFieldView {
     searchTemplate = 'fields/text/search'
 
     seeMoreText = false
-    rowsDefault = 10
+    rowsDefault = 50000
     rowsMin = 2
     seeMoreDisabled = false
     cutHeight = 200
     noResize = false
     changeInterval = 5
+    shrinkThreshold = 10;
 
     searchTypeList = [
         'contains',
@@ -75,10 +76,16 @@ class TextFieldView extends BaseFieldView {
         },
     }
 
+    /** @private */
+    _lastLength
+
+    /** @private */
+    maxRows
+
     setup() {
         super.setup();
 
-        this.params.rows = this.params.rows || this.rowsDefault;
+        this.maxRows = this.params.rows || this.rowsDefault;
         this.noResize = this.options.noResize || this.params.noResize || this.noResize;
         this.seeMoreDisabled = this.seeMoreDisabled || this.params.seeMoreDisabled;
         this.autoHeightDisabled = this.options.autoHeightDisabled || this.params.autoHeightDisabled ||
@@ -90,8 +97,8 @@ class TextFieldView extends BaseFieldView {
 
         this.rowsMin = this.options.rowsMin || this.params.rowsMin || this.rowsMin;
 
-        if (this.params.rows < this.rowsMin) {
-            this.rowsMin = this.params.rows;
+        if (this.maxRows < this.rowsMin) {
+            this.rowsMin = this.maxRows;
         }
 
         this.on('remove', () => {
@@ -101,14 +108,15 @@ class TextFieldView extends BaseFieldView {
 
     setupSearch() {
         this.events['change select.search-type'] = e => {
-            let type = $(e.currentTarget).val();
+            const type = $(e.currentTarget).val();
 
             this.handleSearchType(type);
         };
     }
 
+    // noinspection JSCheckFunctionSignatures
     data() {
-        let data = super.data();
+        const data = super.data();
 
         if (
             this.model.get(this.name) !== null &&
@@ -125,11 +133,9 @@ class TextFieldView extends BaseFieldView {
         }
 
         if (this.mode === this.MODE_EDIT) {
-            if (this.autoHeightDisabled) {
-                data.rows = this.params.rows;
-            } else {
-                data.rows = this.rowsMin;
-            }
+            data.rows = this.autoHeightDisabled ?
+                this.maxRows :
+                this.rowsMin;
         }
 
         data.valueIsSet = this.model.has(this.name);
@@ -144,8 +150,9 @@ class TextFieldView extends BaseFieldView {
             data.displayRawText = this.params.displayRawText;
         }
 
-        data.noResize = this.noResize;
+        data.noResize = this.noResize || (!this.autoHeightDisabled && !this.params.rows);
 
+        // noinspection JSValidateTypes
         return data;
     }
 
@@ -158,14 +165,18 @@ class TextFieldView extends BaseFieldView {
     }
 
     getValueForDisplay() {
-        let text = this.model.get(this.name);
+        const text = this.model.get(this.name);
 
         return text || '';
     }
 
+    /**
+     * @public
+     * @param {Number} [lastHeight]
+     */
     controlTextareaHeight(lastHeight) {
-        var scrollHeight = this.$element.prop('scrollHeight');
-        var clientHeight = this.$element.prop('clientHeight');
+        const scrollHeight = this.$element.prop('scrollHeight');
+        const clientHeight = this.$element.prop('clientHeight');
 
         if (typeof lastHeight === 'undefined' && clientHeight === 0) {
             setTimeout(this.controlTextareaHeight.bind(this), 10);
@@ -173,23 +184,70 @@ class TextFieldView extends BaseFieldView {
             return;
         }
 
+        /** @type {HTMLTextAreaElement} */
+        const element = this.$element.get(0);
+
+        if (!element || element.value === undefined) {
+            return;
+        }
+
+        const length = element.value.length;
+
+        if (this._lastLength === undefined) {
+            this._lastLength = length;
+        }
+
+        if (length > this._lastLength) {
+            this._lastLength = length;
+        }
+
         if (clientHeight === lastHeight) {
+            // @todo Revise.
             return;
         }
 
         if (scrollHeight > clientHeight + 1) {
-            var rows = this.$element.prop('rows');
+            const rows = element.rows;
 
-            if (this.params.rows && rows >= this.params.rows) {
+            if (this.maxRows && rows >= this.maxRows) {
                 return;
             }
 
-            this.$element.attr('rows', rows + 1);
+            element.rows ++;
+
             this.controlTextareaHeight(clientHeight);
+
+            return;
         }
 
         if (this.$element.val().length === 0) {
-            this.$element.attr('rows', this.rowsMin);
+            element.rows = this.rowsMin;
+
+            return;
+        }
+
+        const tryShrink = () => {
+            const rows = element.rows;
+
+            if (this.rowsMin && rows - 1 <= this.rowsMin) {
+                return;
+            }
+
+            element.rows --;
+
+            if (element.scrollHeight > element.clientHeight + 1) {
+                this.controlTextareaHeight();
+
+                return;
+            }
+
+            tryShrink();
+        };
+
+        if (length < this._lastLength - this.shrinkThreshold) {
+            this._lastLength = length;
+
+            tryShrink();
         }
     }
 
@@ -240,14 +298,15 @@ class TextFieldView extends BaseFieldView {
         }
 
         if (this.mode === this.MODE_EDIT) {
-            var text = this.getValueForDisplay();
+            const text = this.getValueForDisplay();
+
             if (text) {
                 this.$element.val(text);
             }
         }
 
         if (this.mode === this.MODE_SEARCH) {
-            var type = this.$el.find('select.search-type').val();
+            const type = this.$el.find('select.search-type').val();
 
             this.handleSearchType(type);
 
@@ -261,11 +320,11 @@ class TextFieldView extends BaseFieldView {
         }
 
         if (this.mode === this.MODE_EDIT && !this.autoHeightDisabled) {
-            this.controlTextareaHeight();
-
-            this.$element.on('input', () => {
+            if (!this.autoHeightDisabled) {
                 this.controlTextareaHeight();
-            });
+
+                this.$element.on('input', () => this.controlTextareaHeight());
+            }
 
             let lastChangeKeydown = new Date();
             const changeKeydownInterval = this.changeInterval * 1000;
@@ -280,7 +339,7 @@ class TextFieldView extends BaseFieldView {
     }
 
     fetch() {
-        let data = {};
+        const data = {};
 
         let value = this.$element.val() || null;
 
@@ -294,7 +353,7 @@ class TextFieldView extends BaseFieldView {
     }
 
     fetchSearch() {
-        let type = this.fetchSearchType() || 'startsWith';
+        const type = this.fetchSearchType() || 'startsWith';
 
         if (type === 'isEmpty') {
             return  {
@@ -337,7 +396,7 @@ class TextFieldView extends BaseFieldView {
             };
         }
 
-        let value = this.$element.val().toString().trim();
+        const value = this.$element.val().toString().trim();
 
         if (value) {
             return {
@@ -355,7 +414,7 @@ class TextFieldView extends BaseFieldView {
     }
 
     mailTo(emailAddress) {
-        let attributes = {
+        const attributes = {
             status: 'Draft',
             to: emailAddress,
         };
@@ -366,7 +425,7 @@ class TextFieldView extends BaseFieldView {
             !this.getAcl().checkScope('Email', 'create')
         ) {
             Espo.loader.require('email-helper', EmailHelper => {
-                let emailHelper = new EmailHelper();
+                const emailHelper = new EmailHelper();
 
                 document.location.href = emailHelper
                     .composeMailToLink(attributes, this.getConfig().get('outboundEmailBccAddress'));
@@ -375,7 +434,7 @@ class TextFieldView extends BaseFieldView {
             return;
         }
 
-        let viewName = this.getMetadata().get('clientDefs.' + this.scope + '.modalViews.compose') ||
+        const viewName = this.getMetadata().get('clientDefs.' + this.scope + '.modalViews.compose') ||
             'views/modals/compose-email';
 
         Espo.Ui.notify(' ... ');
@@ -384,7 +443,8 @@ class TextFieldView extends BaseFieldView {
             attributes: attributes,
         }, view => {
             view.render();
-            view.notify(false);
+
+            Espo.Ui.notify(false);
         });
     }
 }

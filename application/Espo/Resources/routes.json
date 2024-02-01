@@ -18,6 +18,11 @@
         "actionClassName": "Espo\\Tools\\App\\Api\\PostDestroyAuthToken"
     },
     {
+        "route": "/App/about",
+        "method": "get",
+        "actionClassName": "Espo\\Tools\\App\\Api\\GetAbout"
+    },
+    {
         "route": "/Metadata",
         "method": "get",
         "params": {
@@ -62,6 +67,11 @@
             "action": "list",
             "scope": "User"
         }
+    },
+    {
+        "route": "/GlobalStream",
+        "method": "get",
+        "actionClassName": "Espo\\Tools\\Stream\\Api\\GetGlobal"
     },
     {
         "route": "/GlobalSearch",
@@ -378,6 +388,11 @@
         "route": "/EmailAddress/search",
         "method": "get",
         "actionClassName": "Espo\\Tools\\EmailAddress\\Api\\GetSearch"
+    },
+    {
+        "route": "/User/:id/stream/own",
+        "method": "get",
+        "actionClassName": "Espo\\Tools\\Stream\\Api\\GetOwn"
     },
     {
         "route": "/User/:id/acl",

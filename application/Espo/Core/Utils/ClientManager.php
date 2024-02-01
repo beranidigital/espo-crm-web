@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -44,10 +44,12 @@ use Slim\ResponseEmitter;
 class ClientManager
 {
     private string $mainHtmlFilePath = 'html/main.html';
-    private string $runScript = "app.start();";
+    private string $runScript = 'app.start();';
     private string $favicon = 'client/img/favicon.ico';
     private string $favicon196 = 'client/img/favicon196x196.png';
     private string $basePath = '';
+    private string $apiUrl = 'api/v1';
+
     private string $nonce;
 
     private const APP_DESCRIPTION = "EspoCRM – Open Source CRM application.";
@@ -105,7 +107,7 @@ class ClientManager
             return;
         }
 
-        $scriptSrc = "script-src 'self' 'nonce-{$this->nonce}' 'unsafe-eval'";
+        $scriptSrc = "script-src 'self' 'nonce-$this->nonce' 'unsafe-eval'";
 
         $scriptSourceList = $this->config->get('clientCspScriptSourceList') ?? [];
 
@@ -189,7 +191,7 @@ class ClientManager
 
         $data = [
             'applicationId' => 'espocrm-application-id',
-            'apiUrl' => 'api/v1',
+            'apiUrl' => $this->apiUrl,
             'applicationName' => $this->config->get('applicationName', 'EspoCRM'),
             'cacheTimestamp' => $cacheTimestamp,
             'appTimestamp' => $appTimestamp,
@@ -373,5 +375,13 @@ class ClientManager
             fn ($item) => Util::fromCamelCase($item, '-'),
             $modules
         );
+    }
+
+    /**
+     * @since 8.0.0
+     */
+    public function setApiUrl(string $apiUrl): void
+    {
+        $this->apiUrl = $apiUrl;
     }
 }

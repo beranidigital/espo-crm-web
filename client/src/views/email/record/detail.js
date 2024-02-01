@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -41,7 +41,7 @@ class EmailDetailRecordView extends DetailRecordView {
             return;
         }
 
-        let status = this.model.get('status');
+        const status = this.model.get('status');
 
         if (status === 'Draft') {
             this.layoutName = 'composeSmall';
@@ -233,7 +233,7 @@ class EmailDetailRecordView extends DetailRecordView {
     }
 
     controlSendButton()  {
-        let status = this.model.get('status');
+        const status = this.model.get('status');
 
         if (status === 'Draft') {
             this.showActionItem('send');
@@ -349,15 +349,15 @@ class EmailDetailRecordView extends DetailRecordView {
     }
 
     send() {
-        var model = this.model;
+        const model = this.model;
 
-        let status = model.get('status');
+        const status = model.get('status');
 
         model.set('status', 'Sending');
 
         this.isSending = true;
 
-        var afterSend = () => {
+        const afterSend = () => {
             model.trigger('after:send');
 
             this.trigger('after:send');
@@ -393,20 +393,20 @@ class EmailDetailRecordView extends DetailRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     exitAfterDelete() {
-        var folderId = ((this.collection || {}).data || {}).folderId || null;
+        let folderId = ((this.collection || {}).data || {}).folderId || null;
 
         if (folderId === 'inbox') {
             folderId = null;
         }
 
-        var options = {
+        const options = {
             isReturn: true,
             isReturnThroughLink: false,
             folder: folderId,
         };
 
-        var url = '#' + this.scope;
-        var action = null;
+        let url = '#' + this.scope;
+        let action = null;
 
         if (folderId) {
             action = 'list';
@@ -421,13 +421,13 @@ class EmailDetailRecordView extends DetailRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     actionViewUsers(data) {
-        var viewName =
+        const viewName =
             this.getMetadata()
                 .get(['clientDefs', this.model.entityType, 'relationshipPanels', 'users', 'viewModalView']) ||
             this.getMetadata().get(['clientDefs', 'User', 'modalViews', 'relatedList']) ||
             'views/modals/related-list';
 
-        var options = {
+        const options = {
             model: this.model,
             link: 'users',
             scope: 'User',
@@ -439,7 +439,7 @@ class EmailDetailRecordView extends DetailRecordView {
         };
 
         if (data.viewOptions) {
-            for (var item in data.viewOptions) {
+            for (const item in data.viewOptions) {
                 options[item] = data.viewOptions[item];
             }
         }
@@ -484,7 +484,7 @@ class EmailDetailRecordView extends DetailRecordView {
     // noinspection JSUnusedGlobalSymbols
     actionPrint() {
         /** @type {module:views/fields/wysiwyg} */
-        let bodyView = this.getFieldView('body');
+        const bodyView = this.getFieldView('body');
 
         if (!bodyView) {
             return;
@@ -498,16 +498,16 @@ class EmailDetailRecordView extends DetailRecordView {
             return;
         }
 
-        let el = bodyView.$el.get(0);
+        const el = bodyView.$el.get(0);
         /** @type {Element} */
-        let recordElement = this.$el.get(0);
+        const recordElement = this.$el.get(0);
 
         iframe = document.createElement('iframe');
         iframe.style.display = 'none';
 
         recordElement.append(iframe);
 
-        let contentWindow = iframe.contentWindow;
+        const contentWindow = iframe.contentWindow;
 
         contentWindow.document.open();
         contentWindow.document.write(el.innerHTML);
@@ -527,7 +527,13 @@ class EmailDetailRecordView extends DetailRecordView {
         let msg = this.translate('sendingFailed', 'strings', 'Email');
 
         if (data.message) {
-            msg += ': ' + data.message;
+            let part = data.message;
+
+            if (this.getLanguage().has(part, 'messages', 'Email')) {
+                part = this.translate(part, 'messages', 'Email');
+            }
+
+            msg += ': ' + part;
         }
 
         Espo.Ui.error(msg, true);

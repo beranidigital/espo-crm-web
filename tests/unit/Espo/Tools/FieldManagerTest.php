@@ -2,38 +2,42 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\unit\Espo\Tools;
 
-use tests\unit\ReflectionHelper;
+use Espo\Core\Utils\Language;
+use Espo\Core\Utils\Metadata;
 use Espo\Tools\FieldManager\FieldManager;
 use Espo\Core\InjectableFactory;
 
-class FieldManagerTest extends \PHPUnit\Framework\TestCase
+use PHPUnit\Framework\TestCase;
+use tests\unit\ReflectionHelper;
+
+class FieldManagerTest extends TestCase
 {
     private FieldManager $fieldManager;
 
@@ -41,12 +45,12 @@ class FieldManagerTest extends \PHPUnit\Framework\TestCase
 
     protected function setUp() : void
     {
-        $this->metadata = $this->createMock('Espo\\Core\\Utils\\Metadata');
-        $this->language = $this->createMock('Espo\\Core\\Utils\\Language');
-        $this->baseLanguage = $this->createMock('\\Espo\\Core\\Utils\\Language');
-        $this->defaultLanguage = $this->createMock('\\Espo\\Core\\Utils\\Language');
+        $this->metadata = $this->createMock(Metadata::class);
+        $this->language = $this->createMock(Language::class);
+        $this->baseLanguage = $this->createMock(Language::class);
+        $this->defaultLanguage = $this->createMock(Language::class);
 
-        $this->metadataHelper = $this->createMock('Espo\\Core\\Utils\\Metadata\\Helper');
+        $this->metadataHelper = $this->createMock(Metadata\Helper::class);
 
         $this->fieldManager = new FieldManager(
             $this->createMock(InjectableFactory::class),
@@ -249,19 +253,19 @@ class FieldManagerTest extends \PHPUnit\Framework\TestCase
 
     public function dddtestUpdateCustomFieldIsNotChanged()
     {
-        $data = array(
+        $data = [
             "type" => "varchar",
             "maxLength" => "50",
             "isCustom" => true,
-        );
+        ];
 
-        $map = array(
+        $map = [
             ['entityDefs.CustomEntity.fields.varName', [], $data],
             ['entityDefs.CustomEntity.fields.varName.type', null, $data['type']],
             [['entityDefs', 'CustomEntity', 'fields', 'varName'], null, $data],
             ['fields.varchar', null, null],
             [['fields', 'varchar', 'hookClassName'], null, null],
-        );
+        ];
 
         $this->metadata
             ->expects($this->any())
@@ -278,23 +282,23 @@ class FieldManagerTest extends \PHPUnit\Framework\TestCase
             ->method('getCustom')
             ->will($this->returnValue((object) []));
 
-        $this->assertTrue($this->fieldManager->update('CustomEntity', 'varName', $data));
+        $this->fieldManager->update('CustomEntity', 'varName', $data);
     }
 
     public function testUpdateCustomField()
     {
-        $data = array(
+        $data = [
             "type" => "varchar",
             "maxLength" => "50",
             "isCustom" => true,
-        );
+        ];
 
-        $map = array(
+        $map = [
             ['entityDefs.CustomEntity.fields.varName.type', null, $data['type']],
             [['entityDefs', 'CustomEntity', 'fields', 'varName'], null, $data],
             ['fields.varchar', null, null],
             [['fields', 'varchar', 'hookClassName'], null, null],
-        );
+        ];
 
         $this->metadata
             ->expects($this->any())
@@ -392,20 +396,23 @@ class FieldManagerTest extends \PHPUnit\Framework\TestCase
 
     public function testNormalizeDefs()
     {
-        $input1 = 'fielName';
-        $input2 = array(
+        $input1 = 'fieldName';
+        $input2 = [
             "type" => "varchar",
             "maxLength" => "50",
-        );
+        ];
 
-        $result = (object) array(
-            'fields' => (object) array(
-                'fielName' => (object) array(
+        $result = (object) [
+            'fields' => (object) [
+                'fieldName' => (object) [
                     "type" => "varchar",
                     "maxLength" => "50",
-                ),
-            ),
+                ],
+            ],
+        ];
+        $this->assertEquals(
+            $result,
+            $this->reflection->invokeMethod('normalizeDefs', ['CustomEntity', $input1, $input2])
         );
-        $this->assertEquals($result, $this->reflection->invokeMethod('normalizeDefs', array('CustomEntity', $input1, $input2)));
     }
 }

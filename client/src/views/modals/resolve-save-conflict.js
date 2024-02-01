@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -43,10 +43,10 @@ class ResolveSaveConflictModalView extends ModalView {
     defaultResolution = 'current'
 
     data() {
-        let dataList = [];
+        const dataList = [];
 
         this.fieldList.forEach(item => {
-            let o = {
+            const o = {
                 field: item,
                 viewKey: item + 'Field',
                 resolution: this.defaultResolution,
@@ -85,17 +85,17 @@ class ResolveSaveConflictModalView extends ModalView {
         this.currentAttributes = Espo.Utils.cloneDeep(this.options.currentAttributes);
         this.actualAttributes = Espo.Utils.cloneDeep(this.options.actualAttributes);
 
-        let attributeList = this.options.attributeList;
+        const attributeList = this.options.attributeList;
 
-        let fieldList = [];
+        const fieldList = [];
 
         this.getFieldManager()
             .getEntityTypeFieldList(this.entityType)
             .forEach(field => {
-                let fieldAttributeList = this.getFieldManager()
+                const fieldAttributeList = this.getFieldManager()
                     .getEntityTypeFieldAttributeList(this.entityType, field);
 
-                let intersect = attributeList.filter(value => fieldAttributeList.includes(value));
+                const intersect = attributeList.filter(value => fieldAttributeList.includes(value));
 
                 if (intersect.length) {
                     fieldList.push(field);
@@ -121,10 +121,10 @@ class ResolveSaveConflictModalView extends ModalView {
     }
 
     setResolution(field, resolution) {
-        let attributeList = this.getFieldManager()
+        const attributeList = this.getFieldManager()
             .getEntityTypeFieldAttributeList(this.entityType, field);
 
-        let values = {};
+        const values = {};
 
         let source = this.currentAttributes;
 
@@ -135,7 +135,7 @@ class ResolveSaveConflictModalView extends ModalView {
             source = this.originalAttributes;
         }
 
-        for (let attribute of attributeList) {
+        for (const attribute of attributeList) {
             values[attribute] = source[attribute] || null;
         }
 
@@ -143,9 +143,9 @@ class ResolveSaveConflictModalView extends ModalView {
     }
 
     createField(field) {
-        let type = this.model.getFieldType(field);
+        const type = this.model.getFieldType(field);
 
-        let viewName =
+        const viewName =
             this.model.getFieldParam(field, 'view') ||
             this.getFieldManager().getViewName(type);
 
@@ -160,10 +160,10 @@ class ResolveSaveConflictModalView extends ModalView {
 
     afterRender() {
         this.$el.find('[data-name="resolution"]').on('change', e => {
-            let $el = $(e.currentTarget);
+            const $el = $(e.currentTarget);
 
-            let field = $el.attr('data-field');
-            let resolution = $el.val();
+            const field = $el.attr('data-field');
+            const resolution = $el.val();
 
             this.setResolution(field, resolution);
         });
@@ -171,7 +171,7 @@ class ResolveSaveConflictModalView extends ModalView {
 
     // noinspection JSUnusedGlobalSymbols
     actionApply() {
-        let attributes = this.model.attributes;
+        const attributes = this.model.attributes;
 
         this.originalModel.set(attributes);
 

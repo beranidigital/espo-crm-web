@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -179,28 +179,44 @@ class Payload
             throw new RuntimeException("Bad `aud`.");
         }
 
-        if ($exp !== null && !is_int($exp)) {
-            throw new RuntimeException("No or bad `exp`.");
+        if ($exp !== null && !is_numeric($exp)) {
+            throw new RuntimeException("Bad `exp`.");
         }
 
-        if ($iat !== null && !is_int($iat)) {
-            throw new RuntimeException("No or bad `iat`.");
+        if ($iat !== null && !is_numeric($iat)) {
+            throw new RuntimeException("Bad `iat`.");
         }
 
-        if ($nbf !== null && !is_int($nbf)) {
-            throw new RuntimeException("No or bad `nbf`.");
+        if ($nbf !== null && !is_numeric($nbf)) {
+            throw new RuntimeException("Bad `nbf`.");
         }
 
         if ($nonce !== null && !is_string($nonce)) {
             throw new RuntimeException("Bad `nonce`.");
         }
 
-        if ($authTime !== null && !is_int($authTime)) {
+        if ($authTime !== null && !is_numeric($authTime)) {
             throw new RuntimeException("Bad `auth_time`.");
         }
 
         if ($sid !== null && !is_string($sid)) {
             throw new RuntimeException("Bad `sid`.");
+        }
+
+        if ($exp !== null) {
+            $exp = (int) $exp;
+        }
+
+        if ($iat !== null) {
+            $iat = (int) $iat;
+        }
+
+        if ($nbf !== null) {
+            $nbf = (int) $nbf;
+        }
+
+        if ($authTime !== null) {
+            $authTime = (int) $authTime;
         }
 
         return new self(

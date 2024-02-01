@@ -16,6 +16,10 @@
         {
             "name": "readOnly",
             "type": "bool"
+        },
+        {
+            "name": "readOnlyAfterCreate",
+            "type": "bool"
         }
     ],
     "filter": false,
@@ -23,5 +27,8 @@
         "type": "varchar",
         "maxLength": 7
     },
+    "sanitizerClassNameList": [
+        "Espo\\Classes\\FieldSanitizers\\StringTrim"
+    ],
     "notCreatable": true
 }

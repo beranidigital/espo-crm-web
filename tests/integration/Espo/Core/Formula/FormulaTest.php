@@ -2,43 +2,44 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\integration\Espo\Core\Formula;
 
-use Espo\Core\Field\DateTime;
 use Espo\Core\Field\DateTimeOptional;
 use Espo\Core\Formula\Manager;
 use Espo\Entities\User;
+use Espo\Modules\Crm\Entities\Account;
 use Espo\Modules\Crm\Entities\Meeting;
+use Espo\Modules\Crm\Entities\Opportunity;
 use Espo\ORM\EntityManager;
+use tests\integration\Core\BaseTestCase;
 
-class FormulaTest extends \tests\integration\Core\BaseTestCase
+class FormulaTest extends BaseTestCase
 {
-
     public function testCountRelatedAndSumRelated()
     {
         $entityManager = $this->getContainer()->get('entityManager');
@@ -386,29 +387,33 @@ class FormulaTest extends \tests\integration\Core\BaseTestCase
 
     public function testRecordFindRelatedMany()
     {
-        $fm = $this->getContainer()->get('formulaManager');
-        $em = $this->getContainer()->get('entityManager');
+        $fm = $this->getContainer()->getByClass(Manager::class);
+        $em = $this->getContainer()->getByClass(EntityManager::class);
 
         $a = $em->createEntity('Account', []);
+        $c1 = $em->createEntity('Contact', []);
+        $c2 = $em->createEntity('Contact', []);
 
         $o1 = $em->createEntity('Opportunity', [
             'accountId' => $a->getId(),
             'stage' => 'Prospecting',
             'name' => '1',
+            'contactsIds' => [$c1->getId()],
         ]);
         $o2 = $em->createEntity('Opportunity', [
             'accountId' => $a->getId(),
             'stage' => 'Closed Won',
             'name' => '2',
+            'contactsIds' => [$c1->getId()],
         ]);
         $o3 = $em->createEntity('Opportunity', [
             'accountId' => $a->getId(),
             'stage' => 'Prospecting',
             'name' => '3',
+            'contactsIds' => [$c2->getId()],
         ]);
 
-        $ow1 = $em->createEntity('Opportunity', []);
-
+        $em->createEntity('Opportunity', []);
 
         $script = "record\\findRelatedMany('Account', '".$a->getId()."', 'opportunities', 2, null, null, 'open')";
         $result = $fm->run($script);
@@ -435,6 +440,11 @@ class FormulaTest extends \tests\integration\Core\BaseTestCase
         $result = $fm->run($script);
         $this->assertIsArray($result);
         $this->assertEquals([$o1->getId(), $o3->getId()], $result);
+
+        $script = "record\\findRelatedMany('Contact', '{$c1->getId()}', 'opportunities', 10, 'name')";
+        $result = $fm->run($script);
+        $this->assertIsArray($result);
+        $this->assertEquals([$o1->getId(), $o2->getId()], $result);
     }
 
     public function testRecordAttribute()
@@ -840,35 +850,57 @@ class FormulaTest extends \tests\integration\Core\BaseTestCase
         $script = sprintf(
             "ext\\calendar\\userIsBusy('%s', '%s', '%s')",
             $user->getId(),
-            $dateStart->getString(),
-            $dateEnd->getString()
+            $dateStart->toString(),
+            $dateEnd->toString()
         );
         $this->assertTrue($fm->run($script));
 
         $script = sprintf(
             "ext\\calendar\\userIsBusy('%s', '%s', '%s')",
             $user->getId(),
-            $dateStart->addHours(-1)->getString(),
-            $dateEnd->addHours(1)->getString()
+            $dateStart->addHours(-1)->toString(),
+            $dateEnd->addHours(1)->toString()
         );
         $this->assertTrue($fm->run($script));
 
         $script = sprintf(
             "ext\\calendar\\userIsBusy('%s', '%s', '%s')",
             $user->getId(),
-            $dateStart->addDays(-1)->getString(),
-            $dateEnd->addDays(-1)->getString()
+            $dateStart->addDays(-1)->toString(),
+            $dateEnd->addDays(-1)->toString()
         );
         $this->assertFalse($fm->run($script));
 
         $script = sprintf(
             "ext\\calendar\\userIsBusy('%s', '%s', '%s', '%s', '%s')",
             $user->getId(),
-            $dateStart->getString(),
-            $dateEnd->getString(),
+            $dateStart->toString(),
+            $dateEnd->toString(),
             $meeting->getEntityType(),
             $meeting->getId()
         );
         $this->assertFalse($fm->run($script));
+    }
+
+    public function testIsRelated(): void
+    {
+        $em = $this->getEntityManager();
+        $fm = $this->getContainer()->getByClass(Manager::class);
+
+        $account = $em->createEntity(Account::ENTITY_TYPE, []);
+        $opp = $em->createEntity(Opportunity::ENTITY_TYPE, []);
+
+        $em
+            ->getRDBRepositoryByClass(Account::class)
+            ->getRelation($account, 'opportunities')
+            ->relate($opp);
+
+        $script = sprintf(
+            "entity\\isRelated('opportunities', '%s')",
+            $opp->getId()
+        );
+
+        /** @noinspection PhpUnhandledExceptionInspection */
+        $this->assertTrue($fm->run($script, $account));
     }
 }

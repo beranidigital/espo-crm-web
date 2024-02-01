@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -85,8 +85,8 @@ class Service
      */
     public function fetch(string $userId, FetchParams $fetchParams): array
     {
-        $from = $fetchParams->getFrom()->getString();
-        $to = $fetchParams->getTo()->getString();
+        $from = $fetchParams->getFrom()->toString();
+        $to = $fetchParams->getTo()->toString();
         $scopeList = $fetchParams->getScopeList();
         $skipAcl = $fetchParams->skipAcl();
 
@@ -784,26 +784,26 @@ class Service
             try {
                 foreach ($rangeList as $range) {
                     if (
-                        $start->getTimestamp() < $range->start->getTimestamp() &&
-                        $end->getTimestamp() > $range->end->getTimestamp()
+                        $start->toTimestamp() < $range->start->getTimestamp() &&
+                        $end->toTimestamp() > $range->end->getTimestamp()
                     ) {
-                        $range->dateStart = $start->getString();
+                        $range->dateStart = $start->toString();
                         $range->start = $start;
-                        $range->dateEnd = $end->getString();
+                        $range->dateEnd = $end->toString();
                         $range->end = $end;
 
                         continue 2;
                     }
 
                     if (
-                        $start->getTimestamp() < $range->start->getTimestamp() &&
-                        $end->getTimestamp() > $range->start->getTimestamp()
+                        $start->toTimestamp() < $range->start->getTimestamp() &&
+                        $end->toTimestamp() > $range->start->getTimestamp()
                     ) {
-                        $range->dateStart = $start->getString();
+                        $range->dateStart = $start->toString();
                         $range->start = $start;
 
-                        if ($end->getTimestamp() > $range->end->getTimestamp()) {
-                            $range->dateEnd = $end->getString();
+                        if ($end->toTimestamp() > $range->end->getTimestamp()) {
+                            $range->dateEnd = $end->toString();
                             $range->end = $end;
                         }
 
@@ -811,14 +811,14 @@ class Service
                     }
 
                     if (
-                        $start->getTimestamp() < $range->end->getTimestamp() &&
-                        $end->getTimestamp() > $range->end->getTimestamp()
+                        $start->toTimestamp() < $range->end->getTimestamp() &&
+                        $end->toTimestamp() > $range->end->getTimestamp()
                     ) {
-                        $range->dateEnd = $end->getString();
+                        $range->dateEnd = $end->toString();
                         $range->end = $end;
 
-                        if ($start->getTimestamp() < $range->start->getTimestamp()) {
-                            $range->dateStart = $start->getString();
+                        if ($start->toTimestamp() < $range->start->getTimestamp()) {
+                            $range->dateStart = $start->toString();
                             $range->start = $start;
                         }
 
@@ -827,8 +827,8 @@ class Service
                 }
 
                 $busyItem = (object) [
-                    'dateStart' => $start->getString(),
-                    'dateEnd' => $end->getString(),
+                    'dateStart' => $start->toString(),
+                    'dateEnd' => $end->toString(),
                     'start' => $start,
                     'end' => $end,
                 ];
@@ -926,7 +926,7 @@ class Service
         $toReturn = true;
 
         try {
-            $diff = $to->getDateTime()->diff($from->getDateTime(), true);
+            $diff = $to->toDateTime()->diff($from->toDateTime(), true);
 
             if ($diff->days > $this->config->get('busyRangesMaxRange', self::BUSY_RANGES_MAX_RANGE_DAYS)) {
                 $toReturn = false;

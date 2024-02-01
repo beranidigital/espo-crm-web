@@ -54,31 +54,35 @@
                 {{#if isGroup}}
                 <ul class="dropdown-menu" role="menu" aria-labelledby="nav-tab-group-{{name}}">
                     {{#each itemList}}
-                    <li data-name="{{name}}" class="in-group tab">
-                        <a
-                            {{#if link}}href="{{link}}"{{else}}role="button"{{/if}}
-                            class="{{aClassName}}"
-                            {{#if color}}
-                                style="border-color: {{color}}"
-                            {{/if}}
-                            {{#if isGroup}}
-                                id="nav-tab-group-{{name}}"
-                                data-toggle="dropdown"
-                            {{/if}}
-                        >
+                        {{#if isDivider}}
+                            <li class="divider"></li>
+                        {{else}}
+                            <li data-name="{{name}}" class="in-group tab">
+                                <a
+                                        {{#if link}}href="{{link}}"{{else}}role="button"{{/if}}
+                                        class="{{aClassName}}"
+                                    {{#if color}}
+                                        style="border-color: {{color}}"
+                                    {{/if}}
+                                    {{#if isGroup}}
+                                        id="nav-tab-group-{{name}}"
+                                        data-toggle="dropdown"
+                                    {{/if}}
+                                >
                             <span class="short-label"{{#if color}} style="color: {{color}}"{{/if}}>
                                 {{#if iconClass}}
-                                <span class="{{iconClass}}"></span>
+                                    <span class="{{iconClass}}"></span>
                                 {{else}}
-                                {{#if colorIconClass}}
-                                <span class="{{colorIconClass}}" style="color: {{color}}"></span>
-                                {{/if}}
-                                <span class="short-label-text">&nbsp;</span>
+                                    {{#if colorIconClass}}
+                                        <span class="{{colorIconClass}}" style="color: {{color}}"></span>
+                                    {{/if}}
+                                    <span class="short-label-text">&nbsp;</span>
                                 {{/if}}
                             </span>
-                            <span class="full-label">{{label}}</span>
-                        </a>
-                    </li>
+                                    <span class="full-label">{{label}}</span>
+                                </a>
+                            </li>
+                        {{/if}}
                     {{/each}}
                 </ul>
                 {{/if}}
@@ -135,32 +139,36 @@
                         {{#if isGroup}}
                         <ul class="dropdown-menu" role="menu" aria-labelledby="nav-tab-group-{{name}}">
                             {{#each itemList}}
-                            <li data-name="{{name}}" class="in-group tab">
-                                <a
-                                    {{#if link}}href="{{link}}"{{else}}role="button"{{/if}}
-                                    tabindex="0"
-                                    class="{{aClassName}}"
-                                    {{#if color}}
-                                        style="border-color: {{color}}"
-                                    {{/if}}
-                                    {{#if isGroup}}
-                                        id="nav-tab-group-{{name}}"
-                                        data-toggle="dropdown"
-                                    {{/if}}
-                                >
+                                {{#if isDivider}}
+                                    <li class="divider"></li>
+                                {{else}}
+                                    <li data-name="{{name}}" class="in-group tab">
+                                        <a
+                                                {{#if link}}href="{{link}}"{{else}}role="button"{{/if}}
+                                                tabindex="0"
+                                                class="{{aClassName}}"
+                                            {{#if color}}
+                                                style="border-color: {{color}}"
+                                            {{/if}}
+                                            {{#if isGroup}}
+                                                id="nav-tab-group-{{name}}"
+                                                data-toggle="dropdown"
+                                            {{/if}}
+                                        >
                                     <span class="short-label"{{#if color}} style="color: {{color}}"{{/if}}>
                                         {{#if iconClass}}
-                                        <span class="{{iconClass}}"></span>
+                                            <span class="{{iconClass}}"></span>
                                         {{else}}
-                                        {{#if colorIconClass}}
-                                        <span class="{{colorIconClass}}" style="color: {{color}}"></span>
-                                        {{/if}}
-                                        <span class="short-label-text">&nbsp;</span>
+                                            {{#if colorIconClass}}
+                                                <span class="{{colorIconClass}}" style="color: {{color}}"></span>
+                                            {{/if}}
+                                            <span class="short-label-text">&nbsp;</span>
                                         {{/if}}
                                     </span>
-                                    <span class="full-label">{{label}}</span>
-                                </a>
-                            </li>
+                                            <span class="full-label">{{label}}</span>
+                                        </a>
+                                    </li>
+                                {{/if}}
                             {{/each}}
                         </ul>
                         {{/if}}
@@ -174,28 +182,9 @@
             <li class="nav navbar-nav navbar-form global-search-container">
                 {{{globalSearch}}}
             </li>
-            {{#if enableQuickCreate}}
-            <li class="dropdown hidden-xs quick-create-container">
-                <a
-                    id="nav-quick-create-dropdown"
-                    class="dropdown-toggle"
-                    data-toggle="dropdown"
-                    role="button"
-                    tabindex="0"
-                    title="{{translate 'Create'}}"
-                ><i class="fas fa-plus icon"></i></a>
-                <ul class="dropdown-menu" role="menu" aria-labelledby="nav-quick-create-dropdown">
-                    <li class="dropdown-header">{{translate 'Create'}}</li>
-                    {{#each quickCreateList}}
-                    <li><a
-                            href="#{{./this}}/create"
-                            data-name="{{./this}}"
-                            data-action="quick-create"
-                        >{{translate this category='scopeNames'}}</a></li>
-                    {{/each}}
-                </ul>
-            </li>
-            {{/if}}
+            {{#each itemDataList}}
+                <li class="{{class}}" data-item="{{name}}">{{{var key ../this}}}</li>
+            {{/each}}
             <li class="dropdown notifications-badge-container">
                 {{{notificationsBadge}}}
             </li>

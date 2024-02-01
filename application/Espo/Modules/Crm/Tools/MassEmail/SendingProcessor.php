@@ -2,32 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Modules\Crm\Tools\MassEmail;
+
+use Laminas\Mail\Message;
 
 use Espo\Core\Mail\Account\GroupAccount\AccountFactory;
 use Espo\Core\Mail\Exceptions\NoSmtp;
@@ -36,12 +38,9 @@ use Espo\Core\Mail\SmtpParams;
 use Espo\Entities\Attachment;
 use Espo\Modules\Crm\Tools\MassEmail\MessagePreparator\Data;
 use Espo\ORM\Collection;
-use Laminas\Mail\Message;
-
 use Espo\Entities\EmailTemplate;
 use Espo\Repositories\EmailAddress as EmailAddressRepository;
 use Espo\Entities\EmailAddress;
-
 use Espo\Core\Exceptions\Error;
 use Espo\Core\Mail\EmailSender;
 use Espo\Core\Mail\Sender;
@@ -50,7 +49,6 @@ use Espo\Core\Utils\Config;
 use Espo\Core\Utils\DateTime as DateTimeUtil;
 use Espo\Core\Utils\Language;
 use Espo\Core\Utils\Log;
-
 use Espo\Entities\Email;
 use Espo\Modules\Crm\Entities\Campaign;
 use Espo\Modules\Crm\Entities\CampaignTrackingUrl;
@@ -70,37 +68,17 @@ class SendingProcessor
     private const MAX_ATTEMPT_COUNT = 3;
     private const MAX_PER_HOUR_COUNT = 10000;
 
-    private Config $config;
-    private EntityManager $entityManager;
-    private Language $defaultLanguage;
-    private EmailSender $emailSender;
-    private Log $log;
-    private AccountFactory $accountFactory;
-    private CampaignService $campaignService;
-    private MessageHeadersPreparator $headersPreparator;
-    private TemplateProcessor $templateProcessor;
-
     public function __construct(
-        Config $config,
-        EntityManager $entityManager,
-        Language $defaultLanguage,
-        EmailSender $emailSender,
-        Log $log,
-        AccountFactory $accountFactory,
-        CampaignService $campaignService,
-        MessageHeadersPreparator $headersPreparator,
-        TemplateProcessor $templateProcessor
-    ) {
-        $this->config = $config;
-        $this->entityManager = $entityManager;
-        $this->defaultLanguage = $defaultLanguage;
-        $this->emailSender = $emailSender;
-        $this->log = $log;
-        $this->accountFactory = $accountFactory;
-        $this->campaignService = $campaignService;
-        $this->headersPreparator = $headersPreparator;
-        $this->templateProcessor = $templateProcessor;
-    }
+        private Config $config,
+        private EntityManager $entityManager,
+        private Language $defaultLanguage,
+        private EmailSender $emailSender,
+        private Log $log,
+        private AccountFactory $accountFactory,
+        private CampaignService $campaignService,
+        private MessageHeadersPreparator $headersPreparator,
+        private TemplateProcessor $templateProcessor
+    ) {}
 
     /**
      * @throws Error
@@ -108,7 +86,8 @@ class SendingProcessor
      */
     public function process(MassEmail $massEmail, bool $isTest = false): void
     {
-        $maxBatchSize = $this->config->get('massEmailMaxPerHourCount', self::MAX_PER_HOUR_COUNT);
+        $hourMaxSize = $this->config->get('massEmailMaxPerHourCount', self::MAX_PER_HOUR_COUNT);
+        $batchMaxSize = $this->config->get('massEmailMaxPerBatchCount');
 
         if (!$isTest) {
             $threshold = new DateTime();
@@ -122,21 +101,28 @@ class SendingProcessor
                 ])
                 ->count();
 
-            if ($sentLastHourCount >= $maxBatchSize) {
+            if ($sentLastHourCount >= $hourMaxSize) {
                 return;
             }
 
-            $maxBatchSize = $maxBatchSize - $sentLastHourCount;
+            $hourMaxSize = $hourMaxSize - $sentLastHourCount;
+        }
+
+        $maxSize = $hourMaxSize;
+
+        if ($batchMaxSize) {
+            $maxSize = min($batchMaxSize, $maxSize);
         }
 
         $queueItemList = $this->entityManager
             ->getRDBRepositoryByClass(EmailQueueItem::class)
+            ->sth()
             ->where([
                 'status' => EmailQueueItem::STATUS_PENDING,
                 'massEmailId' => $massEmail->getId(),
                 'isTest' => $isTest,
             ])
-            ->limit(0, $maxBatchSize)
+            ->limit(0, $maxSize)
             ->find();
 
         $templateId = $massEmail->getEmailTemplateId();
@@ -186,7 +172,7 @@ class SendingProcessor
                 !$account->getEntity()->smtpIsForMassEmail() ||
                 !$smtpParams
             ) {
-                throw new Error("Mass Email: Group email account {$inboundEmailId} can't be used for mass email.");
+                throw new Error("Mass Email: Group email account $inboundEmailId can't be used for mass email.");
             }
 
             if ($account->getEntity()->getReplyToAddress()) {
@@ -404,7 +390,7 @@ class SendingProcessor
 
         $target = $this->entityManager->getEntityById($queueItem->getTargetType(), $queueItem->getTargetId());
 
-        $emailAddress = $target ? $target->get('emailAddress') : null;
+        $emailAddress = $target?->get('emailAddress');
 
         if (
             !$target ||

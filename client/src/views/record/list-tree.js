@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -50,8 +50,9 @@ class ListTreeRecordView extends ListRecordView {
     level = 0
     itemViewName = 'views/record/list-tree-item'
 
+    // noinspection JSCheckFunctionSignatures
     data() {
-        let data = super.data();
+        const data = super.data();
 
         data.createDisabled = this.createDisabled;
 
@@ -163,7 +164,7 @@ class ListTreeRecordView extends ListRecordView {
         }
 
         this.rowList.forEach(key => {
-            let view = /** @type module:views/record/list-tree-item */this.getView(key);
+            const view = /** @type module:views/record/list-tree-item */this.getView(key);
 
             if (view.model.id === id) {
                 view.setIsSelected();
@@ -185,12 +186,12 @@ class ListTreeRecordView extends ListRecordView {
         if (this.collection.length > 0) {
             this.wait(true);
 
-            let modelList = this.collection.models;
-            let count = modelList.length;
+            const modelList = this.collection.models;
+            const count = modelList.length;
             let built = 0;
 
             modelList.forEach(model => {
-                let key = model.id;
+                const key = model.id;
 
                 this.rowList.push(key);
 
@@ -244,7 +245,7 @@ class ListTreeRecordView extends ListRecordView {
     actionCreate(data, e) {
         e.stopPropagation();
 
-        let attributes = this.getCreateAttributes();
+        const attributes = this.getCreateAttributes();
 
         let maxOrder = 0;
 
@@ -264,9 +265,9 @@ class ListTreeRecordView extends ListRecordView {
             attributes.parentName = this.model.get('name');
         }
 
-        let scope = this.collection.entityType;
+        const scope = this.collection.entityType;
 
-        let viewName = this.getMetadata().get('clientDefs.' + scope + '.modalViews.edit') ||
+        const viewName = this.getMetadata().get('clientDefs.' + scope + '.modalViews.edit') ||
             'views/modals/edit';
 
         this.createView('quickCreate', viewName, {
@@ -278,7 +279,7 @@ class ListTreeRecordView extends ListRecordView {
             this.listenToOnce(view, 'after:save', model => {
                 view.close();
 
-                let collection = /** @type module:collections/tree */ this.collection;
+                const collection = /** @type module:collections/tree */ this.collection;
 
                 model.set('childCollection', collection.createSeed());
 

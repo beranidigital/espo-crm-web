@@ -2,52 +2,50 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Authentication\TwoFactor\Email;
 
-use Espo\Core\Exceptions\Error;
 use Espo\Core\Exceptions\Forbidden;
-
+use Espo\Core\Mail\Exceptions\SendingError;
 use Espo\Core\Utils\Config;
 use Espo\Core\Mail\EmailSender;
 use Espo\Core\Mail\EmailFactory;
 use Espo\Core\Utils\TemplateFileManager;
 use Espo\Core\Htmlizer\HtmlizerFactory;
 use Espo\Core\Field\DateTime;
-
 use Espo\ORM\EntityManager;
 use Espo\ORM\Query\Part\Condition as Cond;
-
 use Espo\Entities\User;
 use Espo\Entities\Email;
 use Espo\Entities\TwoFactorCode;
 use Espo\Entities\UserData;
-
 use Espo\Repositories\UserData as UserDataRepository;
+
+use RuntimeException;
 
 use const STR_PAD_LEFT;
 
@@ -58,7 +56,7 @@ class Util
      */
     private const CODE_LIFETIME_PERIOD = '10 minutes';
 
-    /*
+    /**
      * A max number of attempts to try a single code.
      */
     private const CODE_ATTEMPTS_COUNT = 5;
@@ -78,37 +76,18 @@ class Util
      */
     private const CODE_LIMIT_PERIOD = '10 minutes';
 
-    /**
-     * @var EntityManager
-     */
-    private $entityManager;
-
-    private $config;
-
-    private $emailSender;
-
-    private $templateFileManager;
-
-    private $htmlizerFactory;
-
-    private $emailFactory;
-
     public function __construct(
-        EntityManager $entityManager,
-        Config $config,
-        EmailSender $emailSender,
-        TemplateFileManager $templateFileManager,
-        HtmlizerFactory $htmlizerFactory,
-        EmailFactory $emailFactory
-    ) {
-        $this->entityManager = $entityManager;
-        $this->config = $config;
-        $this->emailSender = $emailSender;
-        $this->templateFileManager = $templateFileManager;
-        $this->htmlizerFactory = $htmlizerFactory;
-        $this->emailFactory = $emailFactory;
-    }
+        private EntityManager $entityManager,
+        private Config $config,
+        private EmailSender $emailSender,
+        private TemplateFileManager $templateFileManager,
+        private HtmlizerFactory $htmlizerFactory,
+        private EmailFactory $emailFactory
+    ) {}
 
+    /**
+     * @throws Forbidden
+     */
     public function storeEmailAddress(User $user, string $emailAddress): void
     {
         $this->checkEmailAddressIsUsers($user, $emailAddress);
@@ -116,7 +95,7 @@ class Util
         $userData = $this->getUserDataRepository()->getByUserId($user->getId());
 
         if (!$userData) {
-            throw new Error("UserData not found.");
+            throw new RuntimeException("UserData not found.");
         }
 
         $userData->set('auth2FAEmailAddress', $emailAddress);
@@ -156,6 +135,10 @@ class Util
         return true;
     }
 
+    /**
+     * @throws SendingError
+     * @throws Forbidden
+     */
     public function sendCode(User $user, ?string $emailAddress = null): void
     {
         if ($emailAddress === null) {
@@ -194,19 +177,22 @@ class Util
         return $this->entityManager
             ->getRDBRepository(TwoFactorCode::ENTITY_TYPE)
             ->where([
-                'method' => 'Email',
+                'method' => EmailLogin::NAME,
                 'userId' => $user->getId(),
                 'isActive' => true,
             ])
             ->findOne();
     }
 
+    /**
+     * @throws Forbidden
+     */
     private function getEmailAddress(User $user): string
     {
         $userData = $this->getUserDataRepository()->getByUserId($user->getId());
 
         if (!$userData) {
-            throw new Error("UserData not found.");
+            throw new RuntimeException("UserData not found.");
         }
 
         $emailAddress = $userData->get('auth2FAEmailAddress');
@@ -216,13 +202,16 @@ class Util
         }
 
         if ($user->getEmailAddressGroup()->getCount() === 0) {
-            throw new Error("User does not have email address.");
+            throw new Forbidden("User does not have email address.");
         }
 
         /** @var string */
         return $user->getEmailAddressGroup()->getPrimaryAddress();
     }
 
+    /**
+     * @throws Forbidden
+     */
     private function checkEmailAddressIsUsers(User $user, string $emailAddress): void
     {
         $userAddressList = array_map(
@@ -237,6 +226,9 @@ class Util
         }
     }
 
+    /**
+     * @throws Forbidden
+     */
     private function checkCodeLimit(User $user): void
     {
         $limit = $this->config->get('auth2FAEmailCodeLimit') ?? self::CODE_LIMIT;
@@ -244,7 +236,7 @@ class Util
 
         $from = DateTime::createNow()
             ->modify('-' . $period)
-            ->getString();
+            ->toString();
 
         $count = $this->entityManager
             ->getRDBRepository(TwoFactorCode::ENTITY_TYPE)
@@ -269,6 +261,7 @@ class Util
 
         $max = pow(10, $codeLength) - 1;
 
+        /** @noinspection PhpUnhandledExceptionInspection */
         return str_pad(
             (string) random_int(0, $max),
             $codeLength,
@@ -308,7 +301,7 @@ class Util
             ->in(TwoFactorCode::ENTITY_TYPE)
             ->where([
                 'userId' => $user->getId(),
-                'method' => 'Email',
+                'method' => EmailLogin::NAME,
             ])
             ->set([
                 'isActive' => false,
@@ -325,7 +318,7 @@ class Util
         $this->entityManager->createEntity(TwoFactorCode::ENTITY_TYPE, [
             'code' => $code,
             'userId' => $user->getId(),
-            'method' => 'Email',
+            'method' => EmailLogin::NAME,
             'attemptsLeft' => $this->getCodeAttemptsCount(),
         ]);
     }

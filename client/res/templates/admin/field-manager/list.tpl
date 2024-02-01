@@ -23,10 +23,10 @@
 
 <table class="table fields-table table-panel table-hover">
     <thead>
-        <th width="35%">{{translate 'Name' scope='FieldManager'}}</th>
-        <th width="35%">{{translate 'Label' scope='FieldManager'}}</th>
-        <th width="20%">{{translate 'Type' scope='FieldManager'}}</th>
-        <th width="10%" align="right"></th>
+        <th style="width: 35%">{{translate 'Name' scope='FieldManager'}}</th>
+        <th style="width: 35%">{{translate 'Label' scope='FieldManager'}}</th>
+        <th style="width: 20%">{{translate 'Type' scope='FieldManager'}}</th>
+        <th style="width: 8%; text-align: right;"></th>
     </thead>
     <tbody>
     {{#each fieldDefsArray}}
@@ -45,9 +45,24 @@
         </td>
         <td>{{translate name scope=../scope category='fields'}}</td>
         <td>{{translate type category='fieldTypes' scope='Admin'}}</td>
-        <td align="right">
+        <td style="text-align: right">
             {{#if isCustom}}
-            <a role="button" tabindex="0" data-action="removeField" data-name="{{name}}">{{translate 'Remove'}}</a>
+                <div class="btn-group row-dropdown-group">
+                    <button
+                        class="btn btn-link btn-sm dropdown-toggle"
+                        data-toggle="dropdown"
+                    ><span class="caret"></span></button>
+                    <ul class="dropdown-menu pull-right">
+                        <li>
+                            <a
+                                role="button"
+                                tabindex="0"
+                                data-action="removeField"
+                                data-name="{{name}}"
+                            >{{translate 'Remove'}}</a>
+                        </li>
+                    </ul>
+                </div>
             {{/if}}
         </td>
     </tr>

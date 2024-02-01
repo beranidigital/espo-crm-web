@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -48,7 +48,7 @@ export default class {
         this.model = view.model;
 
         /** @var {Object.<string, Object.<string, *>>} defs */
-        let defs = view.getMetadata().get(['authenticationMethods']) || {};
+        const defs = view.getMetadata().get(['authenticationMethods']) || {};
 
         /**
          * @private
@@ -56,7 +56,7 @@ export default class {
          */
         this.methodList = Object.keys(defs).filter(item => {
             /** @var {Object.<string, *>} */
-            let data = defs[item].provider || {};
+            const data = defs[item].provider || {};
 
             return data.isAvailable;
         });
@@ -113,14 +113,14 @@ export default class {
 
         this.authFields[method] = fieldList;
 
-        let mDynamicLogicFieldsDefs = (this.getFromMetadata(method, 'dynamicLogic') || {}).fields || {};
+        const mDynamicLogicFieldsDefs = (this.getFromMetadata(method, 'dynamicLogic') || {}).fields || {};
 
-        for (let f in mDynamicLogicFieldsDefs) {
+        for (const f in mDynamicLogicFieldsDefs) {
             if (!fieldList.includes(f)) {
                 continue;
             }
 
-            let defs = this.modifyDynamicLogic(mDynamicLogicFieldsDefs[f]);
+            const defs = this.modifyDynamicLogic(mDynamicLogicFieldsDefs[f]);
 
             this.dynamicLogicDefs.fields[f] = Espo.Utils.cloneDeep(defs);
         }
@@ -137,9 +137,9 @@ export default class {
         }
 
         if (typeof defs === 'object') {
-            let o = {};
+            const o = {};
 
-            for (let property in defs) {
+            for (const property in defs) {
                 let value = defs[property];
 
                 if (property === 'attribute' && value === 'authenticationMethod') {
@@ -181,7 +181,7 @@ export default class {
                         return;
                     }
 
-                    let labelText = this.view.translate(item.name, 'fields', 'Settings');
+                    const labelText = this.view.translate(item.name, 'fields', 'Settings');
 
                     item.options = item.options || {};
 
@@ -215,10 +215,10 @@ export default class {
      * @param {function(): void} callback
      */
     handlePanelsVisibility(callback) {
-        let authenticationMethod = this.model.get('method');
+        const authenticationMethod = this.model.get('method');
 
         this.methodList.forEach(method => {
-            let fieldList = (this.authFields[method] || []);
+            const fieldList = (this.authFields[method] || []);
 
             if (method !== authenticationMethod) {
                 this.view.hidePanel(method);

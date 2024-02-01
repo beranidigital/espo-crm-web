@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -40,6 +40,7 @@ use Espo\Core\Api\ErrorOutput;
 use Espo\Core\Api\RequestWrapper;
 use Espo\Core\Api\ResponseWrapper;
 use Espo\Core\Api\AuthBuilderFactory;
+use Espo\Core\Portal\Utils\Url;
 use Espo\Core\Utils\Route;
 use Espo\Core\Utils\ClientManager;
 use Espo\Core\ApplicationRunners\EntryPoint as EntryPointRunner;
@@ -85,6 +86,14 @@ class Starter
 
         if (!$entryPoint) {
             throw new BadRequest("No 'entryPoint' param.");
+        }
+
+        $portalId = Url::getPortalIdFromEnv();
+
+        if ($portalId && !$final) {
+            $this->runThroughPortal($portalId, $entryPoint);
+
+            return;
         }
 
         $responseWrapped = new ResponseWrapper(new Response());
@@ -206,7 +215,11 @@ class Starter
     {
         $app = new PortalApplication($portalId);
 
-        $app->setClientBasePath($this->clientManager->getBasePath());
+        $clientManager = $app->getContainer()
+            ->getByClass(ClientManager::class);
+
+        $clientManager->setBasePath($this->clientManager->getBasePath());
+        $clientManager->setApiUrl('api/v1/portal-access/' . $portalId);
 
         $params = RunnerParams::fromArray([
             'entryPoint' => $entryPoint,

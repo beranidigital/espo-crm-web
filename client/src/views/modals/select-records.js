@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -45,6 +45,7 @@ class SelectRecordsModalView extends ModalView {
     searchPanel = true
     scope = ''
     noCreateScopeList = ['User', 'Team', 'Role', 'Portal']
+    layoutName = 'listSmall'
 
     /** @inheritDoc */
     shortcutKeys = {
@@ -89,10 +90,12 @@ class SelectRecordsModalView extends ModalView {
     }
 
     setup() {
+        /** @type {Object.<string, module:search-manager~advancedFilter>} */
         this.filters = this.options.filters || {};
-        this.boolFilterList = this.options.boolFilterList || [];
+        this.boolFilterList = this.options.boolFilterList;
         this.primaryFilterName = this.options.primaryFilterName || null;
         this.filterList = this.options.filterList || this.filterList || null;
+        this.layoutName = this.options.layoutName || this.layoutName;
 
         if ('multiple' in this.options) {
             this.multiple = this.options.multiple;
@@ -123,12 +126,15 @@ class SelectRecordsModalView extends ModalView {
 
         this.scope = this.entityType = this.options.scope || this.scope;
 
-        let customDefaultOrderBy = this.getMetadata().get(['clientDefs', this.scope, 'selectRecords', 'orderBy']);
-        let customDefaultOrder = this.getMetadata().get(['clientDefs', this.scope, 'selectRecords', 'order']);
+        const orderBy = this.options.orderBy ||
+            this.getMetadata().get(['clientDefs', this.scope, 'selectRecords', 'orderBy']);
 
-        if (customDefaultOrderBy) {
-            this.defaultOrderBy = customDefaultOrderBy;
-            this.defaultOrder = customDefaultOrder || false;
+        const order = this.options.orderDirection ||
+            this.getMetadata().get(['clientDefs', this.scope, 'selectRecords', 'order']);
+
+        if (orderBy) {
+            this.defaultOrderBy = orderBy;
+            this.defaultOrder = order || false;
         }
 
         if (this.noCreateScopeList.indexOf(this.scope) !== -1) {
@@ -142,6 +148,16 @@ class SelectRecordsModalView extends ModalView {
             ) {
                 this.createButton = false;
             }
+        }
+
+        if (this.createButton) {
+            this.addButton({
+                name: 'create',
+                position: 'right',
+                onClick: () => this.create(),
+                iconClass: 'fas fa-plus fa-sm',
+                label: 'Create',
+            });
         }
 
         if (this.getMetadata().get(['clientDefs', this.scope, 'searchPanelDisabled'])) {
@@ -188,14 +204,19 @@ class SelectRecordsModalView extends ModalView {
 
         // If the list not yet loaded.
         this.once('close', () => {
-            Espo.Ui.notify(false);
+            if (
+                this.collection.lastSyncPromise &&
+                this.collection.lastSyncPromise.getStatus() < 4
+            ) {
+                Espo.Ui.notify(false);
+            }
 
             this.collection.abortLastFetch();
         });
     }
 
     setupSearch() {
-        let searchManager = this.searchManager =
+        const searchManager = this.searchManager =
             new SearchManager(this.collection, 'listSelect', null, this.getDateTime());
 
         searchManager.emptyOnReset = true;
@@ -204,11 +225,11 @@ class SelectRecordsModalView extends ModalView {
             searchManager.setAdvanced(this.filters);
         }
 
-        let boolFilterList = this.boolFilterList ||
+        const boolFilterList = this.boolFilterList ||
             this.getMetadata().get('clientDefs.' + this.scope + '.selectDefaultFilters.boolFilterList');
 
         if (boolFilterList) {
-            let d = {};
+            const d = {};
 
             boolFilterList.forEach(item => {
                 d[item] = true;
@@ -217,7 +238,7 @@ class SelectRecordsModalView extends ModalView {
             searchManager.setBool(d);
         }
 
-        let primaryFilterName = this.primaryFilterName ||
+        const primaryFilterName = this.primaryFilterName ||
             this.getMetadata().get('clientDefs.' + this.scope + '.selectDefaultFilters.filter');
 
         if (primaryFilterName) {
@@ -251,7 +272,7 @@ class SelectRecordsModalView extends ModalView {
             checkboxes: this.multiple,
             massActionsDisabled: true,
             rowActionsView: false,
-            layoutName: 'listSmall',
+            layoutName: this.layoutName,
             searchManager: this.searchManager,
             checkAllResultDisabled: !this.massRelateEnabled,
             buttonsDisabled: true,
@@ -281,13 +302,19 @@ class SelectRecordsModalView extends ModalView {
             }
 
             const fetch = () => {
-                // Timeout to make notify work.
-                setTimeout(() => {
+                this.whenRendered().then(() => {
                     Espo.Ui.notify(' ... ');
 
                     this.collection.fetch()
                         .then(() => Espo.Ui.notify(false));
-                }, 1);
+                });
+                // Timeout to make notify work.
+                /*setTimeout(() => {
+                    Espo.Ui.notify(' ... ');
+
+                    this.collection.fetch()
+                        .then(() => Espo.Ui.notify(false));
+                }, 1);*/
             };
 
             if (this.options.forceSelectAllAttributes || this.forceSelectAllAttributes) {
@@ -301,7 +328,7 @@ class SelectRecordsModalView extends ModalView {
                     selectAttributeList.push('name');
                 }
 
-                let mandatorySelectAttributeList = this.options.mandatorySelectAttributeList ||
+                const mandatorySelectAttributeList = this.options.mandatorySelectAttributeList ||
                     this.mandatorySelectAttributeList || [];
 
                 mandatorySelectAttributeList.forEach(attribute => {
@@ -330,8 +357,8 @@ class SelectRecordsModalView extends ModalView {
 
         Espo.Ui.notify(' ... ');
 
-        let viewName = this.getMetadata()
-            .get(['clientDefs', this.scope, 'modalViews', 'edit']) ||
+        const viewName = this.getMetadata()
+                .get(['clientDefs', this.scope, 'modalViews', 'edit']) ||
             'views/modals/edit';
 
         new Promise(resolve => {
@@ -375,7 +402,7 @@ class SelectRecordsModalView extends ModalView {
             return;
         }
 
-        let listView = this.getRecordView();
+        const listView = this.getRecordView();
 
         if (listView.allResultIsChecked) {
             this.trigger('select', {
@@ -389,7 +416,7 @@ class SelectRecordsModalView extends ModalView {
             return;
         }
 
-        let list = listView.getSelected();
+        const list = listView.getSelected();
 
         if (list.length) {
             this.trigger('select', list);
@@ -423,7 +450,7 @@ class SelectRecordsModalView extends ModalView {
             return;
         }
 
-        let $search = this.$el.find('input.text-filter').first();
+        const $search = this.$el.find('input.text-filter').first();
 
         if (!$search.length) {
             return;

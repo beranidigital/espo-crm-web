@@ -2,28 +2,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -35,7 +35,6 @@ use Espo\Modules\Crm\Entities\Contact;
 use Espo\Modules\Crm\Entities\Lead;
 use Espo\ORM\EntityManager;
 use Espo\ORM\Entity;
-
 use Espo\Core\AclManager;
 use Espo\Core\Record\ServiceContainer;
 use Espo\Core\Utils\Config;
@@ -44,54 +43,29 @@ use Espo\Core\Entities\Person;
 use Espo\Core\Htmlizer\HtmlizerFactory as HtmlizerFactory;
 use Espo\Core\Htmlizer\Htmlizer;
 use Espo\Core\Acl\GlobalRestriction;
-use Espo\Core\Utils\DateTime as DateTimeUtil;
-
 use Espo\Entities\EmailTemplate;
 use Espo\Entities\User;
 use Espo\Entities\Attachment;
 use Espo\Entities\EmailAddress;
-
 use Espo\Repositories\EmailAddress as EmailAddressRepository;
 
 use Exception;
-use DateTime;
-use DateTimezone;
 
 class Processor
 {
     private const KEY_PARENT = 'Parent';
 
-    private $formatter;
-    private $entityManager;
-    private $aclManager;
-    private $recordServiceContainer;
-    private $config;
-    private $fileStorageManager;
-    private $user;
-    private $htmlizerFactory;
-    private $dateTime;
-
     public function __construct(
-        Formatter $formatter,
-        EntityManager $entityManager,
-        AclManager $aclManager,
-        ServiceContainer $recordServiceContainer,
-        Config $config,
-        FileStorageManager $fileStorageManager,
-        User $user,
-        HtmlizerFactory $htmlizerFactory,
-        DateTimeUtil $dateTime
-    ) {
-        $this->formatter = $formatter;
-        $this->entityManager = $entityManager;
-        $this->aclManager = $aclManager;
-        $this->recordServiceContainer = $recordServiceContainer;
-        $this->config = $config;
-        $this->fileStorageManager = $fileStorageManager;
-        $this->user = $user;
-        $this->htmlizerFactory = $htmlizerFactory;
-        $this->dateTime = $dateTime;
-    }
+        private Formatter $formatter,
+        private EntityManager $entityManager,
+        private AclManager $aclManager,
+        private ServiceContainer $recordServiceContainer,
+        private Config $config,
+        private FileStorageManager $fileStorageManager,
+        private User $user,
+        private HtmlizerFactory $htmlizerFactory,
+        private PlaceholdersProvider $placeholdersProvider
+    ) {}
 
     public function process(EmailTemplate $template, Params $params, Data $data): Result
     {
@@ -188,8 +162,8 @@ class Processor
         $parent = $entityHash[self::KEY_PARENT] ?? null;
 
         if ($parent && !$this->config->get('emailTemplateHtmlizerDisabled')) {
-            $handlebarsInSubject = strpos($subject, '{{') !== false && strpos($subject, '}}') !== false;
-            $handlebarsInBody = strpos($body, '{{') !== false && strpos($body, '}}') !== false;
+            $handlebarsInSubject = str_contains($subject, '{{') && str_contains($subject, '}}');
+            $handlebarsInBody = str_contains($body, '{{') && str_contains($body, '}}');
 
             if ($handlebarsInSubject || $handlebarsInBody) {
                 $htmlizer = $this->createHtmlizer($params, $user);
@@ -212,7 +186,8 @@ class Processor
                 $user,
                 false,
                 null,
-                !$params->applyAcl()
+                !$params->applyAcl(),
+                $template->isHtml()
             );
         }
 
@@ -224,9 +199,13 @@ class Processor
                 $user,
                 false,
                 null,
-                !$params->applyAcl()
+                !$params->applyAcl(),
+                $template->isHtml()
             );
         }
+
+        $subject = $this->processPlaceholders($subject, $data);
+        $body = $this->processPlaceholders($body, $data);
 
         $attachmentList = $params->copyAttachments() ?
             $this->copyAttachments($template) :
@@ -240,6 +219,17 @@ class Processor
         );
     }
 
+    private function processPlaceholders(string $text, Data $data): string
+    {
+        foreach ($this->placeholdersProvider->get() as [$key, $placeholder]) {
+            $value = $placeholder->get($data);
+
+            $text = str_replace('{' . $key . '}', $value, $text);
+        }
+
+        return $text;
+    }
+
     private function processText(
         string $type,
         Entity $entity,
@@ -247,7 +237,8 @@ class Processor
         User $user,
         bool $skipLinks = false,
         ?string $prefixLink = null,
-        bool $skipAcl = false
+        bool $skipAcl = false,
+        bool $isHtml = true
     ): string {
 
         $attributeList = $entity->getAttributeList();
@@ -281,7 +272,7 @@ class Processor
                 continue;
             }
 
-            $value = $this->formatter->formatAttributeValue($entity, $attribute);
+            $value = $this->formatter->formatAttributeValue($entity, $attribute, !$isHtml);
 
             if (is_null($value)) {
                 continue;
@@ -302,20 +293,9 @@ class Processor
                 $entity,
                 $text,
                 $user,
-                $skipAcl
+                $skipAcl,
+                $isHtml
             );
-        }
-
-        $now = new DateTime('now', new DateTimezone($this->config->get('timeZone')));
-
-        $replaceData = [
-            'today' => $this->dateTime->getTodayString(),
-            'now' => $this->dateTime->getNowString(),
-            'currentYear' => $now->format('Y'),
-        ];
-
-        foreach ($replaceData as $key => $value) {
-            $text = str_replace('{' . $key . '}', $value, $text);
         }
 
         return $text;
@@ -326,7 +306,8 @@ class Processor
         Entity $entity,
         string $text,
         User $user,
-        bool $skipAcl
+        bool $skipAcl,
+        bool $isHtml
     ): string {
 
         $forbiddenLinkList = $skipAcl ?
@@ -367,7 +348,7 @@ class Processor
             try {
                 $hasAccess = $this->aclManager->checkEntityRead($user, $relatedEntity);
             }
-            catch (Exception $e) {
+            catch (Exception) {
                 continue;
             }
 
@@ -382,7 +363,8 @@ class Processor
                 $user,
                 true,
                 $relation,
-                $skipAcl
+                $skipAcl,
+                $isHtml
             );
         }
 

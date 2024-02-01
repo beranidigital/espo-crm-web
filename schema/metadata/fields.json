@@ -121,6 +121,9 @@
             },
             "description": "Columns used in full-text search."
         },
+        "default": {
+            "description": "Currently is not used. A default value. Used when populating defaults for a new record. Usually to be set to null."
+        },
         "valueFactoryClassName": {
             "type": "string",
             "description": "A factory that creates value-objects for this field. A value-object can be obtained by calling getValueObject method on an Entity. Should implement Espo\\ORM\\Value\\ValueFactory."
@@ -164,6 +167,15 @@
         "converterClassName": {
             "type": "string",
             "description": "A metadata converter. Converts field metadata to ORM metadata. Should implement Espo\\Core\\Utils\\Database\\Orm\\FieldConverter."
+        },
+        "sanitizerClassName": {
+            "type": "string",
+            "description": "A sanitizer. Should implement Espo\\Core\\FieldSanitize\\Sanitizer."
+        },
+        "sanitizerClassNameList": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Sanitizers. Classes should implement Espo\\Core\\FieldSanitize\\Sanitizer. As of v8.2."
         }
     }
 }

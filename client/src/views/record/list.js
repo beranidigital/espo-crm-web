@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -33,6 +33,8 @@ import MassActionHelper from 'helpers/mass-action';
 import ExportHelper from 'helpers/export';
 import RecordModal from 'helpers/record-modal';
 import SelectProvider from 'helpers/list/select-provider';
+import RecordListSettingsView from 'views/record/list/settings';
+import ListSettingsHelper from 'helpers/list/settings';
 
 /**
  * A record-list view. Renders and processes list items, actions.
@@ -49,6 +51,7 @@ class ListRecordView extends View {
      * @property {string} action An action.
      * @property {string} [label] A label.
      * @property {string} [link] A link.
+     * @property {string} [text] A text.
      * @property {Object.<string, string|number|boolean>} [data] Data attributes.
      */
 
@@ -342,6 +345,11 @@ class ListRecordView extends View {
      * @property {string} [type] An overridden field type.
      * @property {Object.<string, *>} [params] Overridden field parameters.
      * @property {Object.<string, *>} [options] Field view options.
+     * @property {string} [label] A label.
+     * @property {boolean} [notSortable] Not sortable.
+     * @property {boolean} [hidden] Hidden by default.
+     * @property {boolean} [noLabel] No label.
+     * @property {string} [customLabel] A custom label.
      */
 
     /**
@@ -474,6 +482,11 @@ class ListRecordView extends View {
      */
     massActionDefs = null
 
+    /**
+     * @private
+     */
+    _additionalRowActionList
+
     /** @inheritDoc */
     events = {
         /**
@@ -493,11 +506,11 @@ class ListRecordView extends View {
 
             e.preventDefault();
 
-            let id = $(e.currentTarget).attr('data-id');
-            let model = this.collection.get(id);
-            let scope = this.getModelScope(id);
+            const id = $(e.currentTarget).attr('data-id');
+            const model = this.collection.get(id);
+            const scope = this.getModelScope(id);
 
-            let options = {
+            const options = {
                 id: id,
                 model: model,
             };
@@ -514,15 +527,15 @@ class ListRecordView extends View {
          * @this ListRecordView
          */
         'auxclick a.link': function (e) {
-            let isCombination = e.button === 1 && (e.ctrlKey || e.metaKey);
+            const isCombination = e.button === 1 && (e.ctrlKey || e.metaKey);
 
             if (!isCombination) {
                 return;
             }
 
-            let $target = $(e.currentTarget);
+            const $target = $(e.currentTarget);
 
-            let id = $target.attr('data-id');
+            const id = $target.attr('data-id');
 
             if (!id) {
                 return;
@@ -532,10 +545,10 @@ class ListRecordView extends View {
                 return;
             }
 
-            let $menu = $target.parent().closest(`[data-id="${id}"]`)
+            const $menu = $target.parent().closest(`[data-id="${id}"]`)
                 .find(`ul.list-row-dropdown-menu[data-id="${id}"]`);
 
-            let $quickView = $menu.find(`a[data-action="quickView"]`);
+            const $quickView = $menu.find(`a[data-action="quickView"]`);
 
             if ($menu.length && !$quickView.length) {
                 return;
@@ -558,7 +571,7 @@ class ListRecordView extends View {
          * @this module:views/record/list
          */
         'click a.sort': function (e) {
-            let field = $(e.currentTarget).data('name');
+            const field = $(e.currentTarget).data('name');
 
             this.toggleSort(field);
         },
@@ -567,7 +580,7 @@ class ListRecordView extends View {
          * @this ListRecordView
          */
         'click .pagination a': function (e) {
-            let page = $(e.currentTarget).data('page');
+            const page = $(e.currentTarget).data('page');
 
             if ($(e.currentTarget).parent().hasClass('disabled')) {
                 return;
@@ -591,7 +604,7 @@ class ListRecordView extends View {
         },
         /** @this ListRecordView */
         'mousedown input.record-checkbox': function () {
-            let $focused = $(document.activeElement);
+            const $focused = $(document.activeElement);
 
             this._$focusedCheckbox = null;
 
@@ -608,18 +621,18 @@ class ListRecordView extends View {
          * @this ListRecordView
          */
         'click input.record-checkbox': function (e) {
-            let $target = $(e.currentTarget);
+            const $target = $(e.currentTarget);
 
-            let $from = this._$focusedCheckbox;
+            const $from = this._$focusedCheckbox;
 
             if (e.shiftKey && $from) {
-                let $checkboxes = this.$el.find('input.record-checkbox');
-                let start = $checkboxes.index($target);
-                let end = $checkboxes.index($from);
-                let checked = $from.prop('checked');
+                const $checkboxes = this.$el.find('input.record-checkbox');
+                const start = $checkboxes.index($target);
+                const end = $checkboxes.index($from);
+                const checked = $from.prop('checked');
 
                 $checkboxes.slice(Math.min(start, end), Math.max(start, end) + 1).each((i, el) => {
-                    let $el = $(el);
+                    const $el = $(el);
 
                     $el.prop('checked', checked);
                     this.checkboxClick($el, checked);
@@ -654,15 +667,15 @@ class ListRecordView extends View {
          * @this ListRecordView
          */
         'click .actions-menu a.mass-action': function (e) {
-            let $el = $(e.currentTarget);
+            const $el = $(e.currentTarget);
 
-            let action = $el.data('action');
-            let method = 'massAction' + Espo.Utils.upperCaseFirst(action);
+            const action = $el.data('action');
+            const method = 'massAction' + Espo.Utils.upperCaseFirst(action);
 
             e.preventDefault();
             e.stopPropagation();
 
-            let $parent = $el.closest('.dropdown-menu').parent();
+            const $parent = $el.closest('.dropdown-menu').parent();
 
             // noinspection JSUnresolvedReference
             $parent.find('.actions-button[data-toggle="dropdown"]')
@@ -689,7 +702,7 @@ class ListRecordView extends View {
      * @private
      */
     checkboxClick($checkbox, checked) {
-        let id = $checkbox.attr('data-id');
+        const id = $checkbox.attr('data-id');
 
         if (checked) {
             this.checkRecord(id, $checkbox);
@@ -725,11 +738,11 @@ class ListRecordView extends View {
             asc = false;
         }
 
-        let order = asc ? 'asc' : 'desc';
+        const order = asc ? 'asc' : 'desc';
 
         Espo.Ui.notify(' ... ');
 
-        let maxSizeLimit = this.getConfig().get('recordListMaxSizeLimit') || 200;
+        const maxSizeLimit = this.getConfig().get('recordListMaxSizeLimit') || 200;
 
         while (this.collection.length > maxSizeLimit) {
             this.collection.pop();
@@ -752,10 +765,43 @@ class ListRecordView extends View {
      * @protected
      */
     initStickedBar() {
-        let $stickedBar = this.$stickedBar = this.$el.find('.sticked-bar');
-        let $middle = this.$el.find('> .list');
+        const controlSticking = () => {
+            if (this.checkedList.length === 0 && !this.allResultIsChecked) {
+                return;
+            }
 
-        let $window = $(window);
+            const scrollTop = $scrollable.scrollTop();
+
+            const stickTop = buttonsTop;
+            const edge = middleTop + $middle.outerHeight(true);
+
+            if (isSmallWindow && $('#navbar .navbar-body').hasClass('in')) {
+                return;
+            }
+
+            if (scrollTop >= edge) {
+                $stickedBar.removeClass('hidden');
+                $navbarRight.addClass('has-sticked-bar');
+
+                return;
+            }
+
+            if (scrollTop > stickTop) {
+                $stickedBar.removeClass('hidden');
+                $navbarRight.addClass('has-sticked-bar');
+
+                return;
+            }
+
+            $stickedBar.addClass('hidden');
+            $navbarRight.removeClass('has-sticked-bar');
+        };
+
+        const $stickedBar = this.$stickedBar = this.$el.find('.sticked-bar');
+        const $middle = this.$el.find('> .list');
+
+        const $window = $(window);
+
         let $scrollable = $window;
         let $navbarRight = $('#navbar .navbar-right');
 
@@ -763,17 +809,17 @@ class ListRecordView extends View {
             this.$stickedBar = null;
         });
 
-        let isModal = !!this.$el.closest('.modal-body').length;
+        const isModal = !!this.$el.closest('.modal-body').length;
 
-        let screenWidthXs = this.getThemeManager().getParam('screenWidthXs');
-        let navbarHeight = this.getThemeManager().getParam('navbarHeight');
+        const screenWidthXs = this.getThemeManager().getParam('screenWidthXs');
+        const navbarHeight = this.getThemeManager().getParam('navbarHeight');
 
-        let isSmallWindow = $(window.document).width() < screenWidthXs;
+        const isSmallWindow = $(window.document).width() < screenWidthXs;
 
-        let getOffsetTop = (element) => {
+        const getOffsetTop = (element) => {
             let offsetTop = 0;
 
-            let withHeader = !isSmallWindow && !isModal;
+            const withHeader = !isSmallWindow && !isModal;
 
             do {
                 if (element.classList.contains('modal-body')) {
@@ -826,38 +872,6 @@ class ListRecordView extends View {
             $scrollable.off('scroll.list-' + this.cid);
             $window.off('resize.list-' + this.cid);
         });
-
-        let controlSticking = () => {
-            if (this.checkedList.length === 0 && !this.allResultIsChecked) {
-                return;
-            }
-
-            let scrollTop = $scrollable.scrollTop();
-
-            let stickTop = buttonsTop;
-            let edge = middleTop + $middle.outerHeight(true);
-
-            if (isSmallWindow && $('#navbar .navbar-body').hasClass('in')) {
-                return;
-            }
-
-            if (scrollTop >= edge) {
-                $stickedBar.removeClass('hidden');
-                $navbarRight.addClass('has-sticked-bar');
-
-                return;
-            }
-
-            if (scrollTop > stickTop) {
-                $stickedBar.removeClass('hidden');
-                $navbarRight.addClass('has-sticked-bar');
-
-                return;
-            }
-
-            $stickedBar.addClass('hidden');
-            $navbarRight.removeClass('has-sticked-bar');
-        };
     }
 
     /**
@@ -920,14 +934,14 @@ class ListRecordView extends View {
 
     /** @inheritDoc */
     data() {
-        let paginationTop = this.pagination === 'both' ||
+        const paginationTop = this.pagination === 'both' ||
             this.pagination === 'top';
 
-        let paginationBottom = this.pagination === 'both' ||
+        const paginationBottom = this.pagination === 'both' ||
             this.pagination === true ||
             this.pagination === 'bottom';
 
-        let moreCount = this.collection.total - this.collection.length;
+        const moreCount = this.collection.total - this.collection.length;
         let checkAllResultDisabled = this.checkAllResultDisabled;
 
         if (!this.massActionsDisabled) {
@@ -936,9 +950,9 @@ class ListRecordView extends View {
             }
         }
 
-        let displayTotalCount = this.displayTotalCount && this.collection.total > 0;
+        const displayTotalCount = this.displayTotalCount && this.collection.total > 0;
 
-        let topBar =
+        const topBar =
             paginationTop ||
             this.checkboxes ||
             (this.buttonList.length && !this.buttonsDisabled) ||
@@ -946,7 +960,7 @@ class ListRecordView extends View {
             this.forceDisplayTopBar ||
             displayTotalCount;
 
-        let noDataDisabled = this.noDataDisabled || this._renderEmpty;
+        const noDataDisabled = this.noDataDisabled || this._renderEmpty;
 
         return {
             scope: this.scope,
@@ -973,7 +987,7 @@ class ListRecordView extends View {
                 this.massActionList || this.buttonList.length || this.dropdownItemList.length,
             totalCountFormatted: this.getNumberUtil().formatInt(this.collection.total),
             moreCountFormatted: this.getNumberUtil().formatInt(moreCount),
-            checkboxColumnWidth: this.checkboxColumnWidth,
+            checkboxColumnWidth: this.checkboxColumnWidth + 'px',
             noDataDisabled: noDataDisabled,
         };
     }
@@ -1128,7 +1142,7 @@ class ListRecordView extends View {
 
         url = url || 'Export';
 
-        let o = {
+        const o = {
             scope: this.entityType,
         };
 
@@ -1136,7 +1150,7 @@ class ListRecordView extends View {
             o.fieldList = fieldList;
         }
         else {
-            let layoutFieldList = [];
+            const layoutFieldList = [];
 
             (this.listLayout || []).forEach((item) => {
                 if (item.name) {
@@ -1147,10 +1161,10 @@ class ListRecordView extends View {
             o.fieldList = layoutFieldList;
         }
 
-        let helper = new ExportHelper(this);
-        let idle = this.allResultIsChecked && helper.checkIsIdle(this.collection.total);
+        const helper = new ExportHelper(this);
+        const idle = this.allResultIsChecked && helper.checkIsIdle(this.collection.total);
 
-        let proceedDownload = (attachmentId) => {
+        const proceedDownload = (attachmentId) => {
             window.location = this.getBasePath() + '?entryPoint=download&id=' + attachmentId;
         };
 
@@ -1204,21 +1218,21 @@ class ListRecordView extends View {
      * @param {string} name An action.
      */
     massAction(name) {
-        let defs = this.massActionDefs[name] || {};
+        const defs = this.massActionDefs[name] || {};
 
-        let handler = defs.handler;
+        const handler = defs.handler;
 
         if (handler) {
-            let method = 'action' + Espo.Utils.upperCaseFirst(name);
+            const method = defs.actionFunction || 'action' + Espo.Utils.upperCaseFirst(name);
 
-            let data = {
+            const data = {
                 entityType: this.entityType,
                 action: name,
                 params: this.getMassActionSelectionPostData(),
             };
 
             Espo.loader.require(handler, Handler => {
-                let handler = new Handler(this);
+                const handler = new Handler(this);
 
                 handler[method].call(handler, data);
             });
@@ -1226,12 +1240,12 @@ class ListRecordView extends View {
             return;
         }
 
-        let bypassConfirmation = defs.bypassConfirmation || false;
-        let confirmationMsg = defs.confirmationMessage || 'confirmation';
-        let acl = defs.acl;
-        let aclScope = defs.aclScope;
+        const bypassConfirmation = defs.bypassConfirmation || false;
+        const confirmationMsg = defs.confirmationMessage || 'confirmation';
+        const acl = defs.acl;
+        const aclScope = defs.aclScope;
 
-        let proceed = () => {
+        const proceed = () => {
             if (acl || aclScope) {
                 if (!this.getAcl().check(aclScope || this.scope, acl)) {
                     Espo.Ui.error(this.translate('Access denied'));
@@ -1240,35 +1254,34 @@ class ListRecordView extends View {
                 }
             }
 
-            let idList = [];
-            let data = {};
+            const idList = [];
+            const data = {};
 
             if (this.allResultIsChecked) {
                 data.where = this.collection.getWhere();
-                data.searchParams =  this.collection.data || {};
+                data.searchParams = this.collection.data || {};
                 data.selectData = data.searchData; // for bc;
                 data.byWhere = true; // for bc
-            }
-            else {
+            } else {
                 data.idList = idList; // for bc
                 data.ids = idList;
             }
 
-            for (let i in this.checkedList) {
+            for (const i in this.checkedList) {
                 idList.push(this.checkedList[i]);
             }
 
             data.entityType = this.entityType;
 
-            let waitMessage = defs.waitMessage || 'pleaseWait';
+            const waitMessage = defs.waitMessage || 'pleaseWait';
 
             Espo.Ui.notify(this.translate(waitMessage, 'messages', this.scope));
 
-            let url = defs.url;
+            const url = defs.url;
 
             Espo.Ajax.postRequest(url, data)
-                .then(/** Object.<string, *> */result=> {
-                    let successMessage = result.successMessage || defs.successMessage || 'done';
+                .then(/** Object.<string, *> */result => {
+                    const successMessage = result.successMessage || defs.successMessage || 'done';
 
                     this.collection
                         .fetch()
@@ -1293,7 +1306,7 @@ class ListRecordView extends View {
     }
 
     getMassActionSelectionPostData() {
-        let data = {};
+        const data = {};
 
         if (this.allResultIsChecked) {
             data.where = this.collection.getWhere();
@@ -1304,7 +1317,7 @@ class ListRecordView extends View {
         else {
             data.ids = [];
 
-            for (let i in this.checkedList) {
+            for (const i in this.checkedList) {
                 data.ids.push(this.checkedList[i]);
             }
         }
@@ -1316,7 +1329,7 @@ class ListRecordView extends View {
     massActionRecalculateFormula() {
         let ids = false;
 
-        let allResultIsChecked = this.allResultIsChecked;
+        const allResultIsChecked = this.allResultIsChecked;
 
         if (!allResultIsChecked) {
             ids = this.checkedList;
@@ -1328,9 +1341,9 @@ class ListRecordView extends View {
         }, () => {
             Espo.Ui.notify(this.translate('pleaseWait', 'messages'));
 
-            let params = this.getMassActionSelectionPostData();
-            let helper = new MassActionHelper(this);
-            let idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
+            const params = this.getMassActionSelectionPostData();
+            const helper = new MassActionHelper(this);
+            const idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
 
             Espo.Ajax.postRequest('MassAction', {
                 entityType: this.entityType,
@@ -1338,10 +1351,10 @@ class ListRecordView extends View {
                 params: params,
                 idle: idle,
             })
-                .then((result) => {
+                .then(result => {
                     result = result || {};
 
-                    let final = () => {
+                    const final = () => {
                         this.collection
                             .fetch()
                             .then(() => {
@@ -1388,9 +1401,9 @@ class ListRecordView extends View {
         }, () => {
             Espo.Ui.notify(' ... ');
 
-            let helper = new MassActionHelper(this);
-            let params = this.getMassActionSelectionPostData();
-            let idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
+            const helper = new MassActionHelper(this);
+            const params = this.getMassActionSelectionPostData();
+            const idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
 
             Espo.Ajax.postRequest('MassAction', {
                 entityType: this.entityType,
@@ -1401,7 +1414,7 @@ class ListRecordView extends View {
             .then(result => {
                 result = result || {};
 
-                let afterAllResult = count => {
+                const afterAllResult = count => {
                     if (!count) {
                         Espo.Ui.warning(this.translate('noRecordsRemoved', 'messages'));
 
@@ -1413,10 +1426,12 @@ class ListRecordView extends View {
                     this.collection
                         .fetch()
                         .then(() => {
-                            let msg = count === 1 ? 'massRemoveResultSingle' : 'massRemoveResult';
+                            const msg = count === 1 ? 'massRemoveResultSingle' : 'massRemoveResult';
 
                             Espo.Ui.success(this.translate(msg, 'messages').replace('{count}', count));
                         });
+
+                    this.collection.trigger('after:mass-remove');
 
                     Espo.Ui.notify(false);
                 };
@@ -1431,7 +1446,7 @@ class ListRecordView extends View {
                     return;
                 }
 
-                let count = result.count;
+                const count = result.count;
 
                 if (this.allResultIsChecked) {
                     afterAllResult(count);
@@ -1439,7 +1454,7 @@ class ListRecordView extends View {
                     return;
                 }
 
-                let idsRemoved = result.ids || [];
+                const idsRemoved = result.ids || [];
 
                 if (!count) {
                     Espo.Ui.warning(this.translate('noRecordsRemoved', 'messages'));
@@ -1463,7 +1478,9 @@ class ListRecordView extends View {
                     }
                 }
 
-                let msg = count === 1 ? 'massRemoveResultSingle' : 'massRemoveResult';
+                this.collection.trigger('after:mass-remove');
+
+                const msg = count === 1 ? 'massRemoveResultSingle' : 'massRemoveResult';
 
                 Espo.Ui.success(this.translate(msg, 'messages').replace('{count}', count));
             });
@@ -1472,11 +1489,11 @@ class ListRecordView extends View {
 
     // noinspection JSUnusedGlobalSymbols
     massActionPrintPdf() {
-        let maxCount = this.getConfig().get('massPrintPdfMaxCount');
+        const maxCount = this.getConfig().get('massPrintPdfMaxCount');
 
         if (maxCount) {
             if (this.checkedList.length > maxCount) {
-                let msg = this.translate('massPrintPdfMaxCountError', 'messages')
+                const msg = this.translate('massPrintPdfMaxCountError', 'messages')
                     .replace('{maxCount}', maxCount.toString());
 
                 Espo.Ui.error(msg);
@@ -1485,9 +1502,9 @@ class ListRecordView extends View {
             }
         }
 
-        let idList = [];
+        const idList = [];
 
-        for (let i in this.checkedList) {
+        for (const i in this.checkedList) {
             idList.push(this.checkedList[i]);
         }
 
@@ -1520,9 +1537,9 @@ class ListRecordView extends View {
 
     // noinspection JSUnusedGlobalSymbols
     massActionFollow() {
-        let count = this.checkedList.length;
+        const count = this.checkedList.length;
 
-        let confirmMsg = this.translate('confirmMassFollow', 'messages')
+        const confirmMsg = this.translate('confirmMassFollow', 'messages')
             .replace('{count}', count.toString());
 
         this.confirm({
@@ -1538,7 +1555,7 @@ class ListRecordView extends View {
                     params: this.getMassActionSelectionPostData(),
                 })
                 .then(result => {
-                    let resultCount = result.count || 0;
+                    const resultCount = result.count || 0;
 
                     let msg = 'massFollowResult';
 
@@ -1563,9 +1580,9 @@ class ListRecordView extends View {
 
     // noinspection JSUnusedGlobalSymbols
     massActionUnfollow() {
-        let count = this.checkedList.length;
+        const count = this.checkedList.length;
 
-        let confirmMsg = this.translate('confirmMassUnfollow', 'messages')
+        const confirmMsg = this.translate('confirmMassUnfollow', 'messages')
             .replace('{count}', count.toString());
 
         this.confirm({
@@ -1574,9 +1591,9 @@ class ListRecordView extends View {
         }, () => {
             Espo.Ui.notify(this.translate('pleaseWait', 'messages'));
 
-            let params = this.getMassActionSelectionPostData();
-            let helper = new MassActionHelper(this);
-            let idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
+            const params = this.getMassActionSelectionPostData();
+            const helper = new MassActionHelper(this);
+            const idle = !!params.searchParams && helper.checkIsIdle(this.collection.total);
 
             Espo.Ajax
                 .postRequest('MassAction', {
@@ -1586,7 +1603,7 @@ class ListRecordView extends View {
                     idle: idle,
                 })
                 .then(result => {
-                    let final = (count) => {
+                    const final = (count) => {
                         let msg = 'massUnfollowResult';
 
                         if (!count) {
@@ -1640,7 +1657,7 @@ class ListRecordView extends View {
 
         this.checkedList.sort();
 
-        let url = '#' + this.entityType + '/merge/ids=' + this.checkedList.join(',');
+        const url = '#' + this.entityType + '/merge/ids=' + this.checkedList.join(',');
 
         this.getRouter().navigate(url, {trigger: false});
 
@@ -1662,14 +1679,13 @@ class ListRecordView extends View {
 
         let ids = false;
 
-        let allResultIsChecked = this.allResultIsChecked;
+        const allResultIsChecked = this.allResultIsChecked;
 
         if (!allResultIsChecked) {
             ids = this.checkedList;
         }
 
-        let viewName = this.getMetadata()
-            .get(['clientDefs', this.entityType, 'modalViews', 'massUpdate']) ||
+        const viewName = this.getMetadata().get(['clientDefs', this.entityType, 'modalViews', 'massUpdate']) ||
             'views/modals/mass-update';
 
         this.createView('massUpdate', viewName, {
@@ -1680,7 +1696,7 @@ class ListRecordView extends View {
             searchParams: this.collection.data,
             byWhere: this.allResultIsChecked,
             totalCount: this.collection.total,
-        }, (view) => {
+        }, view => {
             view.render();
 
             view.notify(false);
@@ -1708,7 +1724,7 @@ class ListRecordView extends View {
 
                 view.close();
 
-                let count = o.count;
+                const count = o.count;
 
                 this.collection
                     .fetch()
@@ -1772,7 +1788,7 @@ class ListRecordView extends View {
     massActionConvertCurrency() {
         let ids = false;
 
-        let allResultIsChecked = this.allResultIsChecked;
+        const allResultIsChecked = this.allResultIsChecked;
 
         if (!allResultIsChecked) {
             ids = this.checkedList;
@@ -1785,7 +1801,7 @@ class ListRecordView extends View {
             searchParams: this.collection.data,
             byWhere: this.allResultIsChecked,
             totalCount: this.collection.total,
-        }, (view) => {
+        }, view => {
             view.render();
 
             this.listenToOnce(view, 'after:update', o => {
@@ -1809,7 +1825,7 @@ class ListRecordView extends View {
                     return;
                 }
 
-                let count = o.count;
+                const count = o.count;
 
                 this.collection
                     .fetch()
@@ -1892,7 +1908,7 @@ class ListRecordView extends View {
      * @param {string} item An action.
      */
     removeAllResultMassAction(item) {
-        let index = this.checkAllResultMassActionList.indexOf(item);
+        const index = this.checkAllResultMassActionList.indexOf(item);
 
         if (~index) {
             this.checkAllResultMassActionList.splice(index, 1);
@@ -1930,13 +1946,13 @@ class ListRecordView extends View {
             this.events['click .list a.link'] = (e) => {
                 e.preventDefault();
 
-                let id = $(e.target).attr('data-id');
+                const id = $(e.target).attr('data-id');
 
                 if (id) {
-                    let model = this.collection.get(id);
+                    const model = this.collection.get(id);
 
                     if (this.checkboxes) {
-                        let list = [];
+                        const list = [];
 
                         list.push(model);
 
@@ -1975,6 +1991,9 @@ class ListRecordView extends View {
             this.layoutName += 'Portal';
         }
 
+        this.setupRowActionDefs();
+        this.setupSettings();
+
         this.wait(
             this.getHelper().processSetupHandlers(this, this.setupHandlerType)
         );
@@ -1989,7 +2008,7 @@ class ListRecordView extends View {
             options = options || {};
 
             if (options.previousDataList) {
-                let currentDataList = this.collection.models.map(model => {
+                const currentDataList = this.collection.models.map(model => {
                     return Espo.Utils.cloneDeep(model.attributes);
                 });
 
@@ -2080,18 +2099,18 @@ class ListRecordView extends View {
             ...this.getMetadata().get(['clientDefs', this.scope, 'massActionDefs']) || {},
         };
 
-        let metadataMassActionList = [
+        const metadataMassActionList = [
             ...this.getMetadata().get(['clientDefs', 'Global', 'massActionList']) || [],
             ...this.getMetadata().get(['clientDefs', this.scope, 'massActionList']) || [],
         ];
 
-        let metadataCheckAllMassActionList = [
+        const metadataCheckAllMassActionList = [
             ...this.getMetadata().get(['clientDefs', 'Global', 'checkAllResultMassActionList']) || [],
             ...this.getMetadata().get(['clientDefs', this.scope, 'checkAllResultMassActionList']) || [],
         ];
 
         metadataMassActionList.forEach(item => {
-            let defs = /** @type {Espo.Utils~ActionAccessDefs & Espo.Utils~ActionAvailabilityDefs} */
+            const defs = /** @type {Espo.Utils~ActionAccessDefs & Espo.Utils~ActionAvailabilityDefs} */
                 this.massActionDefs[item] || {};
 
             if (
@@ -2113,7 +2132,7 @@ class ListRecordView extends View {
             }
 
             if (~this.massActionList.indexOf(item)) {
-                let defs = /** @type {Espo.Utils~ActionAccessDefs & Espo.Utils~ActionAvailabilityDefs} */
+                const defs = /** @type {Espo.Utils~ActionAccessDefs & Espo.Utils~ActionAvailabilityDefs} */
                     this.massActionDefs[item] || {};
 
                 if (
@@ -2130,18 +2149,18 @@ class ListRecordView extends View {
         metadataMassActionList
             .concat(metadataCheckAllMassActionList)
             .forEach(action => {
-                let defs = this.massActionDefs[action] || {};
+                const defs = this.massActionDefs[action] || {};
 
                 if (!defs.initFunction || !defs.handler) {
                     return;
                 }
 
-                let viewObject = this;
+                const viewObject = this;
 
                 this.wait(
                     new Promise((resolve) => {
                         Espo.loader.require(defs.handler, Handler => {
-                            let handler = new Handler(viewObject);
+                            const handler = new Handler(viewObject);
 
                             handler[defs.initFunction].call(handler);
 
@@ -2197,7 +2216,7 @@ class ListRecordView extends View {
             this.getAcl().checkScope(this.scope, 'edit') &&
             this.getAcl().getPermissionLevel('massUpdatePermission') === 'yes'
         ) {
-            let currencyFieldList = this.getFieldManager().getEntityTypeFieldList(this.entityType, {
+            const currencyFieldList = this.getFieldManager().getEntityTypeFieldList(this.entityType, {
                 type: 'currency',
                 acl: 'edit',
             });
@@ -2230,7 +2249,7 @@ class ListRecordView extends View {
         }
 
         Espo.Utils.clone(this.massActionList).forEach(item => {
-            let propName = 'massAction' + Espo.Utils.upperCaseFirst(item) + 'Disabled';
+            const propName = 'massAction' + Espo.Utils.upperCaseFirst(item) + 'Disabled';
 
             if (this[propName] || this.options[propName]) {
                 this.removeMassAction(item);
@@ -2244,6 +2263,8 @@ class ListRecordView extends View {
     setupMassActionItems() {}
 
     /**
+     * @param {module:views/record/list~columnDefs[]} listLayout
+     * @return {module:views/record/list~columnDefs[]}
      * @protected
      */
     filterListLayout(listLayout) {
@@ -2265,16 +2286,22 @@ class ListRecordView extends View {
             return this._cachedFilteredListLayout;
         }
 
-        let filteredListLayout = Espo.Utils.clone(listLayout);
+        const filteredListLayout = Espo.Utils.cloneDeep(listLayout);
 
-        for (let i in listLayout) {
-            let name = listLayout[i].name;
+        const deleteIndexes = [];
 
-            if (name && ~forbiddenFieldList.indexOf(name)) {
-                filteredListLayout[i].customLabel = '';
-                filteredListLayout[i].notSortable = true;
+        for (const [i, item] of listLayout.entries()) {
+            if (item.name && forbiddenFieldList.includes(item.name)) {
+                item.customLabel = '';
+                item.notSortable = true;
+
+                deleteIndexes.push(i)
             }
         }
+
+        deleteIndexes
+            .reverse()
+            .forEach(index => filteredListLayout.splice(index, 1));
 
         this._cachedFilteredListLayout = filteredListLayout;
 
@@ -2283,8 +2310,7 @@ class ListRecordView extends View {
 
     /**
      * @protected
-     * @param {function(Object[]):void} callback A callback.
-     * @private
+     * @param {function(module:views/record/list~columnDefs[]): void} callback A callback.
      */
     _loadListLayout(callback) {
         this.layoutLoadCallbackList.push(callback);
@@ -2295,11 +2321,11 @@ class ListRecordView extends View {
 
         this.layoutIsBeingLoaded = true;
 
-        let layoutName = this.layoutName;
-        let layoutScope = this.layoutScope || this.collection.entityType;
+        const layoutName = this.layoutName;
+        const layoutScope = this.layoutScope || this.collection.entityType;
 
         this.getHelper().layoutManager.get(layoutScope, layoutName, listLayout => {
-            let filteredListLayout = this.filterListLayout(listLayout);
+            const filteredListLayout = this.filterListLayout(listLayout);
 
             this.layoutLoadCallbackList.forEach(callbackItem => {
                 callbackItem(filteredListLayout);
@@ -2323,7 +2349,7 @@ class ListRecordView extends View {
         }
 
         if (this.listLayout) {
-            let attributeList = this.fetchAttributeListFromLayout();
+            const attributeList = this.fetchAttributeListFromLayout();
 
             callback(attributeList);
 
@@ -2361,37 +2387,46 @@ class ListRecordView extends View {
      * @protected
      */
     _getHeaderDefs() {
-        let defs = [];
+        const defs = [];
 
-        for (let i in this.listLayout) {
+        const hiddenMap = this._listSettingsHelper ?
+            this._listSettingsHelper.getHiddenColumnMap() : {};
+
+        // noinspection JSIncompatibleTypesComparison
+        if (!this.listLayout || !Array.isArray(this.listLayout)) {
+            return [];
+        }
+
+        for (const col of this.listLayout) {
             let width = false;
 
-            if ('width' in this.listLayout[i] && this.listLayout[i].width !== null) {
-                width = this.listLayout[i].width + '%';
+            if ('width' in col && col.width !== null) {
+                width = col.width + '%';
             }
-            else if ('widthPx' in this.listLayout[i]) {
-                width = this.listLayout[i].widthPx;
+            else if ('widthPx' in col) {
+                width = col.widthPx + 'px';
             }
 
-            let itemName = this.listLayout[i].name;
+            const itemName = col.name;
+            const label = col.label || itemName;
 
-            let item = {
+            const item = {
                 name: itemName,
-                isSortable: !(this.listLayout[i].notSortable || false),
+                isSortable: !(col.notSortable || false),
                 width: width,
-                align: ('align' in this.listLayout[i]) ? this.listLayout[i].align : false,
+                align: ('align' in col) ? col.align : false,
             };
 
-            if ('customLabel' in this.listLayout[i]) {
-                item.customLabel = this.listLayout[i].customLabel;
+            if ('customLabel' in col) {
+                item.customLabel = col.customLabel;
                 item.hasCustomLabel = true;
                 item.label = item.customLabel;
             }
             else {
-                item.label = this.translate(itemName, 'fields', this.collection.entityType);
+                item.label = this.translate(label, 'fields', this.collection.entityType);
             }
 
-            if (this.listLayout[i].noLabel) {
+            if (col.noLabel) {
                 item.label = null;
             }
 
@@ -2403,10 +2438,24 @@ class ListRecordView extends View {
                 }
             }
 
+            if (itemName && hiddenMap[itemName]) {
+                continue;
+            }
+
+            if (itemName) {
+                if (hiddenMap[itemName]) {
+                    continue;
+                }
+
+                if (col.hidden && !(itemName in hiddenMap)) {
+                    continue;
+                }
+            }
+
             defs.push(item);
         }
 
-        let isCustomSorted =
+        const isCustomSorted =
             this.collection.orderBy !== this.collection.defaultOrderBy ||
             this.collection.order !== this.collection.defaultOrder;
 
@@ -2427,7 +2476,7 @@ class ListRecordView extends View {
             }
 
             defs.push({
-                width: this.rowActionsColumnWidth,
+                width: this.rowActionsColumnWidth + 'px',
                 html: html,
                 className: 'action-cell',
             });
@@ -2442,7 +2491,7 @@ class ListRecordView extends View {
     _convertLayout(listLayout, model) {
         model = model || this.collection.prepareModel();
 
-        let layout = [];
+        const layout = [];
 
         if (this.checkboxes) {
             layout.push({
@@ -2452,15 +2501,17 @@ class ListRecordView extends View {
             });
         }
 
-        for (let i in listLayout) {
-            let col = listLayout[i];
-            let type = col.type || model.getFieldType(col.name) || 'base';
+        const hiddenMap = this._listSettingsHelper ?
+            this._listSettingsHelper.getHiddenColumnMap() : {};
+
+        for (const col of listLayout) {
+            const type = col.type || model.getFieldType(col.name) || 'base';
 
             if (!col.name) {
                 continue;
             }
 
-            let item = {
+            const item = {
                 columnName: col.name,
                 name: col.name + 'Field',
                 view: col.view ||
@@ -2491,7 +2542,7 @@ class ListRecordView extends View {
             }
 
             if (col.options) {
-                for (let optionName in col.options) {
+                for (const optionName in col.options) {
                     if (typeof item.options[optionName] !== 'undefined') {
                         continue;
                     }
@@ -2500,8 +2551,19 @@ class ListRecordView extends View {
                 }
             }
 
+            if (col.name) {
+                if (hiddenMap[col.name]) {
+                    continue;
+                }
+
+                if (col.hidden && !(col.name in hiddenMap)) {
+                    continue;
+                }
+            }
+
             layout.push(item);
         }
+
         if (this.rowActionsView && !this.rowActionsDisabled) {
             layout.push(this.getRowActionsDefs());
         }
@@ -2528,7 +2590,7 @@ class ListRecordView extends View {
             $target.closest('tr').addClass('active');
         }
 
-        let index = this.checkedList.indexOf(id);
+        const index = this.checkedList.indexOf(id);
 
         if (index === -1) {
             this.checkedList.push(id);
@@ -2552,7 +2614,7 @@ class ListRecordView extends View {
             $target.closest('tr').removeClass('active');
         }
 
-        let index = this.checkedList.indexOf(id);
+        const index = this.checkedList.indexOf(id);
 
         if (index !== -1) {
             this.checkedList.splice(index, 1);
@@ -2591,14 +2653,16 @@ class ListRecordView extends View {
      * @return {Object}
      */
     getRowActionsDefs() {
-        let options = {
+        const options = {
             defs: {
-                params: {}
+                params: {},
             },
+            additionalActionList: this._additionalRowActionList || [],
+            scope: this.scope,
         };
 
         if (this.options.rowActionsOptions) {
-            for (let item in this.options.rowActionsOptions) {
+            for (const item in this.options.rowActionsOptions) {
                 options[item] = this.options.rowActionsOptions[item];
             }
         }
@@ -2607,7 +2671,7 @@ class ListRecordView extends View {
             columnName: 'buttons',
             name: 'buttonsField',
             view: this.rowActionsView,
-            options: options
+            options: options,
         };
     }
 
@@ -2617,11 +2681,11 @@ class ListRecordView extends View {
      * @return {module:model[]}
      */
     getSelected() {
-        let list = [];
+        const list = [];
 
         this.$el.find('input.record-checkbox:checked').each((i, el) => {
-            let id = $(el).attr('data-id');
-            let model = this.collection.get(id);
+            const id = $(el).attr('data-id');
+            const model = this.collection.get(id);
 
             list.push(model);
         });
@@ -2633,7 +2697,7 @@ class ListRecordView extends View {
      * @protected
      */
     getInternalLayoutForModel(callback, model) {
-        let scope = model.entityType;
+        const scope = model.entityType;
 
         if (this._internalLayout === null) {
             this._internalLayout = {};
@@ -2714,7 +2778,7 @@ class ListRecordView extends View {
      * @param {function(module:view):void} [callback] A callback.
      */
     buildRow(i, model, callback) {
-        let key = model.id;
+        const key = model.id;
 
         this.rowList.push(key);
 
@@ -2723,7 +2787,7 @@ class ListRecordView extends View {
 
             this.prepareInternalLayout(internalLayout, model);
 
-            let acl =  {
+            const acl = {
                 edit: this.getAcl().checkModel(model, 'edit') && !this.editDisabled,
                 delete: this.getAcl().checkModel(model, 'delete') && !this.removeDisabled,
             };
@@ -2731,11 +2795,12 @@ class ListRecordView extends View {
             this.createView(key, 'views/base', {
                 model: model,
                 acl: acl,
+                rowActionHandlers: this._rowActionHandlers || {},
                 selector: '.list-row[data-id="' + key + '"]',
-                optionsToPass: ['acl'],
+                optionsToPass: ['acl', 'rowActionHandlers'],
                 layoutDefs: {
                     type: this._internalLayoutType,
-                    layout: internalLayout
+                    layout: internalLayout,
                 },
                 setViewBeforeCallback: this.options.skipBuildRows && !this.isRendered(),
             }, callback);
@@ -2763,9 +2828,9 @@ class ListRecordView extends View {
         }
 
         let iteration = 0;
-        let repeatCount = !this.pagination ? 1 : 2;
+        const repeatCount = !this.pagination ? 1 : 2;
 
-        let callbackWrapped = () => {
+        const callbackWrapped = () => {
             iteration++;
 
             if (iteration === repeatCount) {
@@ -2773,12 +2838,12 @@ class ListRecordView extends View {
                     callback();
                 }
             }
-        }
+        };
 
         this.wait(true);
 
-        let modelList = this.collection.models;
-        let count = modelList.length;
+        const modelList = this.collection.models;
+        const count = modelList.length;
         let builtCount = 0;
 
         modelList.forEach(model => {
@@ -2817,13 +2882,15 @@ class ListRecordView extends View {
         $list = $list || this.$el.find(this.listContainerEl);
         options = options || {};
 
+        const $container = this.$el.find('.list');
+
         $showMore.children('a').addClass('disabled');
 
         if (!options.skipNotify) {
             Espo.Ui.notify(' ... ');
         }
 
-        let lengthBefore = collection.length;
+        const lengthBefore = collection.length;
 
         const final = () => {
             $showMore.parent().append($showMore);
@@ -2832,15 +2899,17 @@ class ListRecordView extends View {
                 collection.total > collection.length + collection.lengthCorrection ||
                 collection.total === -1
             ) {
-                let moreCount = collection.total - collection.length - collection.lengthCorrection;
-                let moreCountString = this.getNumberUtil().formatInt(moreCount);
+                const moreCount = collection.total - collection.length - collection.lengthCorrection;
+                const moreCountString = this.getNumberUtil().formatInt(moreCount);
 
                 this.$el.find('.more-count').text(moreCountString);
 
                 $showMore.removeClass('hidden');
+                $container.addClass('has-show-more');
             }
             else {
                 $showMore.remove();
+                $container.removeClass('has-show-more');
             }
 
             $showMore.children('a').removeClass('disabled');
@@ -2863,7 +2932,7 @@ class ListRecordView extends View {
             this.trigger('after:show-more', lengthBefore);
         };
 
-        let initialCount = collection.length;
+        const initialCount = collection.length;
 
         const success = () => {
             if (!options.skipNotify) {
@@ -2871,8 +2940,9 @@ class ListRecordView extends View {
             }
 
             $showMore.addClass('hidden');
+            $container.removeClass('has-show-more');
 
-            let rowCount = collection.length - initialCount;
+            const rowCount = collection.length - initialCount;
             let rowsReady = 0;
 
             if (collection.length <= initialCount) {
@@ -2885,7 +2955,7 @@ class ListRecordView extends View {
                 this.buildRow(i, model, view => {
                     const model = view.model;
 
-                    let $existingRow = this.getDomRowItem(model.id);
+                    const $existingRow = this.getDomRowItem(model.id);
 
                     if ($existingRow && $existingRow.length) {
                         $existingRow.remove();
@@ -2943,7 +3013,7 @@ class ListRecordView extends View {
     actionQuickView(data) {
         data = data || {};
 
-        let id = data.id;
+        const id = data.id;
 
         if (!id) {
             console.error("No id.");
@@ -2979,7 +3049,7 @@ class ListRecordView extends View {
             return;
         }
 
-        let helper = new RecordModal(this.getMetadata(), this.getAcl());
+        const helper = new RecordModal(this.getMetadata(), this.getAcl());
 
         helper
             .showDetail(this, {
@@ -3008,7 +3078,7 @@ class ListRecordView extends View {
     actionQuickEdit(data) {
         data = data || {};
 
-        let id = data.id;
+        const id = data.id;
 
         if (!id) {
             console.error("No id.");
@@ -3038,13 +3108,13 @@ class ListRecordView extends View {
             return;
         }
 
-        let viewName = this.getMetadata().get(['clientDefs', scope, 'modalViews', 'edit']) ||
+        const viewName = this.getMetadata().get(['clientDefs', scope, 'modalViews', 'edit']) ||
             'views/modals/edit';
 
         if (!this.quickEditDisabled) {
             Espo.Ui.notify(' ... ');
 
-            let options = {
+            const options = {
                 scope: scope,
                 id: id,
                 model: model,
@@ -3075,7 +3145,7 @@ class ListRecordView extends View {
                 });
 
                 this.listenToOnce(view, 'after:save', (m) => {
-                    let model = this.collection.get(m.id);
+                    const model = this.collection.get(m.id);
 
                     if (model) {
                         model.set(m.getClonedAttributes());
@@ -3088,7 +3158,7 @@ class ListRecordView extends View {
             return;
         }
 
-        let options = {
+        const options = {
             id: id,
             model: this.collection.get(id),
             returnUrl: this.getRouter().getCurrentUrl(),
@@ -3123,13 +3193,13 @@ class ListRecordView extends View {
     actionQuickRemove(data) {
         data = data || {};
 
-        let id = data.id;
+        const id = data.id;
 
         if (!id) {
             return;
         }
 
-        let model = this.collection.get(id);
+        const model = this.collection.get(id);
 
         if (!this.getAcl().checkModel(model, 'delete')) {
             Espo.Ui.error(this.translate('Access denied'));
@@ -3178,7 +3248,7 @@ class ListRecordView extends View {
             this.checkedList.splice(index, 1);
         }
 
-        let key = id;
+        const key = id;
 
         this.clearView(key);
 
@@ -3263,6 +3333,104 @@ class ListRecordView extends View {
         }
 
         return minWidth;
+    }
+
+    setupRowActionDefs() {
+        this._rowActionHandlers = {};
+
+        const list = this.options.additionalRowActionList;
+
+        if (!list) {
+            return;
+        }
+
+        this._additionalRowActionList = list;
+
+        const defs = this.getMetadata().get(`clientDefs.${this.scope}.rowActionDefs`) || {};
+
+        const promiseList = list.map(action => {
+            /** @type {{handler: string, label?: string, labelTranslation?: string}} */
+            const itemDefs = defs[action] || {};
+
+            if (!itemDefs.handler) {
+                return Promise.resolve();
+            }
+
+            return Espo.loader.requirePromise(itemDefs.handler)
+                .then(Handler => {
+                    this._rowActionHandlers[action] = new Handler(this);
+
+                    return true;
+                });
+        });
+
+        this.wait(Promise.all(promiseList));
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    actionRowAction(data) {
+        const action = data.actualAction;
+        const id = data.id;
+
+        if (!action) {
+            return;
+        }
+
+        /** @type {{process: function(module:model, string)}} */
+        const handler = (this._rowActionHandlers || {})[action];
+
+        if (!handler) {
+            console.warn(`No handler for action ${action}.`);
+
+            return;
+        }
+
+        const model = this.collection.get(id);
+
+        if (!model) {
+            return;
+        }
+
+        handler.process(model, action);
+    }
+
+    /**
+     * @private
+     */
+    setupSettings() {
+        if (!this.options.settingsEnabled || !this.collection.entityType || !this.layoutName) {
+            return;
+        }
+
+        if (
+            !this.getMetadata().get(`scopes.${this.entityType}.object`) ||
+            this.getConfig().get('listViewSettingsDisabled')
+        ) {
+            return;
+        }
+
+        this._listSettingsHelper = new ListSettingsHelper(
+            this.entityType,
+            this.layoutName,
+            this.getUser().id,
+            this.getStorage()
+        );
+
+        const view = new RecordListSettingsView({
+            layoutProvider: () => this.listLayout,
+            helper: this._listSettingsHelper,
+            entityType: this.entityType,
+            onChange: () => {
+                this._internalLayout = null;
+
+                Espo.Ui.notify(' ... ');
+
+                this.collection.fetch()
+                    .then(() => Espo.Ui.notify(false));
+            },
+        });
+
+        this.assignView('settings', view, '.settings-container');
     }
 }
 

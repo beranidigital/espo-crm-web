@@ -20,6 +20,11 @@
             "tooltip": true
         },
         {
+            "name": "default",
+            "type": "multiEnum",
+            "view": "views/admin/field-manager/fields/options/default-multi"
+        },
+        {
             "name": "isSorted",
             "type": "bool"
         },
@@ -40,6 +45,10 @@
         },
         {
             "name": "readOnly",
+            "type": "bool"
+        },
+        {
+            "name": "readOnlyAfterCreate",
             "type": "bool"
         },
         {
@@ -69,5 +78,10 @@
     },
     "translatedOptions": true,
     "dynamicLogicOptions": true,
-    "personalData": true
+    "personalData": true,
+    "sanitizerClassNameList": [
+        "Espo\\Classes\\FieldSanitizers\\ArrayFromNull",
+        "Espo\\Classes\\FieldSanitizers\\ArrayStringTrim"
+    ],
+    "default": []
 }

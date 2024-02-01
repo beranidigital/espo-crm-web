@@ -2,33 +2,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Tools\Import;
 
+use Exception;
 use GuzzleHttp\Psr7\Utils as Psr7Utils;
 
 use Espo\Core\Record\ActionHistory\Action;
@@ -84,7 +85,7 @@ class Service
         }
 
         if (!$this->acl->check($entityType, Table::ACTION_CREATE)) {
-            throw new Forbidden("No create access for '{$entityType}'.");
+            throw new Forbidden("No create access for '$entityType'.");
         }
 
         $result = $this->factory
@@ -124,7 +125,7 @@ class Service
         $source = $this->entityManager->getEntityById(ImportEntity::ENTITY_TYPE, $importParamsId);
 
         if (!$source) {
-            throw new Error("Import '{$importParamsId}' not found.");
+            throw new Error("Import '$importParamsId' not found.");
         }
 
         $entityType = $source->getTargetEntityType();
@@ -154,18 +155,18 @@ class Service
         $import = $this->entityManager->getEntity(ImportEntity::ENTITY_TYPE, $id);
 
         if (!$import) {
-            throw new NotFound("Import '{$id}' not found.");
+            throw new NotFound("Import '$id' not found.");
         }
 
         $status = $import->getStatus();
 
         if ($status !== ImportEntity::STATUS_STANDBY) {
             if (!in_array($status, [ImportEntity::STATUS_IN_PROCESS, ImportEntity::STATUS_FAILED])) {
-                throw new Forbidden("Can't run import with '{$status}' status.");
+                throw new Forbidden("Can't run import with '$status' status.");
             }
 
             if (!$forceResume) {
-                throw new Forbidden("Import has '{$status}' status. Use -r flag to force resume.");
+                throw new Forbidden("Import has '$status' status. Use -r flag to force resume.");
             }
         }
 
@@ -230,7 +231,13 @@ class Service
 
         if ($createdAt) {
             $dtNow = new DateTime();
-            $createdAtDt = new DateTime($createdAt);
+
+            try {
+                $createdAtDt = new DateTime($createdAt);
+            }
+            catch (Exception $e) {
+                throw new RuntimeException($e->getMessage());
+            }
 
             $dayDiff = ($dtNow->getTimestamp() - $createdAtDt->getTimestamp()) / 60 / 60 / 24;
 
@@ -354,7 +361,7 @@ class Service
         $import = $this->entityManager->getEntityById(ImportEntity::ENTITY_TYPE, $id);
 
         if (!$import) {
-            throw new NotFound("Import '{$id}' not found.");
+            throw new NotFound("Import '$id' not found.");
         }
 
         if (!$this->acl->checkEntityDelete($import)) {

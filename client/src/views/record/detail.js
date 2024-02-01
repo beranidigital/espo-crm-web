@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -57,9 +57,11 @@ class DetailRecordView extends BaseRecordView {
      * @property {string} [inlineEditDisabled] Disable inline edit.
      * @property {string} [navigateButtonsDisabled]
      * @property {Object} [dynamicLogicDefs]
+     * @property {module:view-record-helper} [recordHelper] A record helper. For a form state management.
      * @property {Object.<string, *>} [attributes]
      * @property {module:views/record/detail~button[]} [buttonList] Buttons.
      * @property {module:views/record/detail~dropdownItem[]} [dropdownItemList] Dropdown items.
+     * @property {Object.<string, *>} [dataObject] Additional data.
      */
 
     /**
@@ -176,7 +178,7 @@ class DetailRecordView extends BaseRecordView {
      * @property {string} [labelTranslation] A label translation path.
      * @property {string} [html] An HTML.
      * @property {string} [text] A text.
-     * @property {'default'|'danger'|'success'|'warning'} [style] A style.
+     * @property {'default'|'danger'|'success'|'warning'|'primary'} [style] A style.
      * @property {boolean} [hidden] Hidden.
      * @property {string} [title] A title (not translatable).
      * @property {boolean} [disabled] Disabled.
@@ -502,6 +504,12 @@ class DetailRecordView extends BaseRecordView {
     accessControlDisabled
 
     /**
+     * @protected
+     * @type {boolean}
+     */
+    inlineEditModeIsOn = false
+
+    /**
      * A Ctrl+Enter shortcut action.
      *
      * @protected
@@ -575,7 +583,7 @@ class DetailRecordView extends BaseRecordView {
         },
         /** @this DetailRecordView */
         'click .middle-tabs > button': function (e) {
-            let tab = parseInt($(e.currentTarget).attr('data-tab'));
+            const tab = parseInt($(e.currentTarget).attr('data-tab'));
 
             this.selectTab(tab);
         },
@@ -594,7 +602,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let options = {
+        const options = {
             id: this.model.id,
             model: this.model,
         };
@@ -622,13 +630,15 @@ class DetailRecordView extends BaseRecordView {
     actionSave(data) {
         data = data || {};
 
-        let modeBeforeSave = this.mode;
+        const modeBeforeSave = this.mode;
 
         const promise = this.save(data.options)
             .catch(reason => {
                 if (modeBeforeSave === this.MODE_EDIT && reason === 'error') {
                     this.setEditMode();
                 }
+
+                return Promise.reject(reason);
             });
 
         if (!this.lastSaveCancelReason || this.lastSaveCancelReason === 'notModified') {
@@ -649,7 +659,7 @@ class DetailRecordView extends BaseRecordView {
     }
 
     focusOnFirstDiv() {
-        let element = /** @type {HTMLElement} */this.$el.find('> div').get(0);
+        const element = /** @type {HTMLElement} */this.$el.find('> div').get(0);
 
         if (element) {
             element.focus({preventScroll: true});
@@ -671,16 +681,16 @@ class DetailRecordView extends BaseRecordView {
      * A `self-assign` action.
      */
     actionSelfAssign() {
-        let attributes = {
+        const attributes = {
             assignedUserId: this.getUser().id,
             assignedUserName: this.getUser().get('name'),
         };
 
         if ('getSelfAssignAttributes' in this) {
-            let attributesAdditional = this.getSelfAssignAttributes();
+            const attributesAdditional = this.getSelfAssignAttributes();
 
             if (attributesAdditional) {
-                for (let i in attributesAdditional) {
+                for (const i in attributesAdditional) {
                     attributes[i] = attributesAdditional[i];
                 }
             }
@@ -707,7 +717,7 @@ class DetailRecordView extends BaseRecordView {
             this.listenToOnce(view, 'after:update', attributes => {
                 let isChanged = false;
 
-                for (let a in attributes) {
+                for (const a in attributes) {
                     if (attributes[a] !== this.model.get(a)) {
                         isChanged = true;
 
@@ -815,7 +825,7 @@ class DetailRecordView extends BaseRecordView {
                 this.getAcl().check(this.entityType, 'edit') &&
                 !this.getMetadata().get(['clientDefs', this.scope, 'convertCurrencyDisabled'])
             ) {
-                let currencyFieldList = this.getFieldManager()
+                const currencyFieldList = this.getFieldManager()
                     .getEntityTypeFieldList(this.entityType, {
                         type: 'currency',
                         acl: 'edit',
@@ -850,7 +860,7 @@ class DetailRecordView extends BaseRecordView {
         }
 
         if (this.type === this.TYPE_DETAIL) {
-            let actionItemSetup = new ActionItemSetup(
+            const actionItemSetup = new ActionItemSetup(
                 this.getMetadata(),
                 this.getHelper(),
                 this.getAcl(),
@@ -898,7 +908,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {string} name A name.
      */
     hideActionItem(name) {
-        for (let item of this.buttonList) {
+        for (const item of this.buttonList) {
             if (item.name === name) {
                 item.hidden = true;
 
@@ -906,7 +916,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownItemList) {
+        for (const item of this.dropdownItemList) {
             if (item.name === name) {
                 item.hidden = true;
 
@@ -914,7 +924,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownEditItemList) {
+        for (const item of this.dropdownEditItemList) {
             if (item.name === name) {
                 item.hidden = true;
 
@@ -922,7 +932,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.buttonEditList) {
+        for (const item of this.buttonEditList) {
             if (item.name === name) {
                 item.hidden = true;
 
@@ -958,7 +968,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {string} name A name.
      */
     showActionItem(name) {
-        for (let item of this.buttonList) {
+        for (const item of this.buttonList) {
             if (item.name === name) {
                 item.hidden = false;
 
@@ -966,7 +976,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownItemList) {
+        for (const item of this.dropdownItemList) {
             if (item.name === name) {
                 item.hidden = false;
 
@@ -974,7 +984,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownEditItemList) {
+        for (const item of this.dropdownEditItemList) {
             if (item.name === name) {
                 item.hidden = false;
 
@@ -982,7 +992,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.buttonEditList) {
+        for (const item of this.buttonEditList) {
             if (item.name === name) {
                 item.hidden = false;
 
@@ -1019,7 +1029,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {string} name A name.
      */
     disableActionItem(name) {
-        for (let item of this.buttonList) {
+        for (const item of this.buttonList) {
             if (item.name === name) {
                 item.disabled = true;
 
@@ -1027,7 +1037,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownItemList) {
+        for (const item of this.dropdownItemList) {
             if (item.name === name) {
                 item.disabled = true;
 
@@ -1035,7 +1045,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownEditItemList) {
+        for (const item of this.dropdownEditItemList) {
             if (item.name === name) {
                 item.disabled = true;
 
@@ -1043,7 +1053,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.buttonEditList) {
+        for (const item of this.buttonEditList) {
             if (item.name === name) {
                 item.disabled = true;
 
@@ -1072,7 +1082,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {string} name A name.
      */
     enableActionItem(name) {
-        for (let item of this.buttonList) {
+        for (const item of this.buttonList) {
             if (item.name === name) {
                 item.disabled = false;
 
@@ -1080,7 +1090,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownItemList) {
+        for (const item of this.dropdownItemList) {
             if (item.name === name) {
                 item.disabled = false;
 
@@ -1088,7 +1098,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.dropdownEditItemList) {
+        for (const item of this.dropdownEditItemList) {
             if (item.name === name) {
                 item.disabled = false;
 
@@ -1096,7 +1106,7 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        for (let item of this.buttonEditList) {
+        for (const item of this.buttonEditList) {
             if (item.name === name) {
                 item.disabled = false;
 
@@ -1129,7 +1139,7 @@ class DetailRecordView extends BaseRecordView {
         }
 
         if (this.type === this.TYPE_DETAIL && this.mode === this.MODE_EDIT) {
-            let hasButton = this.buttonEditList
+            const hasButton = this.buttonEditList
                 .findIndex(item => item.name === name && !item.disabled && !item.hidden) !== -1;
 
             if (hasButton) {
@@ -1140,7 +1150,7 @@ class DetailRecordView extends BaseRecordView {
                 .findIndex(item => item.name === name && !item.disabled && !item.hidden) !== -1;
         }
 
-        let hasButton = this.buttonList
+        const hasButton = this.buttonList
             .findIndex(item => item.name === name && !item.disabled && !item.hidden) !== -1;
 
         if (hasButton) {
@@ -1176,26 +1186,26 @@ class DetailRecordView extends BaseRecordView {
         }
 
         for (let i = 0; i < this.panelSoftLockedTypeList.length; i++) {
-            let iType = this.panelSoftLockedTypeList[i];
+            const iType = this.panelSoftLockedTypeList[i];
 
             if (iType === softLockedType) {
                 continue;
             }
 
-            let iParam = 'hidden' +  Espo.Utils.upperCaseFirst(iType) + 'Locked';
+            const iParam = 'hidden' + Espo.Utils.upperCaseFirst(iType) + 'Locked';
 
             if (this.recordHelper.getPanelStateParam(name, iParam)) {
                 return;
             }
         }
 
-        let middleView = this.getMiddleView();
+        const middleView = this.getMiddleView();
 
         if (middleView) {
             middleView.showPanelInternal(name);
         }
 
-        let bottomView = this.getBottomView();
+        const bottomView = this.getBottomView();
 
         if (bottomView) {
             if ('showPanel' in bottomView) {
@@ -1204,7 +1214,7 @@ class DetailRecordView extends BaseRecordView {
         }
         else if (this.bottomView) {
             this.once('ready', () => {
-                let view = this.getBottomView();
+                const view = this.getBottomView();
 
                 if (view) {
                     if ('processShowPanel' in view) {
@@ -1220,7 +1230,7 @@ class DetailRecordView extends BaseRecordView {
             });
         }
 
-        let sideView = this.getSideView();
+        const sideView = this.getSideView();
 
         if (sideView) {
             if ('showPanel' in sideView) {
@@ -1229,7 +1239,7 @@ class DetailRecordView extends BaseRecordView {
         }
         else if (this.sideView) {
             this.once('ready', () => {
-                let view = this.getSideView();
+                const view = this.getSideView();
 
                 if (view) {
                     if ('processShowPanel' in view) {
@@ -1283,13 +1293,13 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        let middleView = this.getMiddleView();
+        const middleView = this.getMiddleView();
 
         if (middleView) {
             middleView.hidePanelInternal(name);
         }
 
-        let bottomView = this.getBottomView();
+        const bottomView = this.getBottomView();
 
         if (bottomView) {
             if ('hidePanel' in bottomView) {
@@ -1298,7 +1308,7 @@ class DetailRecordView extends BaseRecordView {
         }
         else if (this.bottomView) {
             this.once('ready', () => {
-                let view = this.getBottomView();
+                const view = this.getBottomView();
 
                 if (view) {
                     if ('processHidePanel' in view) {
@@ -1314,7 +1324,7 @@ class DetailRecordView extends BaseRecordView {
             });
         }
 
-        let sideView = this.getSideView();
+        const sideView = this.getSideView();
 
         if (sideView) {
             if ('hidePanel' in sideView) {
@@ -1323,7 +1333,7 @@ class DetailRecordView extends BaseRecordView {
         }
         else if (this.sideView) {
             this.once('ready', () => {
-                let view = this.getSideView();
+                const view = this.getSideView();
 
                 if (view) {
                     if ('processHidePanel' in view) {
@@ -1368,12 +1378,12 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     initFieldsControlBehaviour() {
-        let fields = this.getFieldViews();
+        const fields = this.getFieldViews();
 
         let fieldInEditMode = null;
 
-        for (let field in fields) {
-            let fieldView = fields[field];
+        for (const field in fields) {
+            const fieldView = fields[field];
 
             this.listenTo(fieldView, 'edit', (view) => {
                 if (fieldInEditMode && fieldInEditMode.isEditMode()) {
@@ -1411,19 +1421,19 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     initStickableButtonsContainer() {
-        let $containers = this.$el.find('.detail-button-container');
-        let $container = this.$el.find('.detail-button-container.record-buttons');
+        const $containers = this.$el.find('.detail-button-container');
+        const $container = this.$el.find('.detail-button-container.record-buttons');
 
         if (!$container.length) {
             return;
         }
 
-        let navbarHeight = this.getThemeManager().getParam('navbarHeight');
-        let screenWidthXs = this.getThemeManager().getParam('screenWidthXs');
+        const navbarHeight = this.getThemeManager().getParam('navbarHeight');
+        const screenWidthXs = this.getThemeManager().getParam('screenWidthXs');
 
-        let isSmallScreen = $(window.document).width() < screenWidthXs;
+        const isSmallScreen = $(window.document).width() < screenWidthXs;
 
-        let getOffsetTop = (/** JQuery */$element) => {
+        const getOffsetTop = (/** JQuery */$element) => {
             let element = /** @type {HTMLElement} */$element.get(0);
 
             let value = 0;
@@ -1442,22 +1452,22 @@ class DetailRecordView extends BaseRecordView {
         };
 
         let stickTop = getOffsetTop($container);
-        let blockHeight = $container.outerHeight();
+        const blockHeight = $container.outerHeight();
 
         stickTop -= 5; // padding;
 
-        let $block = $('<div>')
+        const $block = $('<div>')
             .css('height', blockHeight + 'px')
             .html('&nbsp;')
             .hide()
             .insertAfter($container);
 
         let $middle = this.getMiddleView().$el;
-        let $window = $(window);
-        let $navbarRight = $('#navbar .navbar-right');
+        const $window = $(window);
+        const $navbarRight = $('#navbar .navbar-right');
 
         if (this.stickButtonsFormBottomSelector) {
-            let $bottom = this.$el.find(this.stickButtonsFormBottomSelector);
+            const $bottom = this.$el.find(this.stickButtonsFormBottomSelector);
 
             if ($bottom.length) {
                 $middle = $bottom;
@@ -1467,8 +1477,8 @@ class DetailRecordView extends BaseRecordView {
         $window.off('scroll.detail-' + this.numId);
 
         $window.on('scroll.detail-' + this.numId, () => {
-            let edge = $middle.position().top + $middle.outerHeight(false) - blockHeight;
-            let scrollTop = $window.scrollTop();
+            const edge = $middle.position().top + $middle.outerHeight(false) - blockHeight;
+            const scrollTop = $window.scrollTop();
 
             if (scrollTop >= edge && !this.stickButtonsContainerAllTheWay) {
                 $containers.hide();
@@ -1486,11 +1496,6 @@ class DetailRecordView extends BaseRecordView {
                 if (!$containers.hasClass('stick-sub')) {
                     $containers.addClass('stick-sub');
                     $block.show();
-
-                    /*$('.popover').each((i, el) => {
-                        let $el = $(el);
-                        $el.css('top', ($el.position().top - blockHeight) + 'px');
-                    });*/
                 }
 
                 $navbarRight.addClass('has-sticked-bar');
@@ -1504,11 +1509,6 @@ class DetailRecordView extends BaseRecordView {
                 $containers.removeClass('stick-sub');
                 $navbarRight.removeClass('has-sticked-bar');
                 $block.hide();
-
-                /*$('.popover').each((i, el) => {
-                    let $el = $(el);
-                    $el.css('top', ($el.position().top + blockHeight) + 'px');
-                });*/
             }
 
             $containers.show();
@@ -1519,7 +1519,7 @@ class DetailRecordView extends BaseRecordView {
         let data = super.fetch();
 
         if (this.hasView('side')) {
-            let view = this.getSideView();
+            const view = this.getSideView();
 
             if ('fetch' in view) {
                 data = _.extend(data, view.fetch());
@@ -1527,7 +1527,7 @@ class DetailRecordView extends BaseRecordView {
         }
 
         if (this.hasView('bottom')) {
-            let view = this.getBottomView();
+            const view = this.getBottomView();
 
             if ('fetch' in view) {
                 data = _.extend(data, view.fetch());
@@ -1546,12 +1546,12 @@ class DetailRecordView extends BaseRecordView {
         this.$el.find('.edit-buttons').removeClass('hidden');
 
         return new Promise(resolve => {
-            let fields = this.getFieldViews(true);
+            const fields = this.getFieldViews(true);
 
-            let promiseList = [];
+            const promiseList = [];
 
-            for (let field in fields) {
-                let fieldView = fields[field];
+            for (const field in fields) {
+                const fieldView = fields[field];
 
                 if (fieldView.readOnly) {
                     continue;
@@ -1590,12 +1590,12 @@ class DetailRecordView extends BaseRecordView {
         this.inlineEditModeIsOn = false;
 
         return new Promise(resolve => {
-            let fields = this.getFieldViews(true);
+            const fields = this.getFieldViews(true);
 
-            let promiseList = [];
+            const promiseList = [];
 
-            for (let field in fields) {
-                let fieldView = fields[field];
+            for (const field in fields) {
+                const fieldView = fields[field];
 
                 if (!fieldView.isDetailMode()) {
                     if (fieldView.isEditMode()) {
@@ -1628,6 +1628,14 @@ class DetailRecordView extends BaseRecordView {
         this.setIsNotChanged();
     }
 
+    /**
+     * Whether in edit mode.
+     * @return {boolean}
+     */
+    isEditMode() {
+        return this.mode === 'edit';
+    }
+
     resetModelChanges() {
         let skipReRender = true;
 
@@ -1638,9 +1646,9 @@ class DetailRecordView extends BaseRecordView {
             skipReRender = false;
         }
 
-        let attributes = this.model.attributes;
+        const attributes = this.model.attributes;
 
-        for (let attr in attributes) {
+        for (const attr in attributes) {
             if (!(attr in this.attributes)) {
                 this.model.unset(attr);
             }
@@ -1659,7 +1667,7 @@ class DetailRecordView extends BaseRecordView {
 
             Espo.Ui.notify(' ... ');
 
-            let collection = this.model.collection;
+            const collection = this.model.collection;
 
             this.model
                 .destroy({wait: true})
@@ -1687,7 +1695,7 @@ class DetailRecordView extends BaseRecordView {
      * @return {Object.<string, module:views/fields/base>}
      */
     getFieldViews(withHidden) {
-        let fields = {};
+        const fields = {};
 
         if (this.hasView('middle')) {
             if ('getFieldViews' in this.getMiddleView()) {
@@ -1767,8 +1775,8 @@ class DetailRecordView extends BaseRecordView {
             }
         }
 
-        let hasMiddleTabs = this.hasTabs();
-        let middleTabDataList = hasMiddleTabs ? this.getMiddleTabDataList() : [];
+        const hasMiddleTabs = this.hasTabs();
+        const middleTabDataList = hasMiddleTabs ? this.getMiddleTabDataList() : [];
 
         return {
             scope: this.scope,
@@ -1857,11 +1865,12 @@ class DetailRecordView extends BaseRecordView {
             throw new Error('Model has not been injected into record view.');
         }
 
-        this.recordHelper = new ViewRecordHelper(this.defaultFieldStates, this.defaultFieldStates);
+        this.recordHelper = this.options.recordHelper ||
+            new ViewRecordHelper(this.defaultFieldStates, this.defaultFieldStates);
 
         this._initInlineEditSave();
 
-        let collection = this.collection = this.model.collection;
+        const collection = this.collection = this.model.collection;
 
         if (collection) {
             this.listenTo(this.model, 'destroy', () => {
@@ -2020,7 +2029,7 @@ class DetailRecordView extends BaseRecordView {
 
         this.listenTo(this.model, 'change', (m, o) => {
             if (o.sync) {
-                for (let attribute in m.attributes) {
+                for (const attribute in m.attributes) {
                     if (!m.hasChanged(attribute)) {
                         continue;
                     }
@@ -2038,18 +2047,16 @@ class DetailRecordView extends BaseRecordView {
             }
         });
 
-        let dependencyDefs = Espo.Utils.clone(
-            this.getMetadata().get(['clientDefs', this.entityType, 'formDependency']) || {}
-        );
+        const dependencyDefs = Espo.Utils.clone(
+            this.getMetadata().get(['clientDefs', this.entityType, 'formDependency']) || {});
 
         // noinspection JSDeprecatedSymbols
         this.dependencyDefs = _.extend(dependencyDefs, this.dependencyDefs);
 
         this.initDependency();
 
-        let dynamicLogic = Espo.Utils.clone(
-            this.getMetadata().get(['clientDefs', this.entityType, 'dynamicLogic']) || {}
-        );
+        const dynamicLogic = Espo.Utils.clone(
+            this.getMetadata().get(['clientDefs', this.entityType, 'dynamicLogic']) || {});
 
         this.dynamicLogicDefs = _.extend(dynamicLogic, this.dynamicLogicDefs);
 
@@ -2072,7 +2079,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {module:views/record/base~saveOptions} [options]
      */
     inlineEditSave(field, options) {
-        let view = this.getFieldView(field);
+        const view = this.getFieldView(field);
 
         if (!view) {
             throw new Error(`No field '${field}'.`);
@@ -2127,7 +2134,7 @@ class DetailRecordView extends BaseRecordView {
     initInlineEditDynamicWithLogicInteroperability() {
         let blockEdit = false;
 
-        let process = (type, field) => {
+        const process = (type, field) => {
             if (!this.inlineEditModeIsOn || this.editModeDisabled) {
                 return;
             }
@@ -2137,7 +2144,7 @@ class DetailRecordView extends BaseRecordView {
             }
 
             if (type === 'required') {
-                let fieldView = this.getFieldView(field);
+                const fieldView = this.getFieldView(field);
 
                 if (fieldView.validateRequired) {
                     fieldView.suspendValidationMessage();
@@ -2172,19 +2179,19 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     initDynamicHandler() {
-        let dynamicHandlerClassName = this.dynamicHandlerClassName ||
+        const dynamicHandlerClassName = this.dynamicHandlerClassName ||
             this.getMetadata().get(['clientDefs', this.scope, 'dynamicHandler']);
 
-        let init = dynamicHandler => {
+        const init = dynamicHandler => {
             this.listenTo(this.model, 'change', (model, o) => {
                 if ('onChange' in dynamicHandler) {
                     dynamicHandler.onChange.call(dynamicHandler, model, o);
                 }
 
-                let changedAttributes = model.changedAttributes();
+                const changedAttributes = model.changedAttributes();
 
-                for (let attribute in changedAttributes) {
-                    let methodName = 'onChange' + Espo.Utils.upperCaseFirst(attribute);
+                for (const attribute in changedAttributes) {
+                    const methodName = 'onChange' + Espo.Utils.upperCaseFirst(attribute);
 
                     if (methodName in dynamicHandler) {
                         dynamicHandler[methodName]
@@ -2202,7 +2209,7 @@ class DetailRecordView extends BaseRecordView {
             this.wait(
                 new Promise(resolve => {
                     Espo.loader.require(dynamicHandlerClassName, DynamicHandler => {
-                        let dynamicHandler = this.dynamicHandler = new DynamicHandler(this);
+                        const dynamicHandler = this.dynamicHandler = new DynamicHandler(this);
 
                         init(dynamicHandler);
 
@@ -2212,12 +2219,12 @@ class DetailRecordView extends BaseRecordView {
             );
         }
 
-        let handlerList = this.getMetadata().get(['clientDefs', this.scope, 'dynamicHandlerList']) || [];
+        const handlerList = this.getMetadata().get(['clientDefs', this.scope, 'dynamicHandlerList']) || [];
 
         if (handlerList.length) {
-            let self = this;
+            const self = this;
 
-            let promiseList = [];
+            const promiseList = [];
 
             handlerList.forEach((className) => {
                 promiseList.push(
@@ -2244,7 +2251,7 @@ class DetailRecordView extends BaseRecordView {
 
         if (this.shortcutKeys && this.options.shortcutKeysEnabled) {
             this.events['keydown.record-detail'] = e => {
-                let key = Espo.Utils.getKeyFromKeyEvent(e);
+                const key = Espo.Utils.getKeyFromKeyEvent(e);
 
                 if (typeof this.shortcutKeys[key] === 'function') {
                     this.shortcutKeys[key].call(this, e.originalEvent);
@@ -2252,7 +2259,7 @@ class DetailRecordView extends BaseRecordView {
                     return;
                 }
 
-                let actionName = this.shortcutKeys[key];
+                const actionName = this.shortcutKeys[key];
 
                 if (!actionName) {
                     return;
@@ -2261,7 +2268,7 @@ class DetailRecordView extends BaseRecordView {
                 e.preventDefault();
                 e.stopPropagation();
 
-                let methodName = 'action' + Espo.Utils.upperCaseFirst(actionName);
+                const methodName = 'action' + Espo.Utils.upperCaseFirst(actionName);
 
                 if (typeof this[methodName] === 'function') {
                     this[methodName]();
@@ -2299,20 +2306,20 @@ class DetailRecordView extends BaseRecordView {
     }
 
     switchToModelByIndex(indexOfRecord) {
-        let collection = this.model.collection || this.collection;
+        const collection = this.model.collection || this.collection;
 
         if (!collection) {
             return;
         }
 
-        let model = collection.at(indexOfRecord);
+        const model = collection.at(indexOfRecord);
 
         if (!model) {
             throw new Error("Model is not found in collection by index.");
         }
 
-        let id = model.id;
-        let scope = this.entityType || this.scope;
+        const id = model.id;
+        const scope = this.entityType || this.scope;
 
         this.getRouter().navigate('#' + scope + '/view/' + id, {trigger: false});
 
@@ -2347,7 +2354,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let indexOfRecord = this.indexOfRecord - 1;
+        const indexOfRecord = this.indexOfRecord - 1;
 
         this.switchToModelByIndex(indexOfRecord);
     }
@@ -2382,7 +2389,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let indexOfRecord = this.indexOfRecord + 1;
+        const indexOfRecord = this.indexOfRecord + 1;
 
         if (indexOfRecord <= collection.length - 1) {
             this.switchToModelByIndex(indexOfRecord);
@@ -2416,18 +2423,18 @@ class DetailRecordView extends BaseRecordView {
 
     // noinspection JSUnusedGlobalSymbols
     actionViewFollowers(data) {
-        let viewName = this.getMetadata().get(
+        const viewName = this.getMetadata().get(
                 ['clientDefs', this.entityType, 'relationshipPanels', 'followers', 'viewModalView']
             ) ||
             this.getMetadata().get(['clientDefs', 'User', 'modalViews', 'relatedList']) ||
             'views/modals/followers-list';
 
-        let selectDisabled =
+        const selectDisabled =
             !this.getUser().isAdmin() &&
             this.getAcl().getPermissionLevel('followerManagementPermission') === 'no' &&
             this.getAcl().getPermissionLevel('portalPermission') === 'no';
 
-        let options = {
+        const options = {
             model: this.model,
             link: 'followers',
             scope: 'User',
@@ -2440,7 +2447,7 @@ class DetailRecordView extends BaseRecordView {
         };
 
         if (data.viewOptions) {
-            for (let item in data.viewOptions) {
+            for (const item in data.viewOptions) {
                 options[item] = data.viewOptions[item];
             }
         }
@@ -2521,7 +2528,7 @@ class DetailRecordView extends BaseRecordView {
     }
 
     afterNotModified() {
-        let msg = this.translate('notModified', 'messages');
+        const msg = this.translate('notModified', 'messages');
 
         Espo.Ui.warning(msg);
 
@@ -2535,7 +2542,15 @@ class DetailRecordView extends BaseRecordView {
         this.enableActionItems();
     }
 
-    errorHandlerDuplicate(duplicates, o, resolve) {
+    /**
+     * @protected
+     * @param duplicates
+     * @param {Object} options
+     * @param {function} resolve
+     * @param {function} reject
+     * @return {boolean}
+     */
+    errorHandlerDuplicate(duplicates, options, resolve, reject) {
         Espo.Ui.notify(false);
 
         this.createView('duplicate', 'views/modals/duplicate', {
@@ -2554,6 +2569,10 @@ class DetailRecordView extends BaseRecordView {
                     }
                 }).then(() => resolve());
             });
+
+            this.listenToOnce(view, 'cancel', () => {
+                reject();
+            });
         });
 
         return true;
@@ -2563,12 +2582,12 @@ class DetailRecordView extends BaseRecordView {
     errorHandlerModified(data, options) {
         Espo.Ui.notify(false);
 
-        let versionNumber = data.versionNumber;
-        let values = data.values || {};
+        const versionNumber = data.versionNumber;
+        const values = data.values || {};
 
-        let attributeList = Object.keys(values);
+        const attributeList = Object.keys(values);
 
-        let diffAttributeList = [];
+        const diffAttributeList = [];
 
         attributeList.forEach(attribute => {
             if (this.attributes[attribute] !== values[attribute]) {
@@ -2611,7 +2630,7 @@ class DetailRecordView extends BaseRecordView {
                 this.model.set('versionNumber', versionNumber, {silent: true});
                 this.attributes.versionNumber = versionNumber;
 
-                for (let attribute in values) {
+                for (const attribute in values) {
                     this.setInitialAttributeValue(attribute, values[attribute]);
                 }
             });
@@ -2652,13 +2671,13 @@ class DetailRecordView extends BaseRecordView {
             this.readOnly = true;
         }
 
-        let bottomView = this.getBottomView();
+        const bottomView = this.getBottomView();
 
         if (bottomView && 'setReadOnly' in bottomView) {
             bottomView.setReadOnly();
         }
 
-        let sideView = this.getSideView();
+        const sideView = this.getSideView();
 
         if (sideView && 'setReadOnly' in sideView) {
             sideView.setReadOnly();
@@ -2674,13 +2693,13 @@ class DetailRecordView extends BaseRecordView {
             this.readOnly = false;
         }
 
-        let bottomView = this.getBottomView();
+        const bottomView = this.getBottomView();
 
         if (bottomView && 'setNotReadOnly' in bottomView) {
             bottomView.setNotReadOnly(onlyNotSetAsReadOnly);
         }
 
-        let sideView = this.getSideView();
+        const sideView = this.getSideView();
 
         if (sideView && 'setNotReadOnly' in sideView) {
             sideView.setNotReadOnly(onlyNotSetAsReadOnly);
@@ -2702,7 +2721,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let editAccess = this.getAcl().checkModel(this.model, 'edit', true);
+        const editAccess = this.getAcl().checkModel(this.model, 'edit', true);
 
         if (!editAccess || this.readOnlyLocked) {
             this.readOnly = true;
@@ -2751,7 +2770,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let deleteAccess = this.getAcl().checkModel(this.model, 'delete', true);
+        const deleteAccess = this.getAcl().checkModel(this.model, 'delete', true);
 
         if (!deleteAccess) {
             this.hideActionItem('delete');
@@ -2781,7 +2800,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let streamAccess = this.getAcl().checkModel(this.model, 'stream', true);
+        const streamAccess = this.getAcl().checkModel(this.model, 'stream', true);
 
         if (!streamAccess) {
             this.hideActionItem('viewFollowers');
@@ -2809,13 +2828,13 @@ class DetailRecordView extends BaseRecordView {
      * @param {boolean} [toBeginning]
      */
     addButton(o, toBeginning) {
-        let name = o.name;
+        const name = o.name;
 
         if (!name) {
             return;
         }
 
-        for (let item of this.buttonList) {
+        for (const item of this.buttonList) {
             if (item.name === name) {
                 return;
             }
@@ -2841,13 +2860,13 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let name = o.name;
+        const name = o.name;
 
         if (!name) {
             return;
         }
 
-        for (let item of this.dropdownItemList) {
+        for (const item of this.dropdownItemList) {
             if (item.name === name) {
                 return;
             }
@@ -2865,13 +2884,13 @@ class DetailRecordView extends BaseRecordView {
      * @param {boolean} [toBeginning]
      */
     addButtonEdit(o, toBeginning) {
-        let name = o.name;
+        const name = o.name;
 
         if (!name) {
             return;
         }
 
-        for (let item of this.buttonEditList) {
+        for (const item of this.buttonEditList) {
             if (item.name === name) {
                 return;
             }
@@ -2995,19 +3014,19 @@ class DetailRecordView extends BaseRecordView {
      * @return {Object[]}
      */
     convertDetailLayout(simplifiedLayout) {
-        let layout = [];
-        let el = this.getSelector() || '#' + (this.id);
+        const layout = [];
+        const el = this.getSelector() || '#' + (this.id);
 
         this.panelFieldListMap = {};
 
         let tabNumber = -1;
 
         for (let p = 0; p < simplifiedLayout.length; p++) {
-            let item = simplifiedLayout[p];
+            const item = simplifiedLayout[p];
 
-            let panel = {};
+            const panel = {};
 
-            let tabBreak = item.tabBreak || p === 0;
+            const tabBreak = item.tabBreak || p === 0;
 
             if (tabBreak) {
                 tabNumber++;
@@ -3017,15 +3036,15 @@ class DetailRecordView extends BaseRecordView {
                 panel.label = item.customLabel;
 
                 if (panel.label) {
-                    panel.label = this.getLanguage()
-                        .translate(panel.label, 'panelCustomLabels', this.entityType);
+                    panel.label = this.translate(panel.label, 'panelCustomLabels', this.entityType);
                 }
             } else {
                 panel.label = item.label || null;
 
                 if (panel.label) {
-                    panel.label = this.getLanguage()
-                        .translate(panel.label, 'labels', this.entityType);
+                    panel.label = panel.label[0] === '$' ?
+                        this.translate(panel.label.substring(1), 'panels', this.entityType) :
+                        this.translate(panel.label, 'labels', this.entityType);
                 }
             }
 
@@ -3077,7 +3096,7 @@ class DetailRecordView extends BaseRecordView {
             }
 
             for (const [i, itemI] of item[lType].entries()) {
-                let row = [];
+                const row = [];
 
                 for (const cellDefs of itemI) {
                     if (cellDefs === false) {
@@ -3112,13 +3131,13 @@ class DetailRecordView extends BaseRecordView {
                         this.panelFieldListMap[panel.name].push(name);
                     }
 
-                    let type = cellDefs.type || this.model.getFieldType(name) || 'base';
+                    const type = cellDefs.type || this.model.getFieldType(name) || 'base';
 
                     view = view ||
                         this.model.getFieldParam(name, 'view') ||
                         this.getFieldManager().getViewName(type);
 
-                    let o = {
+                    const o = {
                         fullSelector: el + ' .middle .field[data-name="' + name + '"]',
                         defs: {
                             name: name,
@@ -3181,9 +3200,10 @@ class DetailRecordView extends BaseRecordView {
                     o.validateCallback = () => this.validateField(name);
 
                     o.recordHelper = this.recordHelper;
+                    o.dataObject = this.options.dataObject || {};
 
                     if (cellDefs.options) {
-                        for (let optionName in cellDefs.options) {
+                        for (const optionName in cellDefs.options) {
                             if (typeof o[optionName] !== 'undefined') {
                                 continue;
                             }
@@ -3192,7 +3212,7 @@ class DetailRecordView extends BaseRecordView {
                         }
                     }
 
-                    let cell = {
+                    const cell = {
                         name: name + 'Field',
                         view: view,
                         field: name,
@@ -3298,7 +3318,7 @@ class DetailRecordView extends BaseRecordView {
      * @protected
      */
     createSideView() {
-        let el = this.getSelector() || '#' + (this.id);
+        const el = this.getSelector() || '#' + (this.id);
 
         this.createView('side', this.sideView, {
             model: this.model,
@@ -3310,6 +3330,7 @@ class DetailRecordView extends BaseRecordView {
             recordHelper: this.recordHelper,
             recordViewObject: this,
             isReturn: this.options.isReturn,
+            dataObject: this.options.dataObject,
         });
     }
 
@@ -3319,7 +3340,7 @@ class DetailRecordView extends BaseRecordView {
      * @protected
      */
     createMiddleView(callback) {
-        let el = this.getSelector() || '#' + (this.id);
+        const el = this.getSelector() || '#' + (this.id);
 
         this.waitForView('middle');
 
@@ -3354,7 +3375,7 @@ class DetailRecordView extends BaseRecordView {
      * @protected
      */
     createBottomView() {
-        let el = this.getSelector() || '#' + (this.id);
+        const el = this.getSelector() || '#' + (this.id);
 
         this.createView('bottom', this.bottomView, {
             model: this.model,
@@ -3367,6 +3388,7 @@ class DetailRecordView extends BaseRecordView {
             recordViewObject: this,
             portalLayoutDisabled: this.portalLayoutDisabled,
             isReturn: this.options.isReturn,
+            dataObject: this.options.dataObject,
         });
     }
 
@@ -3398,7 +3420,7 @@ class DetailRecordView extends BaseRecordView {
      */
     exitAfterCreate() {
         if (!this.returnAfterCreate && this.model.id) {
-            let url = '#' + this.scope + '/view/' + this.model.id;
+            const url = '#' + this.scope + '/view/' + this.model.id;
 
             this.getRouter().navigate(url, {trigger: false});
 
@@ -3418,14 +3440,14 @@ class DetailRecordView extends BaseRecordView {
     /**
      * Called after save or cancel. By default, redirects a page. Can be overridden in options.
      *
-     * @param {string|'save'|'cancel'|'delete'} [after] Name of an action after which #exit is invoked.
+     * @param {string|'create'|'save'|'cancel'|'delete'} [after] Name of an action after which #exit is invoked.
      */
     exit(after) {
         if (after) {
-            let methodName = 'exitAfter' + Espo.Utils.upperCaseFirst(after);
+            const methodName = 'exitAfter' + Espo.Utils.upperCaseFirst(after);
 
             if (methodName in this) {
-                let result = this[methodName]();
+                const result = this[methodName]();
 
                 if (result) {
                     return;
@@ -3473,8 +3495,8 @@ class DetailRecordView extends BaseRecordView {
         }
 
         if (this.returnDispatchParams) {
-            let controller = this.returnDispatchParams.controller;
-            let action = this.returnDispatchParams.action;
+            const controller = this.returnDispatchParams.controller;
+            const action = this.returnDispatchParams.action;
             options = this.returnDispatchParams.options || {};
 
             this.getRouter().navigate(url, {trigger: false});
@@ -3487,7 +3509,7 @@ class DetailRecordView extends BaseRecordView {
     }
 
     subscribeToWebSocket() {
-        let topic = 'recordUpdate.' + this.entityType + '.' + this.model.id;
+        const topic = 'recordUpdate.' + this.entityType + '.' + this.model.id;
 
         this.recordUpdateWebSocketTopic = topic;
         this.isSubscribedToWebSocket = true;
@@ -3511,7 +3533,7 @@ class DetailRecordView extends BaseRecordView {
         }
 
         if (this.inlineEditModeIsOn || this.mode === this.MODE_EDIT) {
-            let m = this.model.clone();
+            const m = this.model.clone();
 
             m.fetch().then(() => {
                 if (this.inlineEditModeIsOn || this.mode === this.MODE_EDIT) {
@@ -3584,7 +3606,7 @@ class DetailRecordView extends BaseRecordView {
             return false;
         }
 
-        for (let item of this.detailLayout) {
+        for (const item of this.detailLayout) {
             if (item.tabBreak) {
                 this._hasMiddleTabs = true;
 
@@ -3602,9 +3624,9 @@ class DetailRecordView extends BaseRecordView {
      * @return {{label: string}[]}
      */
     getMiddleTabDataList() {
-        let currentTab = this.currentTab;
+        const currentTab = this.currentTab;
 
-        let panelDataList = this.middlePanelDefsList;
+        const panelDataList = this.middlePanelDefsList;
 
         return panelDataList
             .filter((item, i) => i === 0 || item.tabBreak)
@@ -3668,8 +3690,8 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     storeTab() {
-        let key = 'tab_middle';
-        let keyRecord = 'tab_middle_record';
+        const key = 'tab_middle';
+        const keyRecord = 'tab_middle_record';
 
         this.getSessionStorage().set(key, this.currentTab);
         this.getSessionStorage().set(keyRecord, this.entityType + '_' + this.model.id);
@@ -3679,9 +3701,9 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     selectStoredTab() {
-        let key = 'tab_middle';
+        const key = 'tab_middle';
 
-        let tab = this.getSessionStorage().get(key);
+        const tab = this.getSessionStorage().get(key);
 
         if (tab > 0) {
             this.selectTab(tab);
@@ -3692,7 +3714,7 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     isStoredTabForThisRecord() {
-        let keyRecord = 'tab_middle_record';
+        const keyRecord = 'tab_middle_record';
 
         return this.getSessionStorage().get(keyRecord) === this.entityType + '_' + this.model.id;
     }
@@ -3705,20 +3727,20 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let tabList = [];
+        const tabList = [];
 
-        for (let field of invalidFieldList) {
-            let view = this.getMiddleView().getFieldView(field);
+        for (const field of invalidFieldList) {
+            const view = this.getMiddleView().getFieldView(field);
 
             if (!view) {
                 continue;
             }
 
-            let tabString = view.$el
+            const tabString = view.$el
                 .closest('.panel.tab-hidden')
                 .attr('data-tab');
 
-            let tab = parseInt(tabString);
+            const tab = parseInt(tabString);
 
             if (tabList.indexOf(tab) !== -1) {
                 continue;
@@ -3731,10 +3753,10 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let $tabs = this.$el.find('.middle-tabs');
+        const $tabs = this.$el.find('.middle-tabs');
 
         tabList.forEach(tab => {
-            let $tab = $tabs.find(`> [data-tab="${tab.toString()}"]`);
+            const $tab = $tabs.find(`> [data-tab="${tab.toString()}"]`);
 
             $tab.addClass('invalid');
 
@@ -3775,16 +3797,16 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let panelList = this.middlePanelDefsList.filter(panel => panel.tabNumber === tab);
+        const panelList = this.middlePanelDefsList.filter(panel => panel.tabNumber === tab);
 
-        let allIsHidden = panelList
+        const allIsHidden = panelList
             .findIndex(panel => !this.recordHelper.getPanelStateParam(panel.name, 'hidden')) === -1;
 
         if (!allIsHidden) {
             return;
         }
 
-        let $tab = this.$el.find(`.middle-tabs > [data-tab="${tab.toString()}"]`);
+        const $tab = this.$el.find(`.middle-tabs > [data-tab="${tab.toString()}"]`);
 
         $tab.addClass('hidden');
 
@@ -3801,18 +3823,18 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let $panels = this.$middle.find('> .panel');
-        let $bottomPanels = this.$bottom ? this.$bottom.find('> .panel') : null;
+        const $panels = this.$middle.find('> .panel');
+        const $bottomPanels = this.$bottom ? this.$bottom.find('> .panel') : null;
 
         $panels
             .removeClass('first')
             .removeClass('last')
             .removeClass('in-middle');
 
-        let $visiblePanels = $panels.filter(`:not(.tab-hidden):not(.hidden)`)
+        const $visiblePanels = $panels.filter(`:not(.tab-hidden):not(.hidden)`);
 
         $visiblePanels.each((i, el) => {
-            let $el = $(el);
+            const $el = $(el);
 
             if (i === $visiblePanels.length - 1) {
                 if ($bottomPanels && $bottomPanels.first().hasClass('sticked')) {
@@ -3852,13 +3874,13 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     adjustButtons() {
-        let $buttons = this.$detailButtonContainer.filter('.record-buttons').find('button.btn');
+        const $buttons = this.$detailButtonContainer.filter('.record-buttons').find('button.btn');
 
         $buttons
             .removeClass('radius-left')
             .removeClass('radius-right');
 
-        let $buttonsVisible = $buttons.filter('button:not(.hidden)');
+        const $buttonsVisible = $buttons.filter('button:not(.hidden)');
 
         $buttonsVisible.first().addClass('radius-left');
         $buttonsVisible.last().addClass('radius-right');
@@ -3870,13 +3892,13 @@ class DetailRecordView extends BaseRecordView {
      * @private
      */
     adjustEditButtons() {
-        let $buttons = this.$detailButtonContainer.filter('.edit-buttons').find('button.btn');
+        const $buttons = this.$detailButtonContainer.filter('.edit-buttons').find('button.btn');
 
         $buttons
             .removeClass('radius-left')
             .removeClass('radius-right');
 
-        let $buttonsVisible = $buttons.filter('button:not(.hidden)');
+        const $buttonsVisible = $buttons.filter('button:not(.hidden)');
 
         $buttonsVisible.first().addClass('radius-left');
         $buttonsVisible.last().addClass('radius-right');
@@ -3924,7 +3946,7 @@ class DetailRecordView extends BaseRecordView {
      * @param {JQueryKeyEventObject} e
      */
     handleShortcutKeyCtrlEnter(e) {
-        let action = this.shortcutKeyCtrlEnterAction;
+        const action = this.shortcutKeyCtrlEnterAction;
 
         if (this.inlineEditModeIsOn || this.buttonsDisabled || !action) {
             return;
@@ -3941,7 +3963,7 @@ class DetailRecordView extends BaseRecordView {
         e.preventDefault();
         e.stopPropagation();
 
-        let methodName = 'action' + Espo.Utils.upperCaseFirst(action);
+        const methodName = 'action' + Espo.Utils.upperCaseFirst(action);
 
         this[methodName]();
     }
@@ -4050,7 +4072,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let $buttons = this.$el.find('.middle-tabs > button:not(.hidden)');
+        const $buttons = this.$el.find('.middle-tabs > button:not(.hidden)');
 
         if ($buttons.length === 1) {
             return;
@@ -4067,9 +4089,9 @@ class DetailRecordView extends BaseRecordView {
             index = 0;
         }
 
-        let $tab = $($buttons.get(index));
+        const $tab = $($buttons.get(index));
 
-        let tab = parseInt($tab.attr('data-tab'));
+        const tab = parseInt($tab.attr('data-tab'));
 
         this.selectTab(tab);
 
@@ -4110,7 +4132,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let $button = this.$el.find('button[data-action="previous"]');
+        const $button = this.$el.find('button[data-action="previous"]');
 
         if (!$button.length || $button.hasClass('disabled')) {
             return;
@@ -4143,7 +4165,7 @@ class DetailRecordView extends BaseRecordView {
             return;
         }
 
-        let $button = this.$el.find('button[data-action="next"]');
+        const $button = this.$el.find('button[data-action="next"]');
 
         if (!$button.length || $button.hasClass('disabled')) {
             return;
@@ -4153,6 +4175,17 @@ class DetailRecordView extends BaseRecordView {
         e.stopPropagation();
 
         this.actionNext();
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    /**
+     * Get a current mode.
+     *
+     * @since 8.0.0
+     * @return {'detail'|'edit'}
+     */
+    getMode() {
+        return this.mode;
     }
 }
 

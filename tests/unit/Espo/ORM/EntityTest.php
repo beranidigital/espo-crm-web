@@ -2,48 +2,48 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace tests\unit\Espo\ORM;
 
-use Espo\ORM\{
-    Metadata,
-    MetadataDataProvider,
-    Defs,
-    Defs\DefsData,
-    BaseEntity,
-};
+use Espo\ORM\BaseEntity;
+use Espo\ORM\Defs;
+use Espo\ORM\Defs\DefsData;
+use Espo\ORM\Metadata;
+use Espo\ORM\MetadataDataProvider;
 
+use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use tests\unit\testData\DB\Job;
 
 use Espo\Core\ORM\EntityManager;
 
 require_once 'tests/unit/testData/DB/Entities.php';
 
-class EntityTest extends \PHPUnit\Framework\TestCase
+class EntityTest extends TestCase
 {
     protected function setUp() : void
     {
@@ -75,7 +75,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @return \Espo\ORM\BaseEntity
+     * @return BaseEntity
      */
     protected function createEntity(string $entityType, ?string $className = null)
     {
@@ -83,9 +83,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
 
         $classNameToUse = $className ?? BaseEntity::class;
 
-        $entity = new $classNameToUse($entityType, $defs, $this->entityManager);
-
-        return $entity;
+        return new $classNameToUse($entityType, $defs, $this->entityManager);
     }
 
     public function testIsAttributeChanged()
@@ -104,6 +102,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($job->isAttributeChanged('string'));
 
         $job = $this->createEntity('Job', Job::class);
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
         $job->set('string', null);
         $this->assertTrue($job->isAttributeChanged('string'));
 
@@ -169,6 +168,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($job->isAttributeChanged('array'));
 
         $job = $this->createEntity('Job', Job::class);
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
         $job->set('array', null);
         $this->assertTrue($job->isAttributeChanged('array'));
 
@@ -193,6 +193,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
 
         $job = $this->createEntity('Job', Job::class);
         $job->setFetched('arrayUnordered', ['1', '2']);
+        /** @noinspection PhpRedundantOptionalArgumentInspection */
         $job->set('arrayUnordered', null);
         $this->assertTrue($job->isAttributeChanged('arrayUnordered'));
 
@@ -259,6 +260,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
+        /** @var Job $job */
         $job = $this->createEntity('Job', Job::class);
 
         $job->set('object', $original);
@@ -300,6 +302,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
             ]
         ];
 
+        /** @var Job $job */
         $job = $this->createEntity('Job', Job::class);
 
         $job->set('array', $original);
@@ -335,6 +338,37 @@ class EntityTest extends \PHPUnit\Framework\TestCase
         ]);
 
         $this->assertEquals(json_decode($value), $entity->get('object'));
+    }
+
+    public function testGetJsonArray(): void
+    {
+        $entity = $this->createEntity('Job');
+
+        $entity->set('array', [0, 1]);
+        $this->assertEquals([0, 1], $entity->get('array'));
+
+        $entity->set('array', [[0], [1]]);
+        $this->assertEquals([[0], [1]], $entity->get('array'));
+
+        $entity->set('array', [
+            (object) ['test' => 0],
+            (object) ['test' => 1],
+        ]);
+
+        $this->assertEquals([
+            (object) ['test' => 0],
+            (object) ['test' => 1],
+        ], $entity->get('array'));
+
+        $entity->set('array', [
+            ['test' => 0],
+            ['test' => 1],
+        ]);
+
+        $this->assertEquals([
+            (object) ['test' => 0],
+            (object) ['test' => 1],
+        ], $entity->get('array'));
     }
 
     public function testSetWrongType()
@@ -376,7 +410,7 @@ class EntityTest extends \PHPUnit\Framework\TestCase
     {
         $entity = $this->createEntity('Test');
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
 
         $entity->getId();
     }
@@ -392,11 +426,23 @@ class EntityTest extends \PHPUnit\Framework\TestCase
 
         $entity->setAsFetched();
 
-        $this->assertEquals(false, $entity->isAttributeWritten('int'));
+        $this->assertFalse($entity->isAttributeWritten('int'));
 
         $entity->set('int', '1');
 
-        $this->assertEquals(true, $entity->isAttributeWritten('int'));
-        $this->assertEquals(false, $entity->isAttributeWritten('object'));
+        $this->assertTrue($entity->isAttributeWritten('int'));
+        $this->assertFalse($entity->isAttributeWritten('object'));
+    }
+
+    public function testSetMultiple(): void
+    {
+        $entity = $this->createEntity('Test');
+        $entity->setMultiple(['int' => 2]);
+
+        $this->assertEquals(2, $entity->get('int'));
+
+        $entity->setMultiple((object) ['int' => 3]);
+
+        $this->assertEquals(3, $entity->get('int'));
     }
 }

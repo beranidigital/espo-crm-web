@@ -2,40 +2,39 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 namespace Espo\Core\Authentication\TwoFactor\Sms;
 
+use Espo\Core\Exceptions\Forbidden;
+use Espo\Core\Utils\Log;
 use Espo\ORM\EntityManager;
-
 use Espo\Entities\User;
 use Espo\Entities\UserData;
-
 use Espo\Repositories\UserData as UserDataRepository;
-
 use Espo\Core\Authentication\TwoFactor\Login;
 use Espo\Core\Authentication\Result;
 use Espo\Core\Authentication\Result\Data as ResultData;
@@ -48,14 +47,11 @@ class SmsLogin implements Login
 {
     public const NAME = 'Sms';
 
-    private EntityManager $entityManager;
-    private Util $util;
-
-    public function __construct(EntityManager $entityManager, Util $util)
-    {
-        $this->entityManager = $entityManager;
-        $this->util = $util;
-    }
+    public function __construct(
+        private EntityManager $entityManager,
+        private Util $util,
+        private Log $log
+    ) {}
 
     public function login(Result $result, Request $request): Result
     {
@@ -74,7 +70,14 @@ class SmsLogin implements Login
                 throw new RuntimeException("No user.");
             }
 
-            $this->util->sendCode($user);
+            try {
+                $this->util->sendCode($user);
+            }
+            catch (Forbidden $e) {
+                $this->log->error("Could not send 2FA code for user {$user->getUserName()}. " . $e->getMessage());
+
+                return Result::fail(FailReason::ERROR);
+            }
 
             return Result::secondStepRequired($user, $this->getResultData());
         }

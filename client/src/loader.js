@@ -1,34 +1,34 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
 (function () {
 
-    let root = this;
+    const root = this;
 
     if (!root.Espo) {
         root.Espo = {};
@@ -99,7 +99,15 @@
             this._internalModuleMap = {};
             this._isDeveloperMode = false;
 
-            this._baseUrl = window.location.origin + window.location.pathname;
+            let baseUrl = window.location.origin + window.location.pathname;
+
+            if (baseUrl.slice(-1) !== '/') {
+                baseUrl = window.location.pathname.includes('.') ?
+                    baseUrl.slice(0, baseUrl.lastIndexOf('/')) + '/' :
+                    baseUrl + '/';
+            }
+
+            this._baseUrl = baseUrl;
 
             this._isDeveloperModeIsSet = false;
             this._basePathIsSet = false;
@@ -207,12 +215,12 @@
             this._definedMap[id] = value;
 
             if (id.slice(0, 4) === 'lib!') {
-                let libName = id.slice(4);
+                const libName = id.slice(4);
 
                 const libsData = this._libsConfig[libName];
 
                 if (libsData && libsData.exposeAs) {
-                    let key = libsData.exposeAs;
+                    const key = libsData.exposeAs;
 
                     window[key] = value;
                 }
@@ -229,7 +237,7 @@
                 return 'client/lib/transpiled/src/' + id + '.js';
             }
 
-            let [mod, namePart] = id.split(':');
+            const [mod, namePart] = id.split(':');
 
             if (mod === 'custom') {
                 return 'client/custom/src/' + namePart + '.js';
@@ -263,7 +271,7 @@
             /** @var {?string} */
             let module = null;
 
-            let colonIndex = id.indexOf(':');
+            const colonIndex = id.indexOf(':');
 
             if (colonIndex > 0) {
                 module = id.substring(0, colonIndex);
@@ -274,13 +282,13 @@
             if (!module && id.indexOf('lib!') === 0) {
                 noStrictMode = true;
 
-                let realName = id.substring(4);
+                const realName = id.substring(4);
 
-                let libsData = this._libsConfig[realName] || {};
+                const libsData = this._libsConfig[realName] || {};
 
                 if (!this._isDeveloperMode) {
                     if (libsData.sourceMap) {
-                        let realPath = path.split('?')[0];
+                        const realPath = path.split('?')[0];
 
                         script += `\n//# sourceMappingURL=${this._baseUrl + realPath}.map`;
                     }
@@ -342,7 +350,7 @@
                 this._contextId = null;
             }
 
-            let existing = this._get(id);
+            const existing = this._get(id);
 
             if (typeof existing !== 'undefined') {
                 return;
@@ -354,7 +362,7 @@
                 return;
             }
 
-            let indexOfExports = dependencyIds.indexOf('exports');
+            const indexOfExports = dependencyIds.indexOf('exports');
 
             if (Array.isArray(dependencyIds)) {
                 dependencyIds = dependencyIds.map(depId => this._normalizeIdPath(depId, id));
@@ -380,7 +388,7 @@
             }
 
             if (indexOfExports !== -1) {
-                let exports =  args[indexOfExports];
+                const exports = args[indexOfExports];
 
                 // noinspection JSUnresolvedReference
                 value = ('default' in exports) ? exports.default : exports;
@@ -423,7 +431,7 @@
                 list = [];
             }
 
-            let totalCount = list.length;
+            const totalCount = list.length;
 
             if (totalCount === 1) {
                 this._load(list[0], callback, errorCallback);
@@ -433,7 +441,7 @@
 
             if (totalCount) {
                 let readyCount = 0;
-                let loaded = {};
+                const loaded = {};
 
                 list.forEach(depId => {
                     this._load(depId, c => {
@@ -442,9 +450,9 @@
                         readyCount++;
 
                         if (readyCount === totalCount) {
-                            let args = [];
+                            const args = [];
 
-                            for (let i in list) {
+                            for (const i in list) {
                                 args.push(loaded[list[i]]);
                             }
 
@@ -476,7 +484,7 @@
          * @private
          */
         _normalizeIdPath(id, subjectId) {
-            if (id.at(0) !== '.') {
+            if (id.charAt(0) !== '.') {
                 return id;
             }
 
@@ -486,17 +494,17 @@
 
             let outputPath = id;
 
-            let dirParts = subjectId.split('/').slice(0, -1);
+            const dirParts = subjectId.split('/').slice(0, -1);
 
             if (id.slice(0, 2) === './') {
                 outputPath = dirParts.join('/') + '/' + id.slice(2);
             }
 
-            let parts = outputPath.split('/');
+            const parts = outputPath.split('/');
 
             let up = 0;
 
-            for (let part of parts) {
+            for (const part of parts) {
                 if (part === '..') {
                     up++;
 
@@ -527,7 +535,7 @@
                 return id;
             }
 
-            let [mod, part] = id.split(':');
+            const [mod, part] = id.split(':');
 
             return `modules/${mod}/${part}`;
         }
@@ -548,9 +556,9 @@
 
             if (!!/[A-Z]/.exec(id[0])) {
                 if (id.indexOf(':') !== -1) {
-                    let arr = id.split(':');
-                    let modulePart = arr[0];
-                    let namePart = arr[1];
+                    const arr = id.split(':');
+                    const modulePart = arr[0];
+                    const namePart = arr[1];
 
                     return this._convertCamelCaseToHyphen(modulePart) + ':' +
                         this._convertCamelCaseToHyphen(namePart)
@@ -564,10 +572,10 @@
             if (id.startsWith('modules/')) {
                 id = id.slice(8);
 
-                let index = id.indexOf('/');
+                const index = id.indexOf('/');
 
                 if (index > 0) {
-                    let mod = id.slice(0, index);
+                    const mod = id.slice(0, index);
                     id = id.slice(index + 1);
 
                     return mod + ':' + id;
@@ -618,7 +626,7 @@
                 exportsTo = 'window';
                 exportsAs = null;
 
-                let isDefinedLib = realName in this._libsConfig;
+                const isDefinedLib = realName in this._libsConfig;
 
                 if (isDefinedLib) {
                     const libData = this._libsConfig[realName] || {};
@@ -688,7 +696,7 @@
                     throw new Error("Can't load with empty module ID.");
                 }
 
-                let value = this._get(id);
+                const value = this._get(id);
 
                 if (typeof value !== 'undefined') {
                     callback(value);
@@ -696,16 +704,16 @@
                     return;
                 }
 
-                let restoredId = this._restoreId(id);
+                const restoredId = this._restoreId(id);
 
                 if (restoredId in this._bundleMapping) {
-                    let bundleName = this._bundleMapping[restoredId];
+                    const bundleName = this._bundleMapping[restoredId];
 
                     this._requireBundle(bundleName).then(() => {
-                        let value = this._get(id);
+                        const value = this._get(id);
 
                         if (typeof value === 'undefined') {
-                            let msg = `Could not obtain module '${restoredId}' from bundle '${bundleName}'.`;
+                            const msg = `Could not obtain module '${restoredId}' from bundle '${bundleName}'.`;
                             console.error(msg);
 
                             throw new Error(msg);
@@ -727,7 +735,7 @@
             }
 
             /** @type {Loader~dto} */
-            let dto = {
+            const dto = {
                 id: id,
                 type: type,
                 dataType: dataType,
@@ -752,12 +760,12 @@
             if (this._cacheTimestamp) {
                 useCache = true;
 
-                let sep = (path.indexOf('?') > -1) ? '&' : '?';
+                const sep = (path.indexOf('?') > -1) ? '&' : '?';
 
                 path += sep + 'r=' + this._cacheTimestamp;
             }
 
-            let url = this._basePath + path;
+            const url = this._basePath + path;
 
             dto.path = path;
             dto.url = url;
@@ -793,7 +801,7 @@
                 return this._bundlePromiseMap[name];
             }
 
-            let dependencies = this._bundleDependenciesMap[name] || [];
+            const dependencies = this._bundleDependenciesMap[name] || [];
 
             if (!dependencies.length) {
                 this._bundlePromiseMap[name] = this._addBundle(name);
@@ -802,7 +810,7 @@
             }
 
             this._bundlePromiseMap[name] = new Promise(resolve => {
-                let list = dependencies.map(item => {
+                const list = dependencies.map(item => {
                     if (item.indexOf('bundle!') === 0) {
                         return this._requireBundle(item.substring(7));
                     }
@@ -831,14 +839,14 @@
             }
 
             if (this._cacheTimestamp) {
-                let sep = (src.indexOf('?') > -1) ? '&' : '?';
+                const sep = (src.indexOf('?') > -1) ? '&' : '?';
 
                 src += sep + 'r=' + this._cacheTimestamp;
             }
 
             src = this._basePath + src;
 
-            let scriptEl = document.createElement('script');
+            const scriptEl = document.createElement('script');
 
             scriptEl.setAttribute('type', 'text/javascript')
             scriptEl.setAttribute('src', src);
@@ -865,7 +873,7 @@
                 from = root;
             }
             else {
-                for (let item of exportsTo.split('.')) {
+                for (const item of exportsTo.split('.')) {
                     from = from[item];
 
                     if (typeof from === 'undefined') {
@@ -886,12 +894,12 @@
          * @param {Loader~dto} dto
          */
         _processRequest(dto) {
-            let url = dto.url;
-            let errorCallback = dto.errorCallback;
-            let path = dto.path;
-            let useCache = dto.useCache;
+            const url = dto.url;
+            const errorCallback = dto.errorCallback;
+            const path = dto.path;
+            const useCache = dto.useCache;
 
-            let urlObj = new URL(this._baseUrl + url);
+            const urlObj = new URL(this._baseUrl + url);
 
             if (!useCache) {
                 urlObj.searchParams.append('_', Date.now().toString())
@@ -934,13 +942,13 @@
          * @param {string} text
          */
         _handleResponseText(dto, text) {
-            let id = dto.id;
-            let callback = dto.callback;
-            let type = dto.type;
-            let dataType = dto.dataType;
-            let exportsAs = dto.exportsAs;
-            let exportsTo = dto.exportsTo;
-            let suppressAmd = dto.suppressAmd;
+            const id = dto.id;
+            const callback = dto.callback;
+            const type = dto.type;
+            const dataType = dto.dataType;
+            const exportsAs = dto.exportsAs;
+            const exportsTo = dto.exportsTo;
+            const suppressAmd = dto.suppressAmd;
 
             this._addLoadCallback(id, callback);
 
@@ -1066,7 +1074,7 @@
         }
     }
 
-    let loader = new Loader();
+    const loader = new Loader();
 
     // noinspection JSUnusedGlobalSymbols
 

@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -38,7 +38,8 @@ class AddDashletModalView extends ModalView {
     events = {
         /** @this AddDashletModalView */
         'click .add': function (e) {
-            var name = $(e.currentTarget).data('name');
+            const name = $(e.currentTarget).data('name');
+
             this.trigger('add', name);
             this.close();
         },
@@ -57,7 +58,7 @@ class AddDashletModalView extends ModalView {
     setup() {
         this.headerText = this.translate('Add Dashlet');
 
-        let dashletList = Object.keys(this.getMetadata().get('dashlets') || {})
+        const dashletList = Object.keys(this.getMetadata().get('dashlets') || {})
             .sort((v1, v2) => {
                 return this.translate(v1, 'dashlets').localeCompare(this.translate(v2, 'dashlets'));
             });
@@ -65,8 +66,8 @@ class AddDashletModalView extends ModalView {
         this.translations = {};
 
         this.dashletList = dashletList.filter(item => {
-            let aclScope = this.getMetadata().get(['dashlets', item, 'aclScope']) || null;
-            let accessDataList = this.getMetadata().get(['dashlets', item, 'accessDataList']) || null;
+            const aclScope = this.getMetadata().get(['dashlets', item, 'aclScope']) || null;
+            const accessDataList = this.getMetadata().get(['dashlets', item, 'accessDataList']) || null;
 
             if (this.options.parentType === 'Settings') {
                 return true;
@@ -109,7 +110,7 @@ class AddDashletModalView extends ModalView {
     processQuickSearch(text) {
         text = text.trim();
 
-        let $noData = this.$noData;
+        const $noData = this.$noData;
 
         $noData.addClass('hidden');
 
@@ -119,15 +120,15 @@ class AddDashletModalView extends ModalView {
             return;
         }
 
-        let matchedList = [];
+        const matchedList = [];
 
-        let lowerCaseText = text.toLowerCase();
+        const lowerCaseText = text.toLowerCase();
 
         this.dashletList.forEach(item => {
-            let label = this.translations[item].toLowerCase();
+            const label = this.translations[item].toLowerCase();
 
-            for (let word of label.split(' ')) {
-                let matched = word.indexOf(lowerCaseText) === 0;
+            for (const word of label.split(' ')) {
+                const matched = word.indexOf(lowerCaseText) === 0;
 
                 if (matched) {
                     matchedList.push(item);
@@ -146,7 +147,7 @@ class AddDashletModalView extends ModalView {
         }
 
         this.dashletList.forEach(item => {
-            let $row = this.$el.find(`ul .list-group-item[data-name="${item}"]`);
+            const $row = this.$el.find(`ul .list-group-item[data-name="${item}"]`);
 
             if (!~matchedList.indexOf(item)) {
                 $row.addClass('hidden');

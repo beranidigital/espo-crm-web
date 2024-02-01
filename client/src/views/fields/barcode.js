@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -39,6 +39,8 @@ class BarcodeFieldView extends VarcharFieldView {
     detailTemplate = 'fields/barcode/detail'
 
     setup() {
+        this.validations.push('valid');
+
         let maxLength = 255;
 
         // noinspection SpellCheckingInspection
@@ -92,11 +94,13 @@ class BarcodeFieldView extends VarcharFieldView {
         this.listenTo(this.recordHelper, 'panel-show', () => this.controlWidth());
     }
 
+
     data() {
-        let data = super.data();
+        const data = super.data();
 
         data.isSvg = this.isSvg;
 
+        // noinspection JSValidateTypes
         return data;
     }
 
@@ -107,8 +111,8 @@ class BarcodeFieldView extends VarcharFieldView {
     afterRender() {
         super.afterRender();
 
-        if (this.isListMode() || this.isDetailMode) {
-            let value = this.model.get(this.name);
+        if (this.isListMode() || this.isDetailMode()) {
+            const value = this.model.get(this.name);
 
             if (value) {
                 // noinspection SpellCheckingInspection
@@ -116,7 +120,7 @@ class BarcodeFieldView extends VarcharFieldView {
                     this.initQrcode(value);
                 }
                 else {
-                    let $barcode = $(this.getSelector() + ' .barcode');
+                    const $barcode = $(this.getSelector() + ' .barcode');
 
                     if ($barcode.length) {
                         this.initBarcode(value);
@@ -147,22 +151,22 @@ class BarcodeFieldView extends VarcharFieldView {
             size = 64;
         }
 
-        let containerWidth = this.$el.width() ;
+        const containerWidth = this.$el.width();
 
         if (containerWidth < size && containerWidth) {
             size = containerWidth;
         }
 
-        let $barcode = this.$el.find('.barcode');
+        const $barcode = this.$el.find('.barcode');
 
-        let init = (level) => {
-            let options = {
+        const init = (level) => {
+            const options = {
                 text: value,
                 width: size,
                 height: size,
-                colorDark : '#000000',
-                colorLight : '#ffffff',
-                correctLevel : level || QRCode.CorrectLevel.H,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: level || QRCode.CorrectLevel.H,
             };
 
             new QRCode($barcode.get(0), options);
@@ -184,17 +188,60 @@ class BarcodeFieldView extends VarcharFieldView {
     }
 
     initBarcode(value) {
-        JsBarcode(this.getSelector() + ' .barcode', value, {
-            format: this.params.codeType,
-            height: 50,
-            fontSize: 14,
-            margin: 0,
-            lastChar: this.params.lastChar,
-        });
+        try {
+            JsBarcode(this.getSelector() + ' .barcode', value, {
+                format: this.params.codeType,
+                height: 50,
+                fontSize: 14,
+                margin: 0,
+                lastChar: this.params.lastChar,
+            });
+        }
+        catch (e) {
+            console.error(this.name, e);
+        }
     }
 
     controlWidth() {
         this.$el.find('.barcode').css('max-width', this.$el.width() + 'px');
+    }
+
+    // noinspection JSUnusedGlobalSymbols
+    validateValid() {
+        if (this.params.codeType === 'QRcode') {
+            return;
+        }
+
+        const value = this.model.get(this.name);
+
+        if (!value) {
+            return;
+        }
+
+        let isValid;
+
+        try {
+            JsBarcode({}, value, {
+                format: this.params.codeType,
+                lastChar: this.params.lastChar,
+                valid: valid => isValid = valid,
+            });
+        }
+        catch (e) {
+            return true;
+        }
+
+        if (isValid) {
+            return;
+        }
+
+        const msg = this.translate('barcodeInvalid', 'messages')
+            .replace('{field}', this.getLabelText())
+            .replace('{type}', this.params.codeType);
+
+        this.showValidationMessage(msg);
+
+        return true;
     }
 }
 

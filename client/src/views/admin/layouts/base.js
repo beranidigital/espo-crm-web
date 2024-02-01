@@ -1,28 +1,28 @@
 /************************************************************************
  * This file is part of EspoCRM.
  *
- * EspoCRM - Open Source CRM application.
- * Copyright (C) 2014-2023 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
+ * EspoCRM – Open Source CRM application.
+ * Copyright (C) 2014-2024 Yurii Kuznietsov, Taras Machyshyn, Oleksii Avramenko
  * Website: https://www.espocrm.com
  *
- * EspoCRM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * EspoCRM is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with EspoCRM. If not, see http://www.gnu.org/licenses/.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU General Public License version 3.
+ * Section 5 of the GNU Affero General Public License version 3.
  *
- * In accordance with Section 7(b) of the GNU General Public License version 3,
+ * In accordance with Section 7(b) of the GNU Affero General Public License version 3,
  * these Appropriate Legal Notices must retain the display of the "EspoCRM" word.
  ************************************************************************/
 
@@ -84,11 +84,14 @@ class LayoutBaseView extends View {
         this.events = _.clone(this.events);
         this.scope = this.options.scope;
         this.type = this.options.type;
+        this.realType = this.options.realType;
         this.setId = this.options.setId;
         this.em = this.options.em;
 
-        let defs = this.getMetadata()
+        const defs = this.getMetadata()
             .get(['clientDefs', this.scope, 'additionalLayouts', this.type]) ?? {};
+
+        this.typeDefs = defs;
 
         this.dataAttributeList = Espo.Utils.clone(defs.dataAttributeList || this.dataAttributeList);
 
@@ -139,7 +142,7 @@ class LayoutBaseView extends View {
     }
 
     save(callback) {
-        var layout = this.fetch();
+        const layout = this.fetch();
 
         if (!this.validate(layout)) {
             this.enableButtons();
@@ -189,7 +192,7 @@ class LayoutBaseView extends View {
             return '';
         }
 
-        var map = {
+        const map = {
             '&amp;': '&',
             '&lt;': '<',
             '&gt;': '>',
@@ -197,7 +200,7 @@ class LayoutBaseView extends View {
             '&#x27;': "'",
         };
 
-        var reg = new RegExp('(' + _.keys(map).join('|') + ')', 'g');
+        const reg = new RegExp('(' + _.keys(map).join('|') + ')', 'g');
 
         return ('' + string).replace(reg, match => {
             return map[match];
@@ -218,9 +221,9 @@ class LayoutBaseView extends View {
     }
 
     openEditDialog(attributes) {
-        let name = attributes.name;
+        const name = attributes.name;
 
-        let viewOptions = this.getEditAttributesModalViewOptions(attributes);
+        const viewOptions = this.getEditAttributesModalViewOptions(attributes);
 
         this.createView('editModal', 'views/admin/layouts/modals/edit-attributes', viewOptions, view => {
             view.render();
@@ -228,9 +231,9 @@ class LayoutBaseView extends View {
             this.listenToOnce(view, 'after:save', attributes => {
                 this.trigger('update-item', name, attributes);
 
-                let $li = $("#layout ul > li[data-name='" + name + "']");
+                const $li = $("#layout ul > li[data-name='" + name + "']");
 
-                for (let key in attributes) {
+                for (const key in attributes) {
                     $li.attr('data-' + key, attributes[key]);
                     $li.data(key, attributes[key]);
                     $li.find('.' + key + '-value').text(attributes[key]);
